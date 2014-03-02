@@ -122,23 +122,26 @@ void ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePoint
 	for (int i = 0; i < 8; i++)															//проверяем координаты всех точек на -1;-1
 	if (facePoints[i].x < 0 || facePoints[i].y < 0)	b = 0;
 
-	if (b){
-		CvPoint centralCoords[4];
+	//if (b){
+	CvPoint centralCoords[4];
 
-		for (int i = 0; i < 4; i++)
-			centralCoords[i] = cvPoint((facePoints[i].x + facePoints[i + 4].x) / 2, (facePoints[i].y + facePoints[i + 4].y) / 2);
+	for (int i = 0; i < 4; i++)
+		centralCoords[i] = cvPoint((facePoints[i].x + facePoints[i + 4].x) / 2, (facePoints[i].y + facePoints[i + 4].y) / 2);
 
-		for (int i = 0; i < 4; i++)
-		for (int j = 0; j < 4; j++)
+	for (int i = 0; i < 4; i++)
+	for (int j = 0; j < 4; j++)
+	{
+
+		if (centralCoords[i].x >= 0 && centralCoords[i].y >= 0 && centralCoords[j].x >= 0 && centralCoords[j].y >= 0){
 			cvLine(imageResults, centralCoords[i], centralCoords[j], CV_RGB(0, 0, 255));
-		cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));
+		}
 	}
-	else cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 255));
+	cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));
+	//}
+	//else cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 255));
 }
 
 void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[8], CvPoint p1, CvPoint p2){
-
-
 	bool b = true;
 	for (int i = 0; i < 2; i++){
 		if (facePoints[i].x < 0 || facePoints[i].y < 0) b = false;
@@ -162,8 +165,7 @@ void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, C
 
 		double rad = 57.295779513;
 		double angle = atan(y / x)*rad;
-		
-		
+
 		cv2DRotationMatrix(center, angle, 1, transmat);
 
 		cvWarpAffine(small_img, small_img, transmat);
