@@ -3,7 +3,8 @@
 #include "SiftDetection.h"
 
 #include <Math.h>
-
+#include <stdlib.h>
+#include <io.h>
 
 //«агрузка базы данных, обученной на детектирование лиц в ‘ас
 static CvHaarClassifierCascade* cascade =
@@ -23,6 +24,7 @@ static CvHaarClassifierCascade* cascade_mouth =
 
 
 
+
 //«апись ключевых точек в массив
 void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageResults, CvPoint p1, CvPoint p2, int type, int count){					//ресайз картинки	
 	// ќпредел€ть опатимальный вариант и брать его, сейчас берем не лучший, а первый (дл€ носа и рта)
@@ -31,13 +33,13 @@ void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageRe
 			//первый глаз
 			facePoints[0] = p1;
 			facePoints[4] = p2;
-			cvRectangle(imageResults, p1, p2, CV_RGB(255, 128, 0));
+			//cvRectangle(imageResults, p1, p2, CV_RGB(255, 128, 0));
 		}
 		else if (count == 1){
 			//второй глаз
 			facePoints[1] = p1;
 			facePoints[5] = p2;
-			cvRectangle(imageResults, p1, p2, CV_RGB(0, 128, 255));
+			//cvRectangle(imageResults, p1, p2, CV_RGB(0, 128, 255));
 		}
 		count++;
 
@@ -47,7 +49,7 @@ void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageRe
 		// нос
 		facePoints[2] = p1;
 		facePoints[6] = p2;
-		cvRectangle(imageResults, p1, p2, CV_RGB(255, 100, 255));
+		//cvRectangle(imageResults, p1, p2, CV_RGB(255, 100, 255));
 	}
 	else if (type == 2
 		&& p1.y >= (facePoints[2].y/* + (facePoints[6].y - facePoints[2].y) / 1.5*/)
@@ -55,7 +57,7 @@ void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageRe
 		// рот
 		facePoints[3] = p1;
 		facePoints[7] = p2;
-		cvRectangle(imageResults, p1, p2, CV_RGB(128, 0, 128));
+		//cvRectangle(imageResults, p1, p2, CV_RGB(128, 0, 128));
 	}
 }
 
@@ -116,29 +118,19 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd, IplImage
 }
 
 //ѕрорисовка соединительных линий на резулютирующем изображении
-void ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePoints[8], CvPoint p1, CvPoint p2){
+boolean ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePoints[8], CvPoint p1, CvPoint p2){
 
-	bool b = 1;
+	int count = 0;
 	for (int i = 0; i < 8; i++)															//провер€ем координаты всех точек на -1;-1
-	if (facePoints[i].x < 0 || facePoints[i].y < 0)	b = 0;
-
-	//if (b){
-	CvPoint centralCoords[4];
-
-	for (int i = 0; i < 4; i++)
-		centralCoords[i] = cvPoint((facePoints[i].x + facePoints[i + 4].x) / 2, (facePoints[i].y + facePoints[i + 4].y) / 2);
-
-	for (int i = 0; i < 4; i++)
-	for (int j = 0; j < 4; j++)
-	{
-
-		if (centralCoords[i].x >= 0 && centralCoords[i].y >= 0 && centralCoords[j].x >= 0 && centralCoords[j].y >= 0){
-			cvLine(imageResults, centralCoords[i], centralCoords[j], CV_RGB(0, 0, 255));
-		}
+	if (facePoints[i].x >= 0 && facePoints[i].y >= 0){
+		count++;
 	}
-	cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));
-	//}
-	//else cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 255));
+
+	if (count > 2){
+		cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));							//рисуем желтый квадрат, если нашли более 1 части лица
+		return true;
+	}
+	return false;
 }
 
 void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[8], CvPoint p1, CvPoint p2){
@@ -155,8 +147,6 @@ void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, C
 		CvPoint pb = cvPoint((facePoints[1].x + facePoints[5].x) / 2, (facePoints[1].y + facePoints[5].y) / 2);
 		CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
 
-		//cvLine(resultImage, pa, pb, CV_RGB(0, 0, 255));	
-
 		double x = (pb.x - pa.x);
 		double y = (pb.y - pa.y);
 		CvPoint2D32f center;
@@ -169,10 +159,70 @@ void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, C
 		cv2DRotationMatrix(center, angle, 1, transmat);
 
 		cvWarpAffine(small_img, small_img, transmat);
+
+
 	}
 }
 
+void ViolaJonesDetection::scanBaseFace(char *dir, Mat ffDescriptors, int faceNumber){
+	SiftDetection *siftDetection = new SiftDetection();
+	_finddata_t result;
+	char name[512];
+	long done;
+	IplImage *base_face = 0, *gray_face;
 
+	sprintf(name, "%s\\*.jpg", dir);
+
+	memset(&result, 0, sizeof(result));
+	done = _findfirst(name, &result);
+
+	int max_p = 0;
+	if (done != -1)
+	{
+		int res = 0;
+		while (res == 0){
+			
+			cout << result.name << endl;
+			sprintf(name, "%s\\%s", dir, result.name);
+			base_face = cvLoadImage(name);
+			
+			if (!base_face) {
+				cerr << "base image load error" << endl;
+				return;
+			}
+			else {
+				gray_face= cvCreateImage(cvGetSize(base_face), 8, 1);
+				cvCvtColor(base_face, gray_face, CV_BGR2GRAY);
+				cvEqualizeHist(gray_face, gray_face);
+				Mat bfDescriptors = siftDetection->findDescriptors(base_face, result.name);
+				
+				if (bfDescriptors.rows > 0){
+					int p =	siftDetection->matchDescriptors(ffDescriptors, bfDescriptors);
+					if (p >= max_p){
+						max_p = p;
+						sprintf(name, "F%d", faceNumber);
+
+						cvShowImage(name,base_face);
+					}
+				}
+			}
+			res = _findnext(done, &result);
+		}
+	}
+	_findclose(done);
+	cvReleaseImage(&base_face);
+	cvReleaseImage(&gray_face);
+	delete siftDetection;
+}
+
+
+void saveImage(IplImage *small_img){																					
+	srand(time(0));
+	char filename[512];
+	int random = rand() + rand() * clock();
+	sprintf(filename, "C:\\Face_detector_OK\\face_base\\%d.jpg", random);
+	cvSaveImage(filename, small_img);
+}
 //ƒетектирование ключевых точек лица (вызываетс€ из main)
 void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults, CvMemStorage* strg){
 	if (cascade){
@@ -203,21 +253,31 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 			cvSetImageROI(gray_img, cvRect(x, y, w, h));
 			cvCopy(gray_img, small_img, NULL);
 			cvResetImageROI(gray_img);															//копируем лицо в отдельную картинку
+			cvEqualizeHist(small_img, small_img);												//нормализаци€ гистограммы
 
 			for (int j = 0; j < 8; j++)	facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
-
+			
 			keysFaceDetect(cascade_eyes, imageResults, small_img, strg, p1, 0, facePoints);
 			keysFaceDetect(cascade_nose, imageResults, small_img, strg, p1, 1, facePoints);
 			keysFaceDetect(cascade_mouth, imageResults, small_img, strg, p1, 2, facePoints);
 
 			descriptors_img = small_img;
-			char str[9]; sprintf(str, "%d face", i);
+			char str[9]; sprintf(str, "%d", i);
 
-			//ѕоворот картинки
-			rotateImage(gray_img, descriptors_img, facePoints, p1, p2);
-			siftDetection->findDescriptors(descriptors_img, str);
+			rotateImage(gray_img, descriptors_img, facePoints, p1, p2);							//поворот картинки по линии глаз
+			
+			cvShowImage(str, small_img);
+			//saveImage(small_img);
 
-			drawEvidence(imageResults, facePoints, p1, p2);
+
+
+			//IplImage ** faceImgArr = 0;										// создаем массив изображений лица одного человека
+			//faceImgArr = (IplImage **)cvAlloc(10 * sizeof(IplImage *));		//инициализируем пространство
+
+			Mat faceDescriptors = siftDetection->findDescriptors(descriptors_img, str);		//поиск дескрипторов на входной картинке
+			scanBaseFace("C:\\Face_detector_OK\\face_base\\", faceDescriptors, i);
+
+			boolean b = drawEvidence(imageResults, facePoints, p1, p2);	
 
 		}
 

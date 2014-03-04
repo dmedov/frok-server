@@ -7,7 +7,8 @@ int main() {
 	IplImage *img = 0, *imageResults = 0;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
 
-	img = cvLoadImage("C:\\test_photo\\13.jpg");
+	img = cvLoadImage("C:\\Face_detector_OK\\test_photo\\15.jpg");
+
 	if (!img) {
 		cerr << "image load error" << endl;
 		return -1;
@@ -16,10 +17,9 @@ int main() {
 
 	//Создание хранилища памяти
 	storage = cvCreateMemStorage(0);
-
 	cvClearMemStorage(storage);
 	violaJonesDetection->cascadeDetect(img, imageResults, storage);
-	cvShowImage("img2", imageResults);
+	cvShowImage("img1", imageResults);
 
 	while (1){
 		char c = cvWaitKey(33);
@@ -30,5 +30,4 @@ int main() {
 			return 0;
 		}
 	}
-
 }

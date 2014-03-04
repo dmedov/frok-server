@@ -1,13 +1,13 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "SiftDetection.h"
 
-//Сравнение дескрипторов (доделать)
-void SiftDetection::matchDescriptors(Mat ffd, Mat bfd){
+//РЎСЂР°РІРЅРµРЅРёРµ РґРµСЃРєСЂРёРїС‚РѕСЂРѕРІ (РґРѕРґРµР»Р°С‚СЊ)
+int SiftDetection::matchDescriptors(Mat ffd, Mat bfd){
 	FlannBasedMatcher matcher;
 	vector<DMatch> matches;
 	matcher.match(ffd, bfd, matches);
 
-	double max_dist = 0; double min_dist = 2;
+	double max_dist = 0; double min_dist = 80;
 
 	//-- Quick calculation of max and min distances between keypoints
 	for (int i = 0; i < ffd.rows; i++)	{
@@ -24,23 +24,34 @@ void SiftDetection::matchDescriptors(Mat ffd, Mat bfd){
 			c++;
 		}
 	}
-
+	cout << c << endl;
+	return c;
 }
 
-//Поиск дескрипторов и вывод изображений с найденными дескрипторами
+//РџРѕРёСЃРє РґРµСЃРєСЂРёРїС‚РѕСЂРѕРІ Рё РІС‹РІРѕРґ РёР·РѕР±СЂР°Р¶РµРЅРёР№ СЃ РЅР°Р№РґРµРЅРЅС‹РјРё РґРµСЃРєСЂРёРїС‚РѕСЂР°РјРё
 Mat SiftDetection::findDescriptors(IplImage *face, char* name){
-	//-- Этап 1. Нахождение ключевых точек.
-	SiftFeatureDetector detector(400);
-	vector<KeyPoint> keypoints;
-	detector.detect(face, keypoints);
-	Mat img_keypoints, descriptors_object;
-	drawKeypoints(face, keypoints, img_keypoints, Scalar::all(-1), DrawMatchesFlags::DEFAULT);
+	//-- Р­С‚Р°Рї 1. РќР°С…РѕР¶РґРµРЅРёРµ РєР»СЋС‡РµРІС‹С… С‚РѕС‡РµРє.
 
-	//-- Этап 2. Вычисление дескрипторов.
+	//FeatureDetector * detector = new GFTTDetector();
+	//FeatureDetector * detector = new FastFeatureDetector();
+	//FeatureDetector * detector = new DenseFeatureDetector(1, 1, 0.1, 6,0, true, false);
+	//FeatureDetector * detector = new StarFeatureDetector();	
+	//FeatureDetector * detector = new BRISK();
+	//FeatureDetector * detector = new MSER();
+	//FeatureDetector * detector = new ORB();
+	//FeatureDetector * detector = new SURF(600.0);
+	FeatureDetector * detector = new SIFT(1000);
+
+	vector<KeyPoint> keypoints;
+	detector->detect(face, keypoints);
+	Mat img_keypoints, descriptors_object;
+	drawKeypoints(face, keypoints, img_keypoints, Scalar::all(-1), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+
+	//-- Р­С‚Р°Рї 2. Р’С‹С‡РёСЃР»РµРЅРёРµ РґРµСЃРєСЂРёРїС‚РѕСЂРѕРІ.
 	SiftDescriptorExtractor extractor;
 	extractor.compute(face, keypoints, descriptors_object);
 
-	imshow(name, img_keypoints);
+	//imshow(name, img_keypoints);
 	return descriptors_object;
 }
 
