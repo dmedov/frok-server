@@ -39,8 +39,8 @@ Mat SiftDetection::findDescriptors(IplImage *face, char* name){
 	//FeatureDetector * detector = new BRISK();
 	//FeatureDetector * detector = new MSER();
 	//FeatureDetector * detector = new ORB();
-	//FeatureDetector * detector = new SURF(600.0);
-	FeatureDetector * detector = new SIFT(1000);
+	FeatureDetector * detector = new SURF(600.0);
+	//FeatureDetector * detector = new SIFT(1000);
 
 	vector<KeyPoint> keypoints;
 	detector->detect(face, keypoints);
