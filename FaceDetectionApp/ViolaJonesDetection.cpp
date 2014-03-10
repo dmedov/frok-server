@@ -22,8 +22,17 @@ static CvHaarClassifierCascade* cascade_nose =
 static CvHaarClassifierCascade* cascade_mouth =
 (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_mouth.xml", 0, 0, 0);
 
+IplImage **faceImgArr = 0, ** eigenVectArr = 0;		// создаем массив изображений лица одного человека и eigen массив
+CvMat *eigenValMat = 0;
+IplImage* pAvgTrainImg = 0;							//среднее изображение
 
-
+void saveImage(IplImage *small_img){
+	srand(time(0));
+	char filename[512];
+	int random = rand() + rand() * clock();
+	sprintf(filename, "C:\\Face_detector_OK\\face_base\\%d.jpg", random);
+	cvSaveImage(filename, small_img);
+}
 
 //Запись ключевых точек в массив
 void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageResults, CvPoint p1, CvPoint p2, int type, int count){					//ресайз картинки	
@@ -133,7 +142,7 @@ boolean ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePo
 	return false;
 }
 
-void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[8], CvPoint p1, CvPoint p2){
+void ViolaJonesDetection::rotateImage(IplImage *small_img, CvPoint facePoints[8], CvPoint p1, CvPoint p2){
 	bool b = true;
 	for (int i = 0; i < 2; i++){
 		if (facePoints[i].x < 0 || facePoints[i].y < 0) b = false;
@@ -159,70 +168,44 @@ void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, C
 		cv2DRotationMatrix(center, angle, 1, transmat);
 
 		cvWarpAffine(small_img, small_img, transmat);
-
-
 	}
 }
 
-void ViolaJonesDetection::scanBaseFace(char *dir, Mat ffDescriptors, int faceNumber){
-	SiftDetection *siftDetection = new SiftDetection();
+void calcEigenBaseFace(char *dir, int faceNumber, IplImage **faceImgArr){
+
 	_finddata_t result;
 	char name[512];
 	long done;
-	IplImage *base_face = 0, *gray_face;
+	IplImage *base_face = 0;
 
 	sprintf(name, "%s\\*.jpg", dir);
-
 	memset(&result, 0, sizeof(result));
 	done = _findfirst(name, &result);
+
+	int count = 0;
 
 	int max_p = 0;
 	if (done != -1)
 	{
 		int res = 0;
 		while (res == 0){
-			
 			cout << result.name << endl;
 			sprintf(name, "%s\\%s", dir, result.name);
-			base_face = cvLoadImage(name);
-			
-			if (!base_face) {
-				cerr << "base image load error" << endl;
-				return;
-			}
-			else {
-				gray_face= cvCreateImage(cvGetSize(base_face), 8, 1);
-				cvCvtColor(base_face, gray_face, CV_BGR2GRAY);
-				cvEqualizeHist(gray_face, gray_face);
-				Mat bfDescriptors = siftDetection->findDescriptors(base_face, result.name);
-				
-				if (bfDescriptors.rows > 0){
-					int p =	siftDetection->matchDescriptors(ffDescriptors, bfDescriptors);
-					if (p >= max_p){
-						max_p = p;
-						sprintf(name, "F%d", faceNumber);
 
-						cvShowImage(name,base_face);
-					}
-				}
-			}
+			faceImgArr[count] = cvLoadImage(name, CV_LOAD_IMAGE_GRAYSCALE);
+
+			count++;
 			res = _findnext(done, &result);
+
 		}
+
 	}
 	_findclose(done);
 	cvReleaseImage(&base_face);
-	cvReleaseImage(&gray_face);
-	delete siftDetection;
 }
 
 
-void saveImage(IplImage *small_img){																					
-	srand(time(0));
-	char filename[512];
-	int random = rand() + rand() * clock();
-	sprintf(filename, "C:\\Face_detector_OK\\face_base\\%d.jpg", random);
-	cvSaveImage(filename, small_img);
-}
+
 //Детектирование ключевых точек лица (вызывается из main)
 void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults, CvMemStorage* strg){
 	if (cascade){
@@ -236,6 +219,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 
 		gray_img = cvCreateImage(cvGetSize(image), 8, 1);
 		cvCvtColor(image, gray_img, CV_BGR2GRAY);
+
 
 		CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.2, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 		for (int i = 0; i < (faces ? faces->total : 0); i++){
@@ -256,7 +240,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 			cvEqualizeHist(small_img, small_img);												//нормализация гистограммы
 
 			for (int j = 0; j < 8; j++)	facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
-			
+
 			keysFaceDetect(cascade_eyes, imageResults, small_img, strg, p1, 0, facePoints);
 			keysFaceDetect(cascade_nose, imageResults, small_img, strg, p1, 1, facePoints);
 			keysFaceDetect(cascade_mouth, imageResults, small_img, strg, p1, 2, facePoints);
@@ -264,21 +248,55 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 			descriptors_img = small_img;
 			char str[9]; sprintf(str, "%d", i);
 
-			rotateImage(gray_img, descriptors_img, facePoints, p1, p2);							//поворот картинки по линии глаз
+			rotateImage(small_img, facePoints, p1, p2);							//поворот картинки по линии глаз
+
+			//siftDetection->findDescriptors(small_img, str);
 			
-			cvShowImage(str, small_img);
-			//saveImage(small_img);
+			
+			
+			
+			/////////////////////////////////////////////////EigenfacesClass////////////////////////////////////////////////////////////////////////
+			int nTrainFaces = 10;
+			int nEigens = nTrainFaces - 1;
+			
+			faceImgArr = (IplImage **)cvAlloc(nTrainFaces * sizeof(IplImage *));							//инициализируем пространство
+			eigenVectArr = (IplImage **)cvAlloc(nTrainFaces*sizeof(IplImage *));
+			
+			CvTermCriteria calcLimit = cvTermCriteria(CV_TERMCRIT_ITER, nEigens, 1);
+			eigenValMat = cvCreateMat(1, nEigens, CV_32FC1);
+			pAvgTrainImg = cvCreateImage(cvSize(158, 158), IPL_DEPTH_32F, 1);
+			
+			for (int k = 0; k < nTrainFaces; k++){
+				eigenVectArr[k] = cvCreateImage(cvSize(158, 158), IPL_DEPTH_32F, 1);
+			}
 
+			calcEigenBaseFace("C:\\Face_detector_OK\\face_base\\", i, faceImgArr);
 
+			// Compute average image, eigenvectors (eigenfaces) and eigenvalues (ratios).
+			cvCalcEigenObjects(nTrainFaces, (void*)faceImgArr, (void*)eigenVectArr, CV_EIGOBJ_NO_CALLBACK
+				, 0, 0, &calcLimit, pAvgTrainImg, eigenValMat->data.fl);
 
-			//IplImage ** faceImgArr = 0;										// создаем массив изображений лица одного человека
-			//faceImgArr = (IplImage **)cvAlloc(10 * sizeof(IplImage *));		//инициализируем пространство
+			// Normalize the matrix of eigenvalues.
+			cvNormalize(eigenValMat, eigenValMat, 1, 0, CV_L1, 0);
+			
+			// Project each training image onto the PCA subspace.
+			CvMat *projectedTrainFaceMat = cvCreateMat(nTrainFaces, nEigens, CV_32FC1);
+			int offset = projectedTrainFaceMat->step / sizeof(float);
+			for (int i = 0; i<nTrainFaces; i++) {
+				cvEigenDecomposite(faceImgArr[i], nEigens, eigenVectArr, 0, 0,
+					pAvgTrainImg, projectedTrainFaceMat->data.fl + i*offset);
+			}
 
-			Mat faceDescriptors = siftDetection->findDescriptors(descriptors_img, str);		//поиск дескрипторов на входной картинке
-			scanBaseFace("C:\\Face_detector_OK\\face_base\\", faceDescriptors, i);
+			cvNormalize(pAvgTrainImg, pAvgTrainImg, 1, 0, 4, 0);
 
-			boolean b = drawEvidence(imageResults, facePoints, p1, p2);	
-
+			cvShowImage("AvImg", pAvgTrainImg);
+			/////////////////////////////////////////////////EigenfacesClass////////////////////////////////////////////////////////////////////////
+			
+			
+			
+			
+			
+			boolean b = drawEvidence(imageResults, facePoints, p1, p2);
 		}
 
 		// освобождаем ресурсы
@@ -287,9 +305,63 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 		cvReleaseImage(&small_img);
 		cvReleaseImage(&base_face);
 		cvReleaseImage(&find_face);
+
 	}
 	else{
 		cout << "cascade error" << endl;
 		return;
 	}
+}
+
+
+//Сканирование по SIFT 
+void ViolaJonesDetection::scanBaseFace(char *dir, Mat ffDescriptors, int faceNumber){
+	SiftDetection *siftDetection = new SiftDetection();
+	_finddata_t result;
+	char name[512];
+	long done;
+	IplImage *base_face = 0, *gray_face;
+
+	sprintf(name, "%s\\*.jpg", dir);
+
+	memset(&result, 0, sizeof(result));
+	done = _findfirst(name, &result);
+
+	int max_p = 0;
+	if (done != -1)
+	{
+		int res = 0;
+		while (res == 0){
+
+			cout << result.name << endl;
+			sprintf(name, "%s\\%s", dir, result.name);
+			base_face = cvLoadImage(name);
+
+			if (!base_face) {
+				cerr << "base image load error" << endl;
+				return;
+			}
+			else {
+				gray_face = cvCreateImage(cvGetSize(base_face), 8, 1);
+				cvCvtColor(base_face, gray_face, CV_BGR2GRAY);
+				cvEqualizeHist(gray_face, gray_face);
+				Mat bfDescriptors = siftDetection->findDescriptors(base_face, result.name);
+
+				if (bfDescriptors.rows > 0){
+					int p = siftDetection->matchDescriptors(ffDescriptors, bfDescriptors);
+					if (p >= max_p){
+						max_p = p;
+						sprintf(name, "F%d", faceNumber);
+
+						cvShowImage(name, base_face);
+					}
+				}
+			}
+			res = _findnext(done, &result);
+		}
+	}
+	_findclose(done);
+	cvReleaseImage(&base_face);
+	cvReleaseImage(&gray_face);
+	delete siftDetection;
 }
