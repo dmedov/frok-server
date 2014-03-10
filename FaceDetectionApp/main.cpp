@@ -21,6 +21,7 @@ int main() {
 	violaJonesDetection->cascadeDetect(img, imageResults, storage);
 	cvShowImage("img1", imageResults);
 
+
 	while (1){
 		char c = cvWaitKey(33);
 		if (c == 27) { // нажата ESC
