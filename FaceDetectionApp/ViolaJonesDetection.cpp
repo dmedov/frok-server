@@ -264,13 +264,15 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 			
 			CvTermCriteria calcLimit = cvTermCriteria(CV_TERMCRIT_ITER, nEigens, 1);
 			eigenValMat = cvCreateMat(1, nEigens, CV_32FC1);
+			calcEigenBaseFace("C:\\Face_detector_OK\\face_base\\", i, faceImgArr);
+
 			pAvgTrainImg = cvCreateImage(cvSize(158, 158), IPL_DEPTH_32F, 1);
 			
 			for (int k = 0; k < nTrainFaces; k++){
 				eigenVectArr[k] = cvCreateImage(cvSize(158, 158), IPL_DEPTH_32F, 1);
 			}
 
-			calcEigenBaseFace("C:\\Face_detector_OK\\face_base\\", i, faceImgArr);
+			
 
 			// Compute average image, eigenvectors (eigenfaces) and eigenvalues (ratios).
 			cvCalcEigenObjects(nTrainFaces, (void*)faceImgArr, (void*)eigenVectArr, CV_EIGOBJ_NO_CALLBACK
