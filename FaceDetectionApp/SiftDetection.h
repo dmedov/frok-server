@@ -2,7 +2,7 @@
 class SiftDetection
 {
 public:
-	Mat findDescriptors(IplImage *, char*);
+	Mat findDescriptors(IplImage *, char*, bool);
 	int matchDescriptors(Mat, Mat);
 };
 

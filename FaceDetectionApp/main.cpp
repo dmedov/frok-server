@@ -1,13 +1,30 @@
 #include "stdafx.h"
 #include "ViolaJonesDetection.h";
+#include "EigenDetector.h";
 
+void usage()
+{
+	cout << "Usage:" << endl << "<image name + path>" << endl << "example";
+	return;
+}
 
-int main() {
+int main(int argc, char *argv[]) {
 	CvMemStorage* storage = 0;
 	IplImage *img = 0, *imageResults = 0;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
 
-	img = cvLoadImage("C:\\Face_detector_OK\\test_photo\\15.jpg");
+	if (argc != 2)
+	{
+		cerr << "invalid input arguments" << endl;
+		return -1;
+	}
+
+	//CvCapture *capture = 0;
+	//capture = cvCreateCameraCapture(CV_CAP_ANY);
+
+	//img = cvQueryFrame(capture);	//получение изображения камеры
+
+	img = cvLoadImage(argv[1]);
 
 	if (!img) {
 		cerr << "image load error" << endl;
@@ -20,7 +37,6 @@ int main() {
 	cvClearMemStorage(storage);
 	violaJonesDetection->cascadeDetect(img, imageResults, storage);
 	cvShowImage("img1", imageResults);
-
 
 	while (1){
 		char c = cvWaitKey(33);

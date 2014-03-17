@@ -69,11 +69,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="EigenDetector.cpp" />
     <ClCompile Include="SiftDetection.cpp" />
     <ClCompile Include="ViolaJonesDetection.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="EigenDetector.h" />
     <ClInclude Include="SiftDetection.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="ViolaJonesDetection.h" />

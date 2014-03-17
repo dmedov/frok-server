@@ -29,7 +29,7 @@ int SiftDetection::matchDescriptors(Mat ffd, Mat bfd){
 }
 
 //Поиск дескрипторов и вывод изображений с найденными дескрипторами
-Mat SiftDetection::findDescriptors(IplImage *face, char* name){
+Mat SiftDetection::findDescriptors(IplImage *face, char* name, bool b){
 	//-- Этап 1. Нахождение ключевых точек.
 
 	//FeatureDetector * detector = new GFTTDetector();
@@ -50,8 +50,7 @@ Mat SiftDetection::findDescriptors(IplImage *face, char* name){
 	//-- Этап 2. Вычисление дескрипторов.
 	SiftDescriptorExtractor extractor;
 	extractor.compute(face, keypoints, descriptors_object);
-
-	imshow(name, img_keypoints);
+	if (b)	imshow(name, img_keypoints);
 	return descriptors_object;
 }
 
