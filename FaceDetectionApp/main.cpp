@@ -1,14 +1,22 @@
 #include "stdafx.h"
-#include "ViolaJonesDetection.h";
-#include "EigenDetector.h";
+#include "ViolaJonesDetection.h"
+#include "EigenDetector.h"
 
 void usage()
 {
-	cout << "Usage:" << endl << "<image name + path>" << endl << "example";
+	cout << "Usage:" << endl << "<image name + path>" << endl 
+		<< "example: FaceDetectionApp.exe C:\\Face_detector_OK\\test_photo\\18.jpg";
 	return;
 }
 
+
 int main(int argc, char *argv[]) {
+
+
+	//unsigned int i = 0xABCD;
+	//unsigned char c[4];
+	//memcpy(c, &i, 4);
+
 	CvMemStorage* storage = 0;
 	IplImage *img = 0, *imageResults = 0;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
@@ -16,6 +24,7 @@ int main(int argc, char *argv[]) {
 	if (argc != 2)
 	{
 		cerr << "invalid input arguments" << endl;
+		usage();
 		return -1;
 	}
 

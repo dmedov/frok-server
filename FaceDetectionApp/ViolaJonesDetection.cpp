@@ -24,10 +24,10 @@ static CvHaarClassifierCascade* cascade_mouth =
 (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_mouth.xml", 0, 0, 0);
 
 void saveImage(IplImage *small_img){
-	srand(time(0));
+	srand((unsigned int)time(0));
 	char filename[512];
 	int random = rand() + rand() * clock();
-	sprintf(filename, "C:\\Face_detector_OK\\face_base\\%d.jpg", random);
+	sprintf(filename, "C:\\Face_detector_OK\\zotov_dima\\%d.jpg", random);
 	cvSaveImage(filename, small_img);
 }
 
@@ -133,8 +133,8 @@ boolean ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePo
 	if (facePoints[i].x >= 0 && facePoints[i].y >= 0){
 		count++;
 	}
-
-	if (count > 2){
+	
+	if (count){
 		cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));							//рисуем желтый квадрат, если нашли более 1 части лица
 		return true;
 	}
@@ -166,9 +166,7 @@ void ViolaJonesDetection::rotateImage(IplImage *small_img, CvPoint facePoints[8]
 		double angle = atan(y / x)*rad;
 
 		cv2DRotationMatrix(center, angle, 1, transmat);
-
 		cvWarpAffine(small_img, small_img, transmat);
-
 		cvReleaseMat(&transmat);
 	}
 }
@@ -223,26 +221,32 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 
 			eigenDetector->learn();																//Обучение
 			
-
+			
 			IplImage *dist = cvCreateImage(cvSize(158, 158), small_img->depth, small_img-> nChannels);
 			cvResize(small_img, dist, 1);
-			eigenDetector->recognize(dist);														//Распознавание
+			cout << "p (" << i << ") = ";
+			eigenDetector->recognize(dist);														//Распознавание			
 			cvShowImage(str, dist);
 			cvReleaseImage(&dist);	
 
 			boolean b = drawEvidence(imageResults, facePoints, p1, p2);
-
 		}
 
 		// освобождаем ресурсы			
 		delete siftDetection;
-		delete eigenDetector;		
-		cvReleaseImage(&small_img);
-		cvReleaseImage(&base_face);
-		cvReleaseImage(&find_face);
-		//cvReleaseImage(&gray_img);
-		//cvReleaseImage(&descriptors_img);
+		delete eigenDetector;
 
+		if (small_img != NULL)
+		{
+			cvReleaseImage(&small_img);
+			small_img = NULL;
+		}		
+		if (base_face != NULL)
+			cvReleaseImage(&base_face);
+		if (find_face != NULL)
+			cvReleaseImage(&find_face);
+		if (gray_img != NULL)
+			cvReleaseImage(&gray_img);
 	}
 	else{
 		cout << "cascade error" << endl;

@@ -2,12 +2,13 @@
 #include "EigenDetector.h"
 #include <stdlib.h>
 #include <io.h>
+#include <Math.h>
 
 IplImage** faceImgArr = 0;		//array of face images
 IplImage** eigenVectArr = 0;	//eigenvectors
 IplImage* pAvgTrainImg = 0;
-//char dir[512] = "C:\\Face_detector_OK\\face_base\\";
-char dir[512] = "C:\\Face_detector_OK\\rustevich_roman\\";
+char dir[512] = "C:\\Face_detector_OK\\face_base\\";
+//char dir[512] = "C:\\Face_detector_OK\\rustevich_roman\\";
 
 void EigenDetector::doPCA(CvMat* eigenValMat, int nEigens){
 	//set the PCA termination criterion
@@ -41,8 +42,8 @@ void EigenDetector::learn(){
 	nEigens = nTrainFaces - 1;
 
 
-	faceImgArr = (IplImage**)cvAlloc(nTrainFaces*sizeof(IplImage*));
-	eigenVectArr = (IplImage**)cvAlloc(nEigens*sizeof(IplImage*));
+	faceImgArr = (IplImage**)cvAlloc(nTrainFaces*sizeof(IplImage));
+	eigenVectArr = (IplImage**)cvAlloc(nEigens*sizeof(IplImage));
 	eigenValMat = cvCreateMat(1, nEigens, CV_32FC1);										//allocate the eigenvalue array
 	pAvgTrainImg = cvCreateImage(cvSize(158, 158), IPL_DEPTH_32F, 1);						//allocate the averaged image
 	personNumTruthMat = cvCreateMat(1, nTrainFaces, CV_32SC1);
@@ -66,12 +67,12 @@ void EigenDetector::learn(){
 			projectedTrainFaceMat->data.fl + i*nEigens
 			);
 	}
-	cvShowImage("avg", pAvgTrainImg);
+	//cvShowImage("avg", pAvgTrainImg);
 
 	storeTrainingData(personNumTruthMat, projectedTrainFaceMat, eigenValMat, nEigens);
 
-	//cvRelease((void**)faceImgArr);
-	//cvRelease((void**)eigenVectArr);	
+	cvRelease((void**)faceImgArr);
+	cvRelease((void**)eigenVectArr);
 }
 
 void EigenDetector::storeTrainingData(CvMat* personNumTruthMat, CvMat* projectedTrainFaceMat, CvMat* eigenValMat, int nEigens){
@@ -122,7 +123,7 @@ void EigenDetector::loadBaseFace(char* dir, CvMat* personNumTruthMat){
 	{
 		int res = 0;
 		while (res == 0){
-			cout << result.name << endl;
+			//cout << result.name << endl;
 			sprintf(name, "%s\\%s", dir, result.name);
 
 			IplImage *dist = cvLoadImage(name, CV_LOAD_IMAGE_GRAYSCALE);
@@ -188,7 +189,7 @@ void EigenDetector::recognize(IplImage* TestImg){
 	eigenValMat = (CvMat*)cvReadByName(fileStorage, 0, "eigenValMat", 0);
 	projectedTrainFaceMat = (CvMat*)cvReadByName(fileStorage, 0, "projectedTrainFaceMat", 0);
 	pAvgTrainImg = (IplImage*)cvReadByName(fileStorage, 0, "avgTrainImg", 0);
-	eigenVectArr = (IplImage**)cvAlloc((nTrainFaces)*sizeof(IplImage*));
+	eigenVectArr = (IplImage**)cvAlloc((nTrainFaces)*sizeof(IplImage));
 
 
 	for (int i = 0; i < nEigens; i++){
@@ -211,7 +212,7 @@ void EigenDetector::recognize(IplImage* TestImg){
 
 	iNearest = findNearestNeighbor(projectedTestFace, projectedTrainFaceMat, eigenValMat, nEigens, nTrainFaces, &pConfidence);
 
-	cout << iNearest << " " << pConfidence << endl;
+	//cout << iNearest << " " << pConfidence << endl;
 
 	cvReleaseFileStorage(&fileStorage);
 	cvReleaseMat(&trainPersonNumMat);
@@ -221,18 +222,17 @@ void EigenDetector::recognize(IplImage* TestImg){
 
 int EigenDetector::findNearestNeighbor(float * projectedTestFace, CvMat* projectedTrainFaceMat, CvMat* eigenValMat, int nEigens, int nTrainFaces, float *pConfidence)
 {
-	double leastDistSq = 1e12;
-	//double leastDistSq = DBL_MAX;
+	float leastDistSq = FLT_MAX;
 	int iNearest = 0;
 
 	for (int iTrain = 0; iTrain < nTrainFaces; iTrain++)
 	{
-		double distSq = 0;
+		float distSq = 0;
 
 		for (int i = 0; i < nEigens; i++)
 		{
 			float d_i = projectedTestFace[i] - projectedTrainFaceMat->data.fl[iTrain*nEigens + i];
-			distSq += d_i*d_i / eigenValMat->data.fl[i];  // Mahalanobis distance (might give better results than Eucalidean distance)
+			distSq += (d_i*d_i / eigenValMat->data.fl[i]);  // Mahalanobis distance (might give better results than Eucalidean distance)
 			distSq += d_i*d_i; // Euclidean distance.
 		}
 
@@ -246,9 +246,10 @@ int EigenDetector::findNearestNeighbor(float * projectedTestFace, CvMat* project
 	// Return the confidence level based on the Euclidean distance,
 	// so that similar images should give a confidence between 0.5 to 1.0,
 	// and very different images should give a confidence between 0.0 to 0.5.
-	float  reduction = sqrt(leastDistSq / (float)(nTrainFaces * nEigens)) / 255.0f;
+	float  prediction = (float)(1.0f - sqrt(leastDistSq / (float)(nTrainFaces * nEigens)) / 255.0f);
 
-	*pConfidence = abs(1 - reduction);
+	int p = abs(prediction) * 100;
+	cout << p << " %" << endl;
 
 	// Return the found index.
 	return iNearest;
