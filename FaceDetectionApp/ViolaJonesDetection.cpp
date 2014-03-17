@@ -133,7 +133,7 @@ boolean ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePo
 	if (facePoints[i].x >= 0 && facePoints[i].y >= 0){
 		count++;
 	}
-	
+
 	if (count){
 		cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));							//рисуем желтый квадрат, если нашли более 1 части лица
 		return true;
@@ -218,7 +218,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 
 			//Mat ffDescriptors = siftDetection->findDescriptors(small_img, str,true);
 			//scanBaseFace("C:\\Face_detector_OK\\face_base\\", ffDescriptors, i);
-
+			
 			eigenDetector->learn();																//ќбучение
 			
 			
@@ -228,23 +228,23 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 			eigenDetector->recognize(dist);														//–аспознавание			
 			cvShowImage(str, dist);
 			cvReleaseImage(&dist);	
-
+			
 			boolean b = drawEvidence(imageResults, facePoints, p1, p2);
 		}
 
-		// освобождаем ресурсы			
+		// освобождаем ресурсы
 		delete siftDetection;
 		delete eigenDetector;
 
 		if (small_img != NULL)
 		{
-			cvReleaseImage(&small_img);
+		cvReleaseImage(&small_img);
 			small_img = NULL;
 		}		
 		if (base_face != NULL)
-			cvReleaseImage(&base_face);
+		cvReleaseImage(&base_face);
 		if (find_face != NULL)
-			cvReleaseImage(&find_face);
+		cvReleaseImage(&find_face);
 		if (gray_img != NULL)
 			cvReleaseImage(&gray_img);
 	}
