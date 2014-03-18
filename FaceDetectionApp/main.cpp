@@ -39,7 +39,8 @@ int main(int argc, char *argv[]) {
 		cerr << "image load error" << endl;
 		return -1;
 	}
-	else imageResults = img;
+	else imageResults = cvCloneImage(img);
+	//cvEqualizeHist(imageResults, imageResults);
 
 	//Создание хранилища памяти
 	storage = cvCreateMemStorage(0);

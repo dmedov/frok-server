@@ -67,7 +67,6 @@ void EigenDetector::learn(){
 			projectedTrainFaceMat->data.fl + i*nEigens
 			);
 	}
-	//cvShowImage("avg", pAvgTrainImg);
 
 	storeTrainingData(personNumTruthMat, projectedTrainFaceMat, eigenValMat, nEigens);
 
@@ -168,7 +167,7 @@ int EigenDetector::calcFaces(char* dir){
 }
 
 //**********************************распознавание****************************************
-void EigenDetector::recognize(IplImage* TestImg){
+void EigenDetector::recognize(IplImage* TestImg, IplImage* resultImage, CvPoint p,int id){
 
 	CvMat* trainPersonNumMat = 0, *projectedTrainFaceMat = 0, *eigenValMat = 0;
 	int nEigens = 0, nTrainFaces = 0;
@@ -201,7 +200,7 @@ void EigenDetector::recognize(IplImage* TestImg){
 
 	projectedTestFace = (float*)cvAlloc(nEigens*sizeof(float));
 
-	int iNearest;
+	
 	//project the test images onto the PCA subspace
 	cvEigenDecomposite(TestImg, nEigens,
 		eigenVectArr, 0, 0,
@@ -210,9 +209,15 @@ void EigenDetector::recognize(IplImage* TestImg){
 	cvShowImage("avg", pAvgTrainImg);
 
 
-	iNearest = findNearestNeighbor(projectedTestFace, projectedTrainFaceMat, eigenValMat, nEigens, nTrainFaces, &pConfidence);
+	int prob = findNearestNeighbor(projectedTestFace, projectedTrainFaceMat, eigenValMat, nEigens, nTrainFaces, &pConfidence);
 
-	//cout << iNearest << " " << pConfidence << endl;
+	CvScalar textColor = CV_RGB(0, 255, 255);	// light blue text
+	CvFont font;
+	cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
+	char text[256];
+	sprintf(text, "id %d, p = %d %%", id, prob); //%%
+	cvPutText(resultImage, text, cvPoint(p.x, p.y - 12), &font, textColor);
+
 
 	cvReleaseFileStorage(&fileStorage);
 	cvReleaseMat(&trainPersonNumMat);
@@ -248,9 +253,10 @@ int EigenDetector::findNearestNeighbor(float * projectedTestFace, CvMat* project
 	// and very different images should give a confidence between 0.0 to 0.5.
 	float  prediction = (float)(1.0f - sqrt(leastDistSq / (float)(nTrainFaces * nEigens)) / 255.0f);
 
-	int p = abs(prediction) * 100;
+	int p = prediction * 100;
+	if (p < 0) p = 0;
 	cout << p << " %" << endl;
 
 	// Return the found index.
-	return iNearest;
+	return p;
 }

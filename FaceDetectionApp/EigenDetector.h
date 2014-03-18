@@ -3,7 +3,10 @@ class EigenDetector
 {
 public:
 	void learn();
-	void recognize(IplImage* TestImg);
+	void recognize(IplImage* TestImg
+		, IplImage* resultImage
+		, CvPoint p
+		,int id);
 private:
 	int calcFaces(char* dir);
 
@@ -15,13 +18,6 @@ private:
 
 	void storeTrainingData(
 		CvMat* personNumTruthMat
-		, CvMat* projectedTrainFaceMat
-		, CvMat* eigenValMat
-		, int nEigens
-		);
-
-	void recognize(
-		IplImage* TestImg
 		, CvMat* projectedTrainFaceMat
 		, CvMat* eigenValMat
 		, int nEigens

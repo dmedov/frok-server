@@ -174,8 +174,8 @@ void ViolaJonesDetection::rotateImage(IplImage *small_img, CvPoint facePoints[8]
 //Детектирование лица (вызывается из main)
 void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults, CvMemStorage* strg){
 	if (cascade){
-		SiftDetection *siftDetection =new SiftDetection();
-		EigenDetector *eigenDetector =new EigenDetector();
+		SiftDetection *siftDetection = new SiftDetection();
+		EigenDetector *eigenDetector = new EigenDetector();
 
 		IplImage
 			*gray_img = 0,
@@ -186,6 +186,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 
 		gray_img = cvCreateImage(cvGetSize(image), 8, 1);
 		cvCvtColor(image, gray_img, CV_BGR2GRAY);
+		cvEqualizeHist(gray_img, gray_img);									//Equalize Hist
 
 		CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.2, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 		for (int i = 0; i < (faces ? faces->total : 0); i++){
@@ -218,18 +219,20 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 
 			//Mat ffDescriptors = siftDetection->findDescriptors(small_img, str,true);
 			//scanBaseFace("C:\\Face_detector_OK\\face_base\\", ffDescriptors, i);
-			
+
 			eigenDetector->learn();																//Обучение
-			
-			
-			IplImage *dist = cvCreateImage(cvSize(158, 158), small_img->depth, small_img-> nChannels);
+
+
+			IplImage *dist = cvCreateImage(cvSize(158, 158), small_img->depth, small_img->nChannels);
 			cvResize(small_img, dist, 1);
 			cout << "p (" << i << ") = ";
-			eigenDetector->recognize(dist);														//Распознавание			
-			cvShowImage(str, dist);
-			cvReleaseImage(&dist);	
-			
+			eigenDetector->recognize(dist, imageResults, p1, i);														//Распознавание			
+			//cvShowImage(str, dist);
+			cvReleaseImage(&dist);
+
 			boolean b = drawEvidence(imageResults, facePoints, p1, p2);
+
+
 		}
 
 		// освобождаем ресурсы
@@ -238,13 +241,13 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 
 		if (small_img != NULL)
 		{
-		cvReleaseImage(&small_img);
+			cvReleaseImage(&small_img);
 			small_img = NULL;
-		}		
+		}
 		if (base_face != NULL)
-		cvReleaseImage(&base_face);
+			cvReleaseImage(&base_face);
 		if (find_face != NULL)
-		cvReleaseImage(&find_face);
+			cvReleaseImage(&find_face);
 		if (gray_img != NULL)
 			cvReleaseImage(&gray_img);
 	}
@@ -285,7 +288,7 @@ void ViolaJonesDetection::scanBaseFace(char *dir, Mat ffDescriptors, int faceNum
 				gray_face = cvCreateImage(cvGetSize(base_face), 8, 1);
 				cvCvtColor(base_face, gray_face, CV_BGR2GRAY);
 				cvEqualizeHist(gray_face, gray_face);
-				Mat bfDescriptors = siftDetection->findDescriptors(base_face, result.name,false);
+				Mat bfDescriptors = siftDetection->findDescriptors(base_face, result.name, false);
 
 				if (bfDescriptors.rows > 0){
 					int p = siftDetection->matchDescriptors(ffDescriptors, bfDescriptors);
