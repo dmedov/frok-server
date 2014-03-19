@@ -1,4 +1,7 @@
-# Compiled Object files
+# Common files
+*.sdf
+*.opensdf
+# .suo* Compiled Object files
 *.slo
 *.lo
 *.o

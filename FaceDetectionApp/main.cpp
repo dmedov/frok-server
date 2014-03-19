@@ -7,7 +7,7 @@ int main() {
 	IplImage *img = 0, *imageResults = 0;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
 
-	img = cvLoadImage("C:\\Face_detector_OK\\test_photo\\15.jpg");
+	img = cvLoadImage("C:\\Face_detector_OK\\test_photo\\ActN.jpg");
 
 	if (!img) {
 		cerr << "image load error" << endl;

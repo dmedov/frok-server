@@ -18,11 +18,9 @@ static CvHaarClassifierCascade* cascade_eyes =
 static CvHaarClassifierCascade* cascade_nose =
 (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_nose.xml", 0, 0, 0);
 
-//Загрузка быза данных, обученной для детектирования рота
+//Загрузка быза данных, обученной для детектирования рта
 static CvHaarClassifierCascade* cascade_mouth =
 (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_mouth.xml", 0, 0, 0);
-
-
 
 
 //Запись ключевых точек в массив
@@ -47,17 +45,17 @@ void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageRe
 	else if (type == 1
 		&& p1.y >= (facePoints[0].y/* + (facePoints[4].y - facePoints[0].y) / 1.5*/)){
 		// нос
-		facePoints[2] = p1;
-		facePoints[6] = p2;
-		//cvRectangle(imageResults, p1, p2, CV_RGB(255, 100, 255));
+		facePoints[2] = p1; //cvPoint(p1.x,p1.y);
+		facePoints[6] = p2; //cvPoint(p2.x, p2.y);
+		cvRectangle(imageResults, p1, p2, CV_RGB(255, 100, 255));
 	}
 	else if (type == 2
 		&& p1.y >= (facePoints[2].y/* + (facePoints[6].y - facePoints[2].y) / 1.5*/)
 		&& p1.y >= (facePoints[0].y + (facePoints[4].y - facePoints[0].y) / 1)){
 		// рот
-		facePoints[3] = p1;
-		facePoints[7] = p2;
-		//cvRectangle(imageResults, p1, p2, CV_RGB(128, 0, 128));
+		facePoints[3] = cvPoint(p1.x, p1.y);
+		facePoints[7] = cvPoint(p2.x, p2.y);
+		cvRectangle(imageResults, p1, p2, CV_RGB(128, 0, 128));
 	}
 }
 
@@ -134,11 +132,22 @@ boolean ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePo
 }
 
 void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[8], CvPoint p1, CvPoint p2){
+	
+	double rad = 57.295779513;
 	bool b = true;
+	bool n = false;
+	
 	for (int i = 0; i < 2; i++){
 		if (facePoints[i].x < 0 || facePoints[i].y < 0) b = false;
-		if (facePoints[i + 4].x < 0 || facePoints[i + 4].y < 0) b = false;
+		if (facePoints[i+4].x < 0 || facePoints[i+4].y < 0) b = false;
 	}
+	
+	
+	/*for (int i = 0; i < 2; i++){
+		if (facePoints[i+2].x < 0 || facePoints[i+2].y < 0) n = false;
+		if (facePoints[i+5].x < 0 || facePoints[i+5].y < 0) n = false;
+	}
+	*/
 
 	if (b){
 		int w = small_img->width;
@@ -153,15 +162,40 @@ void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, C
 
 		center = cvPoint2D32f(small_img->width / 2, small_img->height / 2);
 
-		double rad = 57.295779513;
 		double angle = atan(y / x)*rad;
 
 		cv2DRotationMatrix(center, angle, 1, transmat);
 
 		cvWarpAffine(small_img, small_img, transmat);
 
-
 	}
+		else {
+			int w = small_img->width;
+			int h = small_img->height;
+			CvPoint pa = cvPoint((facePoints[2].x + facePoints[6].x) / 2, (facePoints[2].y + facePoints[6].y) / 2);
+			CvPoint pb = cvPoint((facePoints[3].x + facePoints[7].x) / 2, (facePoints[3].y + facePoints[7].y) / 2);
+			CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
+
+			cvLine(gray_img, pa, pb, CV_RGB(250, 0, 0), 1, 8);
+			cvShowImage("David_Duhovniy", gray_img);
+
+			double x = (pb.x - pa.x);
+			double y = (pb.y - pa.y);
+			CvPoint2D32f center;
+
+			center = cvPoint2D32f(small_img->width / 2, small_img->height / 2);
+
+			double angle = atan(y / x)*rad;
+
+			angle -= 90;
+			angle /= 2;
+ 
+
+			cv2DRotationMatrix(center, angle, 1, transmat);
+
+			cvWarpAffine(small_img, small_img, transmat);
+	}
+
 }
 
 void ViolaJonesDetection::scanBaseFace(char *dir, Mat ffDescriptors, int faceNumber){
@@ -269,13 +303,12 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 			cvShowImage(str, small_img);
 			//saveImage(small_img);
 
-
-
+			
 			//IplImage ** faceImgArr = 0;										// создаем массив изображений лица одного человека
 			//faceImgArr = (IplImage **)cvAlloc(10 * sizeof(IplImage *));		//инициализируем пространство
 
-			Mat faceDescriptors = siftDetection->findDescriptors(descriptors_img, str);		//поиск дескрипторов на входной картинке
-			scanBaseFace("C:\\Face_detector_OK\\face_base\\", faceDescriptors, i);
+			//Mat faceDescriptors = siftDetection->findDescriptors(descriptors_img, str);		//поиск дескрипторов на входной картинке
+			//scanBaseFace("C:\\Face_detector_OK\\face_base\\", faceDescriptors, i);
 
 			boolean b = drawEvidence(imageResults, facePoints, p1, p2);	
 
