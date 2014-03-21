@@ -23,7 +23,7 @@ private:
 		, int nEigens
 		);
 
-	int findNearestNeighbor(float * projectedTestFace
+	float findNearestNeighbor(float * projectedTestFace
 		, CvMat* projectedTrainFaceMat
 		, CvMat* eigenValMat
 		, int nEigens

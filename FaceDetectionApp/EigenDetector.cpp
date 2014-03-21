@@ -4,11 +4,13 @@
 #include <io.h>
 #include <Math.h>
 
+#include "opencv2/contrib/contrib.hpp"
+
+
 IplImage** faceImgArr = 0;		//array of face images
 IplImage** eigenVectArr = 0;	//eigenvectors
 IplImage* pAvgTrainImg = 0;
-char dir[512] = "C:\\Face_detector_OK\\face_base\\";
-//char dir[512] = "C:\\Face_detector_OK\\rustevich_roman\\";
+char dir[512] = "C:\\Face_detector_OK\\\tmp\\0\\faces\\";
 
 void EigenDetector::doPCA(CvMat* eigenValMat, int nEigens){
 	//set the PCA termination criterion
@@ -33,10 +35,10 @@ void EigenDetector::doPCA(CvMat* eigenValMat, int nEigens){
 
 void EigenDetector::learn(){
 
-	int nEigens = 0, nTrainFaces = 0;			//number of training images;				//number of eigenvalues
-	CvMat* eigenValMat;				//eigenvalues
+	int nEigens = 0, nTrainFaces = 0;			//number of training images;
+	CvMat* eigenValMat;							//eigenvalues
 	CvMat* personNumTruthMat;
-	CvMat* projectedTrainFaceMat;	//projected training faces	
+	CvMat* projectedTrainFaceMat;				//projected training faces	
 
 	nTrainFaces = calcFaces(dir);
 	nEigens = nTrainFaces - 1;
@@ -55,7 +57,7 @@ void EigenDetector::learn(){
 
 	doPCA(eigenValMat, nEigens);
 
-	projectedTrainFaceMat = cvCreateMat(nTrainFaces, nEigens, CV_32FC1);		//project the training images onto the PCA subspace
+	projectedTrainFaceMat = cvCreateMat(nTrainFaces, nEigens, CV_32FC1);					//project the training images onto the PCA subspace
 
 	for (int i = 0; i < nTrainFaces; i++){
 		cvEigenDecomposite(
@@ -124,8 +126,8 @@ void EigenDetector::loadBaseFace(char* dir, CvMat* personNumTruthMat){
 		while (res == 0){
 			//cout << result.name << endl;
 			sprintf(name, "%s\\%s", dir, result.name);
-
 			IplImage *dist = cvLoadImage(name, CV_LOAD_IMAGE_GRAYSCALE);
+
 			faceImgArr[count] = cvCreateImage(cvSize(158, 158), dist->depth, dist->nChannels);
 			cvResize(dist, faceImgArr[count], 1);
 			cvReleaseImage(&dist);
@@ -175,6 +177,9 @@ void EigenDetector::recognize(IplImage* TestImg, IplImage* resultImage, CvPoint 
 	CvFileStorage* fileStorage;
 
 
+
+
+
 	//create a file-storage interface
 	fileStorage = cvOpenFileStorage("facedata.xml", 0, CV_STORAGE_READ);
 	if (!fileStorage)
@@ -209,13 +214,13 @@ void EigenDetector::recognize(IplImage* TestImg, IplImage* resultImage, CvPoint 
 	cvShowImage("avg", pAvgTrainImg);
 
 
-	int prob = findNearestNeighbor(projectedTestFace, projectedTrainFaceMat, eigenValMat, nEigens, nTrainFaces, &pConfidence);
+	float prob = findNearestNeighbor(projectedTestFace, projectedTrainFaceMat, eigenValMat, nEigens, nTrainFaces, &pConfidence);
 
 	CvScalar textColor = CV_RGB(0, 255, 255);	// light blue text
 	CvFont font;
 	cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
 	char text[256];
-	sprintf(text, "id %d, p = %d %%", id, prob); //%%
+	sprintf(text, "id %d, p = %d %%", id, prob);
 	cvPutText(resultImage, text, cvPoint(p.x, p.y - 12), &font, textColor);
 
 
@@ -225,7 +230,7 @@ void EigenDetector::recognize(IplImage* TestImg, IplImage* resultImage, CvPoint 
 	cvReleaseMat(&eigenValMat);
 }
 
-int EigenDetector::findNearestNeighbor(float * projectedTestFace, CvMat* projectedTrainFaceMat, CvMat* eigenValMat, int nEigens, int nTrainFaces, float *pConfidence)
+float EigenDetector::findNearestNeighbor(float * projectedTestFace, CvMat* projectedTrainFaceMat, CvMat* eigenValMat, int nEigens, int nTrainFaces, float *pConfidence)
 {
 	float leastDistSq = FLT_MAX;
 	int iNearest = 0;
@@ -237,8 +242,8 @@ int EigenDetector::findNearestNeighbor(float * projectedTestFace, CvMat* project
 		for (int i = 0; i < nEigens; i++)
 		{
 			float d_i = projectedTestFace[i] - projectedTrainFaceMat->data.fl[iTrain*nEigens + i];
-			distSq += (d_i*d_i / eigenValMat->data.fl[i]);  // Mahalanobis distance (might give better results than Eucalidean distance)
-			distSq += d_i*d_i; // Euclidean distance.
+			float d = d_i*d_i;
+			distSq += (d / eigenValMat->data.fl[i]) + d;  // Mahalanobis distance (might give better results than Eucalidean distance)
 		}
 
 		if (distSq < leastDistSq)
@@ -248,12 +253,13 @@ int EigenDetector::findNearestNeighbor(float * projectedTestFace, CvMat* project
 		}
 	}
 
+
 	// Return the confidence level based on the Euclidean distance,
 	// so that similar images should give a confidence between 0.5 to 1.0,
 	// and very different images should give a confidence between 0.0 to 0.5.
-	float  prediction = (float)(1.0f - sqrt(leastDistSq / (float)(nTrainFaces * nEigens)) / 255.0f);
+	float  prediction = (1.0f - sqrt(leastDistSq / (nTrainFaces * nEigens)) / 255.0f);
 
-	int p = prediction * 100;
+	float p = prediction * 100;
 	if (p < 0) p = 0;
 	cout << p << " %" << endl;
 

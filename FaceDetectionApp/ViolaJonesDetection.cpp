@@ -2,6 +2,7 @@
 #include "ViolaJonesDetection.h"
 #include "SiftDetection.h"
 #include "EigenDetector.h"
+#include "EigenDetector_v2.h"
 
 #include <Math.h>
 #include <stdlib.h>
@@ -27,7 +28,7 @@ void saveImage(IplImage *small_img){
 	srand((unsigned int)time(0));
 	char filename[512];
 	int random = rand() + rand() * clock();
-	sprintf(filename, "C:\\Face_detector_OK\\zotov_dima\\%d.jpg", random);
+	sprintf(filename, "C:\\Face_detector_OK\\%d.jpg", random);
 	cvSaveImage(filename, small_img);
 }
 
@@ -176,6 +177,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 	if (cascade){
 		SiftDetection *siftDetection = new SiftDetection();
 		EigenDetector *eigenDetector = new EigenDetector();
+		EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 
 		IplImage
 			*gray_img = 0,
@@ -186,7 +188,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 
 		gray_img = cvCreateImage(cvGetSize(image), 8, 1);
 		cvCvtColor(image, gray_img, CV_BGR2GRAY);
-		cvEqualizeHist(gray_img, gray_img);									//Equalize Hist
+		//cvEqualizeHist(gray_img, gray_img);									//Equalize Hist
 
 		CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.2, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 		for (int i = 0; i < (faces ? faces->total : 0); i++){
@@ -215,29 +217,26 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 			descriptors_img = small_img;
 			char str[9]; sprintf(str, "%d", i);
 
+			
 			rotateImage(small_img, facePoints, p1, p2);											//поворот картинки по линии глаз
 
-			//Mat ffDescriptors = siftDetection->findDescriptors(small_img, str,true);
-			//scanBaseFace("C:\\Face_detector_OK\\face_base\\", ffDescriptors, i);
-
-			eigenDetector->learn();																//Обучение
-
+			Ptr<FaceRecognizer> model = createEigenFaceRecognizer(10,2500);
+			model = eigenDetector_v2->learn("C:\\Face_detector_OK\\tmp\\", model);
 
 			IplImage *dist = cvCreateImage(cvSize(158, 158), small_img->depth, small_img->nChannels);
 			cvResize(small_img, dist, 1);
-			cout << "p (" << i << ") = ";
-			eigenDetector->recognize(dist, imageResults, p1, i);														//Распознавание			
-			//cvShowImage(str, dist);
+			//eigenDetector->recognize(dist, imageResults, p1, i);														//Распознавание	
+			eigenDetector_v2->recognize(model, dist, imageResults, p1);
+
 			cvReleaseImage(&dist);
 
 			boolean b = drawEvidence(imageResults, facePoints, p1, p2);
-
-
 		}
 
 		// освобождаем ресурсы
 		delete siftDetection;
 		delete eigenDetector;
+		delete eigenDetector_v2;
 
 		if (small_img != NULL)
 		{
@@ -287,7 +286,7 @@ void ViolaJonesDetection::scanBaseFace(char *dir, Mat ffDescriptors, int faceNum
 			else {
 				gray_face = cvCreateImage(cvGetSize(base_face), 8, 1);
 				cvCvtColor(base_face, gray_face, CV_BGR2GRAY);
-				cvEqualizeHist(gray_face, gray_face);
+				//cvEqualizeHist(gray_face, gray_face);
 				Mat bfDescriptors = siftDetection->findDescriptors(base_face, result.name, false);
 
 				if (bfDescriptors.rows > 0){
