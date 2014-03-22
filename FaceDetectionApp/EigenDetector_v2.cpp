@@ -67,7 +67,6 @@ Ptr<FaceRecognizer> EigenDetector_v2::learn(char* path, Ptr<FaceRecognizer> mode
 	vector<int> labels;
 	int nTrainFaces = 0;
 	char path_id[1024];
-	char path_model[1024];
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hf;
 
@@ -87,8 +86,6 @@ Ptr<FaceRecognizer> EigenDetector_v2::learn(char* path, Ptr<FaceRecognizer> mode
 		FindClose(hf);
 	}
 	model->train(images, labels);
-	sprintf(path_model, "%s//%s", path, "eigenface.yml");
-	model->save(path_model);
 	return model;
 }
 
@@ -106,11 +103,14 @@ void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, Ipl
 	if (predicted_Eigen != -1)
 		prob = (predicted_confidence / threshold) * 100;
 
-	CvScalar textColor = CV_RGB(0, 255, 255);	// light blue text
+	CvScalar textColor = CV_RGB(0, 230, 255);	// light blue text
 	CvFont font;
 	cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
 	char text[256];
-	sprintf(text, "id :%d (%.2f%%)", predicted_Eigen, prob);
+	if (predicted_Eigen > 0)	
+		sprintf(text, "id: %d (%.2f%%)", predicted_Eigen, prob);
+	else 
+		sprintf(text, "id: ? (%.2f%%)", prob);
 	cvPutText(resultImage, text, cvPoint(p.x, p.y - 12), &font, textColor);
 
 }
