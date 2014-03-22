@@ -25,6 +25,13 @@ ViolaJonesDetection::ViolaJonesDetection(){
 	cascade_mouth = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_mouth.xml", 0, 0, 0);
 }
 
+void ViolaJonesDetection::saveImageRandom(IplImage *face, char* dir){
+	srand((unsigned int)time(0));
+	char filename[1024];
+	int random = rand() + rand() * clock();
+	sprintf(filename, "%s\\%d.jpg", dir, random);
+	cvSaveImage(filename, face);
+}
 
 //«апись ключевых точек в массив
 void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageResults, CvPoint p1, CvPoint p2, int type, int count){					//ресайз картинки	
@@ -127,7 +134,7 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd, IplImage
 }
 
 //ѕрорисовка линий на резулютирующем изображении
-boolean ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePoints[8], CvPoint p1, CvPoint p2){
+boolean ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePoints[8], CvPoint p1, CvPoint p2, bool draw){
 
 	int count = 0;
 	for (int i = 0; i < 8; i++)															//провер€ем координаты всех точек на -1;-1
@@ -135,21 +142,22 @@ boolean ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePo
 		count++;
 	}
 
-	if (count){
-		//cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));							//рисуем желтый квадрат, если нашли более 1 части лица
-		int w = (p2.x - p1.x);
-		int h = (p2.y - p1.y);
+	if (count >= 2){
+		if (draw){
+			//cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));							//рисуем желтый квадрат, если нашли более 1 части лица
+			int w = (p2.x - p1.x);
+			int h = (p2.y - p1.y);
 
-		cvLine(imageResults, p1, cvPoint(p1.x + w / 4, p1.y), CV_RGB(128, 128, 255));
-		cvLine(imageResults, p1, cvPoint(p1.x, p1.y + h / 4), CV_RGB(128, 128, 255));
-		cvLine(imageResults, p2, cvPoint(p2.x - w / 4, p2.y), CV_RGB(128, 128, 255));
-		cvLine(imageResults, p2, cvPoint(p2.x, p2.y - h / 4), CV_RGB(128, 128, 255));
+			cvLine(imageResults, p1, cvPoint(p1.x + w / 4, p1.y), CV_RGB(128, 128, 255));
+			cvLine(imageResults, p1, cvPoint(p1.x, p1.y + h / 4), CV_RGB(128, 128, 255));
+			cvLine(imageResults, p2, cvPoint(p2.x - w / 4, p2.y), CV_RGB(128, 128, 255));
+			cvLine(imageResults, p2, cvPoint(p2.x, p2.y - h / 4), CV_RGB(128, 128, 255));
 
-		cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w - w / 4, p1.y), CV_RGB(128, 128, 255));
-		cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w, p1.y + h / 4), CV_RGB(128, 128, 255));
-		cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w, p2.y - h / 4), CV_RGB(128, 128, 255));
-		cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w + w / 4, p2.y), CV_RGB(128, 128, 255));
-
+			cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w - w / 4, p1.y), CV_RGB(128, 128, 255));
+			cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w, p1.y + h / 4), CV_RGB(128, 128, 255));
+			cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w, p2.y - h / 4), CV_RGB(128, 128, 255));
+			cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w + w / 4, p2.y), CV_RGB(128, 128, 255));
+		}
 		return true;
 	}
 	return false;
@@ -224,7 +232,7 @@ void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, C
 }
 
 //ƒетектирование лица (вызываетс€ из main)
-void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults, IplImage *ret_img, CvMemStorage* strg, Ptr<FaceRecognizer> model){
+void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults, CvMemStorage* strg, Ptr<FaceRecognizer> model){
 	if (!cascade){
 		cout << "cascade error" << endl;
 		cvReleaseHaarClassifierCascade(&cascade);
@@ -237,23 +245,21 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 
 	IplImage
 		*gray_img = 0,
-		*small_img = 0,
-		*base_face = 0,
-		*find_face = 0,
-		*descriptors_img = 0;
+		*small_img = 0;
 
 	gray_img = cvCreateImage(cvGetSize(image), 8, 1);
 	cvCvtColor(image, gray_img, CV_BGR2GRAY);
-	//cvEqualizeHist(gray_img, gray_img);									//Equalize Hist
+	cvEqualizeHist(gray_img, gray_img);									//Equalize Hist
 
 	CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.2, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+
 	for (int i = 0; i < (faces ? faces->total : 0); i++){
-		CvRect* r = (CvRect*)cvGetSeqElem(faces, i);
+		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
 		CvPoint p1, p2;
 		CvPoint facePoints[8];
 
-		int x = cvRound(r->x);			int y = cvRound(r->y);
-		int w = cvRound(r->width);		int h = cvRound(r->height);
+		int x = cvRound(rect->x);			int y = cvRound(rect->y);
+		int w = cvRound(rect->width);		int h = cvRound(rect->height);
 
 		p1 = cvPoint(x, y);
 		p2 = cvPoint(x + w, y + h);
@@ -270,19 +276,16 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 		keysFaceDetect(cascade_nose, imageResults, small_img, strg, p1, 1, facePoints);
 		keysFaceDetect(cascade_mouth, imageResults, small_img, strg, p1, 2, facePoints);
 
-		descriptors_img = small_img;
 		char str[9]; sprintf(str, "%d", i);
+		if (drawEvidence(imageResults, facePoints, p1, p2, true)){
 
-		rotateImage(gray_img, small_img, facePoints, p1, p2);											//поворот картинки по линии глаз
+			rotateImage(gray_img, small_img, facePoints, p1, p2);											//поворот картинки по линии глаз
 
-		IplImage *dist = cvCreateImage(cvSize(158, 158), small_img->depth, small_img->nChannels);
-		cvResize(small_img, dist, 1);
-		//eigenDetector->recognize(dist, imageResults, p1, i);														//–аспознавание	
-		
-		eigenDetector_v2->recognize(model, dist, imageResults, p1);
-		
-		cvReleaseImage(&dist);
-		boolean b = drawEvidence(imageResults, facePoints, p1, p2);
+			IplImage *dist = cvCreateImage(cvSize(158, 158), small_img->depth, small_img->nChannels);
+			cvResize(small_img, dist, 1);
+			eigenDetector_v2->recognize(model, dist, imageResults, p1);//–аспознавание	
+			cvReleaseImage(&dist);
+		}
 	}
 
 	// освобождаем ресурсы
@@ -290,14 +293,71 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 	delete eigenDetector;
 	delete eigenDetector_v2;
 
-	if (small_img != NULL)
-		cvReleaseImage(&small_img);
-	if (base_face != NULL)
-		cvReleaseImage(&base_face);
-	if (find_face != NULL)
-		cvReleaseImage(&find_face);
-	if (gray_img != NULL)
-		cvReleaseImage(&gray_img);
+	cvReleaseImage(&small_img);
+	cvReleaseImage(&gray_img);
+}
+
+
+void ViolaJonesDetection::rejectFace(IplImage* image, CvMemStorage* strg, char* dir, char* name){
+
+	if (!cascade){
+		cout << "cascade error" << endl;
+		cvReleaseHaarClassifierCascade(&cascade);
+		return;
+	}
+
+	IplImage
+		*gray_img = 0,
+		*small_img = 0;
+
+	gray_img = cvCreateImage(cvGetSize(image), 8, 1);
+	cvCvtColor(image, gray_img, CV_BGR2GRAY);
+	//cvEqualizeHist(gray_img, gray_img);									//Equalize Hist
+
+	CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.2, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+	for (int i = 0; i < (faces ? faces->total : 0); i++){
+		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
+		CvPoint p1, p2;
+		CvPoint facePoints[8];
+
+		int x = cvRound(rect->x);			int y = cvRound(rect->y);
+		int w = cvRound(rect->width);		int h = cvRound(rect->height);
+
+		p1 = cvPoint(x, y);
+		p2 = cvPoint(x + w, y + h);
+
+		small_img = cvCreateImage(cvSize(w, h), gray_img->depth, gray_img->nChannels);
+		cvSetImageROI(gray_img, cvRect(x, y, w, h));
+		cvCopy(gray_img, small_img, NULL);
+		cvResetImageROI(gray_img);															//копируем лицо в отдельную картинку
+		cvEqualizeHist(small_img, small_img);												//нормализаци€ гистограммы
+
+		for (int j = 0; j < 8; j++)	facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
+
+		keysFaceDetect(cascade_eyes, image, small_img, strg, p1, 0, facePoints);
+		keysFaceDetect(cascade_nose, image, small_img, strg, p1, 1, facePoints);
+		keysFaceDetect(cascade_mouth, image, small_img, strg, p1, 2, facePoints);
+
+		if (drawEvidence(image, facePoints, p1, p2, false)){
+			rotateImage(gray_img, small_img, facePoints, p1, p2);											//поворот картинки по линии глаз
+
+			IplImage *dist = cvCreateImage(cvSize(158, 158), small_img->depth, small_img->nChannels);
+			cvResize(small_img, dist, 1);
+			if (faces->total == 1){
+				char save_dir[1024];
+				sprintf(save_dir, "%s\\faces\\%s", dir,name);
+				cvSaveImage(save_dir, dist);
+				cout << "face detected" << endl;
+			}
+			cvReleaseImage(&dist);
+		}
+	}
+
+	// освобождаем ресурсы
+
+	cvReleaseImage(&small_img);
+	cvReleaseImage(&gray_img);
+
 }
 
 //—канирование по SIFT 

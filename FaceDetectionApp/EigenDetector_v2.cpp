@@ -10,7 +10,7 @@
 void EigenDetector_v2::loadBaseFace(char* dir, vector<Mat> * images, vector<int>* labels, int id){
 
 	_finddata_t result;
-	char name[512];
+	char name[1024];
 	long done;
 	IplImage *base_face = 0;
 
