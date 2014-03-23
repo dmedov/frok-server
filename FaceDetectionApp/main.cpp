@@ -5,15 +5,15 @@
 #include <io.h>
 
 
-int saveLearnModel(){
+int saveLearnModel(char* dir){
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
-	char path_model[1024] = "", path[1024] = "C:\\Face_detector_OK\\tmp\\";
+	char path_model[1024] = "";
 
 	//обучение FaceRecognizer
 	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(5, 2500);
-	model = eigenDetector_v2->learn(path, model);
+	model = eigenDetector_v2->learn(dir, model);
 
-	sprintf(path_model, "%s//%s", path, "eigenface.yml");
+	sprintf(path_model, "%s//%s", dir, "eigenface.yml");
 	model->save(path_model);
 	cout << path_model << " has been saved." << endl;
 
@@ -30,7 +30,7 @@ int recognizeFromModel(char *img_dir, char* dir){
 	char yml_dir[1024];
 	sprintf(yml_dir, "%s//%s", dir, "eigenface.yml");
 	model->load(yml_dir);
-	
+
 	img = cvLoadImage(img_dir);
 
 	if (!img) {
@@ -39,7 +39,7 @@ int recognizeFromModel(char *img_dir, char* dir){
 	}
 
 	else imageResults = cvCloneImage(img);
-	
+
 	storage = cvCreateMemStorage(0);										//Создание хранилища памяти
 
 	violaJonesDetection->cascadeDetect(img, imageResults, storage, model);
@@ -54,7 +54,6 @@ int recognizeFromModel(char *img_dir, char* dir){
 	delete violaJonesDetection;
 	return 0;
 }
-
 
 int rejectFaceForLearn(char* dir){
 	CvMemStorage* storage = 0;
@@ -101,21 +100,27 @@ int rejectFaceForLearn(char* dir){
 	return 0;
 }
 
-
 int main(int argc, char *argv[]) {
-	if (argc != 3){
+	if (argc != 3 && argc != 4){
 		cerr << "invalid input arguments" << endl;
 		return -1;
 	}
 	char *key = argv[2];
 
-	if (key[1] == 'l'){		
-		return saveLearnModel();
-	}	else if (key[1] == 'r'){
-		return recognizeFromModel(argv[1],"C:\\Face_detector_OK\\tmp\\");
+	//<Путь до папки с id> -l
+	//C:\\Face_detector_OK\\tmp\\ -l
+	if (key[1] == 'l'){					
+		return saveLearnModel(argv[1]);
 	}
-	else if (key[1] == 'f'){
+	//<Путь до изображения> -r <путь до *.yml>
+	//C:\Face_detector_OK\test_photo\29.jpg -r C:\Face_detector_OK\tmp\
 
+	else if (key[1] == 'r'){
+		return recognizeFromModel(argv[1], argv[3]);
+	}
+	// <Путь до папки с fotos> -f		
+	// C:\Face_detector_OK\tmp\5\ -f
+	else if (key[1] == 'f'){
 		return rejectFaceForLearn(argv[1]);
 	}
 }

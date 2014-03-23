@@ -176,10 +176,6 @@ void EigenDetector::recognize(IplImage* TestImg, IplImage* resultImage, CvPoint 
 	float* projectedTestFace = 0, pConfidence = 0;
 	CvFileStorage* fileStorage;
 
-
-
-
-
 	//create a file-storage interface
 	fileStorage = cvOpenFileStorage("facedata.xml", 0, CV_STORAGE_READ);
 	if (!fileStorage)
@@ -194,7 +190,6 @@ void EigenDetector::recognize(IplImage* TestImg, IplImage* resultImage, CvPoint 
 	projectedTrainFaceMat = (CvMat*)cvReadByName(fileStorage, 0, "projectedTrainFaceMat", 0);
 	pAvgTrainImg = (IplImage*)cvReadByName(fileStorage, 0, "avgTrainImg", 0);
 	eigenVectArr = (IplImage**)cvAlloc((nTrainFaces)*sizeof(IplImage));
-
 
 	for (int i = 0; i < nEigens; i++){
 		char varname[200];
@@ -218,9 +213,9 @@ void EigenDetector::recognize(IplImage* TestImg, IplImage* resultImage, CvPoint 
 
 	CvScalar textColor = CV_RGB(0, 255, 255);	// light blue text
 	CvFont font;
-	cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
+	cvInitFont(&font, 0, 1.0, 1.0, 0, 1, CV_AA);
 	char text[256];
-	sprintf(text, "id %d, p = %d %%", id, prob);
+	sprintf_s(text, "id %d, p = %f %%", id, prob);
 	cvPutText(resultImage, text, cvPoint(p.x, p.y - 12), &font, textColor);
 
 
