@@ -43,3 +43,8 @@ FaceDetectionApp/Debug/vc120.pdb
 FaceDetectionApp/facedata.xml
 FaceDetectionApp/training_images.txt
 ipch/cybercontrol3-da17081e/cybercontrol3-24b2cf15.ipch
+*.obj
+*.sbr
+*.vcxproj
+*.filters
+*.user

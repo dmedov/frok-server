@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "ViolaJonesDetection.h"
-#include "SiftDetection.h"
+#include "DescriptorDetection.h"
 #include "EigenDetector.h"
 #include "EigenDetector_v2.h"
 
@@ -239,7 +239,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 		return;
 	}
 
-	SiftDetection *siftDetection = new SiftDetection();
+	DescriptorDetection *descriptorDetection = new DescriptorDetection();
 	EigenDetector *eigenDetector = new EigenDetector();
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 
@@ -289,7 +289,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 	}
 
 	// освобождаем ресурсы
-	delete siftDetection;
+	delete descriptorDetection;
 	delete eigenDetector;
 	delete eigenDetector_v2;
 
@@ -362,7 +362,7 @@ void ViolaJonesDetection::rejectFace(IplImage* image, CvMemStorage* strg, char* 
 
 //Сканирование по SIFT 
 void ViolaJonesDetection::scanSIFT(char *dir, Mat ffDescriptors, int faceNumber){
-	SiftDetection *siftDetection = new SiftDetection();
+	DescriptorDetection *descriptorDetection = new DescriptorDetection();
 	_finddata_t result;
 	char name[512];
 	long done;
@@ -391,10 +391,10 @@ void ViolaJonesDetection::scanSIFT(char *dir, Mat ffDescriptors, int faceNumber)
 				gray_face = cvCreateImage(cvGetSize(base_face), 8, 1);
 				cvCvtColor(base_face, gray_face, CV_BGR2GRAY);
 				//cvEqualizeHist(gray_face, gray_face);
-				Mat bfDescriptors = siftDetection->findDescriptors(base_face, result.name, false);
+				Mat bfDescriptors = descriptorDetection->findDescriptors(base_face, result.name, false);
 
 				if (bfDescriptors.rows > 0){
-					int p = siftDetection->matchDescriptors(ffDescriptors, bfDescriptors);
+					int p = descriptorDetection->matchDescriptors(ffDescriptors, bfDescriptors);
 					if (p >= max_p){
 						max_p = p;
 						sprintf(name, "F%d", faceNumber);
@@ -409,7 +409,7 @@ void ViolaJonesDetection::scanSIFT(char *dir, Mat ffDescriptors, int faceNumber)
 	_findclose(done);
 	cvReleaseImage(&base_face);
 	cvReleaseImage(&gray_face);
-	delete siftDetection;
+	delete descriptorDetection;
 }
 
 ViolaJonesDetection::~ViolaJonesDetection(){
