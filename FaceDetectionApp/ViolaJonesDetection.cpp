@@ -134,7 +134,7 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd, IplImage
 }
 
 //Прорисовка линий на резулютирующем изображении
-boolean ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePoints[8], CvPoint p1, CvPoint p2, bool draw){
+bool ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePoints[8], CvPoint p1, CvPoint p2, bool draw){
 
 	int count = 0;
 	for (int i = 0; i < 8; i++)															//проверяем координаты всех точек на -1;-1

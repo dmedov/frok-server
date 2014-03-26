@@ -10,7 +10,7 @@ int saveLearnModel(char* dir){
 	char path_model[1024] = "";
 
 	//обучение FaceRecognizer
-	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(5, 2500);
+	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(3, 2500);
 	model = eigenDetector_v2->learn(dir, model);
 
 	sprintf(path_model, "%s//%s", dir, "eigenface.yml");
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 	char *key = argv[2];
 
 	//<Путь до папки с id> -l
-	//C:\\Face_detector_OK\\tmp\\ -l
+	//C:\Face_detector_OK\tmp\ -l
 	if (key[1] == 'l'){					
 		return saveLearnModel(argv[1]);
 	}
