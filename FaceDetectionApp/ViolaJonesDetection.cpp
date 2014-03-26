@@ -11,7 +11,6 @@
 
 static CvHaarClassifierCascade* cascade, *cascade_eyes, *cascade_nose, *cascade_mouth;
 
-
 ViolaJonesDetection::ViolaJonesDetection(){
 	//Загрузка базы данных, обученной на детектирование лиц в Фас
 	cascade = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml", 0, 0, 0);
