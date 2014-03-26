@@ -144,19 +144,19 @@ bool ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePoint
 
 	if (count >= 2){
 		if (draw){
-		//cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));							//рисуем желтый квадрат, если нашли более 1 части лица
-		int w = (p2.x - p1.x);
-		int h = (p2.y - p1.y);
+			//cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));							//рисуем желтый квадрат, если нашли более 1 части лица
+			int w = (p2.x - p1.x);
+			int h = (p2.y - p1.y);
 
-		cvLine(imageResults, p1, cvPoint(p1.x + w / 4, p1.y), CV_RGB(128, 128, 255));
-		cvLine(imageResults, p1, cvPoint(p1.x, p1.y + h / 4), CV_RGB(128, 128, 255));
-		cvLine(imageResults, p2, cvPoint(p2.x - w / 4, p2.y), CV_RGB(128, 128, 255));
-		cvLine(imageResults, p2, cvPoint(p2.x, p2.y - h / 4), CV_RGB(128, 128, 255));
+			cvLine(imageResults, p1, cvPoint(p1.x + w / 4, p1.y), CV_RGB(128, 128, 255));
+			cvLine(imageResults, p1, cvPoint(p1.x, p1.y + h / 4), CV_RGB(128, 128, 255));
+			cvLine(imageResults, p2, cvPoint(p2.x - w / 4, p2.y), CV_RGB(128, 128, 255));
+			cvLine(imageResults, p2, cvPoint(p2.x, p2.y - h / 4), CV_RGB(128, 128, 255));
 
-		cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w - w / 4, p1.y), CV_RGB(128, 128, 255));
-		cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w, p1.y + h / 4), CV_RGB(128, 128, 255));
-		cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w, p2.y - h / 4), CV_RGB(128, 128, 255));
-		cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w + w / 4, p2.y), CV_RGB(128, 128, 255));
+			cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w - w / 4, p1.y), CV_RGB(128, 128, 255));
+			cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w, p1.y + h / 4), CV_RGB(128, 128, 255));
+			cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w, p2.y - h / 4), CV_RGB(128, 128, 255));
+			cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w + w / 4, p2.y), CV_RGB(128, 128, 255));
 		}
 		return true;
 	}
@@ -231,23 +231,12 @@ void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, C
 
 }
 
-void ViolaJonesDetection::BEImage(cv::Mat _img, cv::Rect _roi, int _maxFadeDistance) {
-	cv::imshow("BEIMAGE", _img);
+Mat ViolaJonesDetection::BEImage(cv::Mat _img, cv::Rect _roi, int _maxFadeDistance) {
 	cv::Mat fadeMask = cv::Mat(_img.size(), CV_32FC1, cv::Scalar(1));
 	cv::rectangle(fadeMask, _roi, cv::Scalar(0), -1);
-
-	/*cv::Mat fadeMask = cv::Mat(_img.size(), CV_8UC1, cv::Scalar(0, 0, 0, 0));
-	cv::rectangle(fadeMask, _roi, cv::Scalar(255, 255, 255, 255), -1);*/
-
-
-	cv::imshow("mask", fadeMask);
-
 	cv::Mat dt;
 	cv::distanceTransform(fadeMask > 0, dt, CV_DIST_L2, CV_DIST_MASK_PRECISE);
 
-
-
-	// fade to a maximum distance:
 	double maxFadeDist;
 
 	if (_maxFadeDistance > 0)
@@ -260,12 +249,8 @@ void ViolaJonesDetection::BEImage(cv::Mat _img, cv::Rect _roi, int _maxFadeDista
 		maxFadeDist = max;
 	}
 
-
 	//dt = 1.0-(dt* 1.0 / max);   // values between 0 and 1 since min val should alwaysbe 0
-	dt = 1.0-(dt* 1.0 / maxFadeDist); // values between 0 and 1 in fading region
-
-	cv::imshow("blending mask", dt);
-
+	dt = 1.0 - (dt* 0.8 / maxFadeDist); // values between 0 and 1 in fading region
 
 	cv::Mat imgF;
 	_img.convertTo(imgF, CV_32FC3);
@@ -274,7 +259,7 @@ void ViolaJonesDetection::BEImage(cv::Mat _img, cv::Rect _roi, int _maxFadeDista
 	std::vector<cv::Mat> channels;
 	cv::split(imgF, channels);
 	// multiply pixel value with the quality weights for image 1
-	for (unsigned int i = 0; i<channels.size(); ++i)
+	for (unsigned int i = 0; i < channels.size(); ++i)
 		channels[i] = channels[i].mul(dt);
 
 	cv::Mat outF;
@@ -282,7 +267,29 @@ void ViolaJonesDetection::BEImage(cv::Mat _img, cv::Rect _roi, int _maxFadeDista
 
 	cv::Mat out;
 	outF.convertTo(out, CV_8UC3);
-	cv::imshow("result BEImage", out);
+	return out;
+}
+
+IplImage* ViolaJonesDetection::imposeMask(IplImage *small_img){
+	Mat small_mat = Mat(small_img);
+	int x = small_mat.cols / 3.5
+		, y = small_mat.rows / 6
+		, width = small_mat.cols *0.714 - small_mat.cols / 3.5
+		, height = small_mat.rows * 2 / 3
+		, maxFD = small_mat.cols / 8;
+
+	small_mat = BEImage(small_mat																						//удаляем шумы
+		, cv::Rect(x, y, width, height)
+		, maxFD
+		);
+
+	IplImage *out = cvCloneImage(&(IplImage)small_mat);
+	int w_roi = width + maxFD * 2, h_roi = height + maxFD * 2;
+	small_img = cvCreateImage(cvSize(w_roi, h_roi), out->depth, out->nChannels);
+	cvSetImageROI(out, cvRect(x - maxFD, y - maxFD, w_roi, h_roi));
+	cvCopy(out, small_img, NULL);
+	cvResetImageROI(out);
+	return small_img;
 }
 
 //Детектирование лица (вызывается из main)
@@ -305,7 +312,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 	cvCvtColor(image, gray_img, CV_BGR2GRAY);
 	cvEqualizeHist(gray_img, gray_img);									//Equalize Hist
 
-	CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.2, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+	CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.12, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 
 	for (int i = 0; i < (faces ? faces->total : 0); i++){
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
@@ -319,7 +326,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 		p2 = cvPoint(x + w, y + h);
 
 		small_img = cvCreateImage(cvSize(w, h), gray_img->depth, gray_img->nChannels);
-		cout << w << " " << h;
+
 		cvSetImageROI(gray_img, cvRect(x, y, w, h));
 		cvCopy(gray_img, small_img, NULL);
 		cvResetImageROI(gray_img);															//копируем лицо в отдельную картинку
@@ -334,11 +341,14 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 		char str[9]; sprintf(str, "%d", i);
 		if (drawEvidence(imageResults, facePoints, p1, p2, true)){
 
-		rotateImage(gray_img, small_img, facePoints, p1, p2);											//поворот картинки по линии глаз
-		Mat in = Mat(small_img);
-		BEImage(in, cv::Rect(in.cols / 4, in.rows / 4, in.cols / 2, in.rows / 2), in.cols / 8);
-		IplImage *dist = cvCreateImage(cvSize(158, 158), small_img->depth, small_img->nChannels);
-		cvResize(small_img, dist, 1);
+			rotateImage(gray_img, small_img, facePoints, p1, p2);											//поворот картинки по линии глаз
+			
+
+
+			small_img = imposeMask(small_img);
+
+			IplImage *dist = cvCreateImage(cvSize(158, 214), small_img->depth, small_img->nChannels);
+			cvResize(small_img, dist, 1);
 			eigenDetector_v2->recognize(model, dist, imageResults, p1);//Распознавание	
 			cvReleaseImage(&dist);
 		}
@@ -352,7 +362,6 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 	cvReleaseImage(&small_img);
 	cvReleaseImage(&gray_img);
 }
-
 
 void ViolaJonesDetection::rejectFace(IplImage* image, CvMemStorage* strg, char* dir, char* name){
 
@@ -368,9 +377,9 @@ void ViolaJonesDetection::rejectFace(IplImage* image, CvMemStorage* strg, char* 
 
 	gray_img = cvCreateImage(cvGetSize(image), 8, 1);
 	cvCvtColor(image, gray_img, CV_BGR2GRAY);
-	//cvEqualizeHist(gray_img, gray_img);									//Equalize Hist
+	//cvEqualizeHist(gray_img, gray_img);									//Equalize Hist   ???????????????????????????????????????
 
-	CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.2, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+	CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.12, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 	for (int i = 0; i < (faces ? faces->total : 0); i++){
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
 		CvPoint p1, p2;
@@ -393,26 +402,28 @@ void ViolaJonesDetection::rejectFace(IplImage* image, CvMemStorage* strg, char* 
 		keysFaceDetect(cascade_eyes, image, small_img, strg, p1, 0, facePoints);
 		keysFaceDetect(cascade_nose, image, small_img, strg, p1, 1, facePoints);
 		keysFaceDetect(cascade_mouth, image, small_img, strg, p1, 2, facePoints);
-		
+
 		if (drawEvidence(image, facePoints, p1, p2, false)){
 			rotateImage(gray_img, small_img, facePoints, p1, p2);											//поворот картинки по линии глаз
-		
-			IplImage *dist = cvCreateImage(cvSize(158, 158), small_img->depth, small_img->nChannels);
+
+			small_img = imposeMask(small_img);
+
+			IplImage *dist = cvCreateImage(cvSize(158, 214), small_img->depth, small_img->nChannels);			
 			cvResize(small_img, dist, 1);
 			if (faces->total == 1){
 				char save_dir[1024];
-				sprintf(save_dir, "%s\\faces\\%s", dir,name);
+				sprintf(save_dir, "%s\\faces\\%s", dir, name);
 				cvSaveImage(save_dir, dist);
 				cout << "face detected" << endl;
 			}
-		cvReleaseImage(&dist);
+			cvReleaseImage(&dist);
 		}
 	}
 
 	// освобождаем ресурсы
 
-		cvReleaseImage(&small_img);
-		cvReleaseImage(&gray_img);
+	cvReleaseImage(&small_img);
+	cvReleaseImage(&gray_img);
 
 }
 

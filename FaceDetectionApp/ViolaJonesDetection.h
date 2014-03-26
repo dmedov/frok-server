@@ -9,9 +9,10 @@ public:
 private:
 	bool drawEvidence(IplImage *imageResults, CvPoint facePoints[8], CvPoint p1, CvPoint p2, bool draw);
 	void writeFacePoints(CvPoint*, IplImage *, CvPoint, CvPoint, int, int);
-	void keysFaceDetect(CvHaarClassifierCascade*, IplImage*, IplImage*, CvMemStorage*, CvPoint, int, CvPoint*);	
+	void keysFaceDetect(CvHaarClassifierCascade*, IplImage*, IplImage*, CvMemStorage*, CvPoint, int, CvPoint*);
 	void rotateImage(IplImage *, IplImage *, CvPoint[], CvPoint, CvPoint);
-	void BEImage(cv::Mat _img, cv::Rect _roi, int _maxFadeDistance);
+	Mat BEImage(cv::Mat _img, cv::Rect _roi, int _maxFadeDistance);
+	IplImage* imposeMask(IplImage *small_img);
 	void scanSIFT(char *dir, Mat, int);
 	void saveImageRandom(IplImage *face, char* dir);
 };

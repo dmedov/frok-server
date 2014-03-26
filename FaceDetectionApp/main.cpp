@@ -10,7 +10,7 @@ int saveLearnModel(char* dir){
 	char path_model[1024] = "";
 
 	//обучение FaceRecognizer
-	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(3, 2500);
+	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(10, 2500);
 	model = eigenDetector_v2->learn(dir, model);
 
 	sprintf(path_model, "%s//%s", dir, "eigenface.yml");
@@ -25,7 +25,7 @@ int recognizeFromModel(char *img_dir, char* dir){
 	CvMemStorage* storage = 0;
 	IplImage *img = 0, *imageResults = 0;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
-	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(5, 2500);
+	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(10, 2500);
 
 	char yml_dir[1024];
 	sprintf(yml_dir, "%s//%s", dir, "eigenface.yml");
