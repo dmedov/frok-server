@@ -82,6 +82,7 @@ Ptr<FaceRecognizer> EigenDetector_v2::learn(char* path, Ptr<FaceRecognizer> mode
 				loadBaseFace(path_face, &images, &labels, atoi(name));
 
 			}
+
 		}
 		FindClose(hf);
 	}
