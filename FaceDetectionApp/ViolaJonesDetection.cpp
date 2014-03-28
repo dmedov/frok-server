@@ -289,6 +289,7 @@ IplImage* ViolaJonesDetection::imposeMask(IplImage *small_img){
 	cvSetImageROI(out, cvRect(x - maxFD, y - maxFD, w_roi, h_roi));
 	cvCopy(out, small_img, NULL);
 	cvResetImageROI(out);
+	cvReleaseImage(&out);
 	return small_img;
 }
 
@@ -342,8 +343,6 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 		if (drawEvidence(imageResults, facePoints, p1, p2, true)){
 
 			rotateImage(gray_img, small_img, facePoints, p1, p2);											//поворот картинки по линии глаз
-			
-
 
 			small_img = imposeMask(small_img);
 
