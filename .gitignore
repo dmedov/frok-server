@@ -31,3 +31,7 @@ FaceDetectionApp/Debug/vc120.idb
 FaceDetectionApp/Debug/vc120.pdb
 FaceDetectionApp/facedata.xml
 FaceDetectionApp/Debug/EigenDetector.obj
+*.suo
+*.vcxproj
+*.filters
+*.user
