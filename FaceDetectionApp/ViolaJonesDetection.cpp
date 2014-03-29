@@ -34,13 +34,13 @@ void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageRe
 			//первый глаз
 			facePoints[0] = p1;
 			facePoints[4] = p2;
-			//cvRectangle(imageResults, p1, p2, CV_RGB(255, 128, 0));
+			cvRectangle(imageResults, p1, p2, CV_RGB(255, 128, 0));
 		}
 		else if (count == 1){
 			//второй глаз
 			facePoints[1] = p1;
 			facePoints[5] = p2;
-			//cvRectangle(imageResults, p1, p2, CV_RGB(0, 128, 255));
+			cvRectangle(imageResults, p1, p2, CV_RGB(0, 128, 255));
 		}
 		count++;
 
@@ -50,7 +50,7 @@ void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageRe
 		// нос
 		facePoints[2] = p1; //cvPoint(p1.x,p1.y);
 		facePoints[6] = p2; //cvPoint(p2.x, p2.y);
-		//cvRectangle(imageResults, p1, p2, CV_RGB(255, 100, 255));
+		cvRectangle(imageResults, p1, p2, CV_RGB(255, 100, 255));
 	}
 	else if (type == 2
 		&& p1.y >= (facePoints[2].y/* + (facePoints[6].y - facePoints[2].y) / 1.5*/)
@@ -58,7 +58,7 @@ void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageRe
 		// рот
 		facePoints[3] = cvPoint(p1.x, p1.y);
 		facePoints[7] = cvPoint(p2.x, p2.y);
-		//cvRectangle(imageResults, p1, p2, CV_RGB(128, 0, 128));
+		cvRectangle(imageResults, p1, p2, CV_RGB(128, 0, 128));
 	}
 }
 
@@ -155,30 +155,31 @@ boolean ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePo
 	return false;
 }
 
-void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[8], CvPoint p1, CvPoint p2){
 
+void defineRotate(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[], CvPoint p1, CvPoint p2)
+{
 	double rad = 57.295779513;
-	bool b = true;
-	bool n = false;
 
-	for (int i = 0; i < 2; i++){
-		if (facePoints[i].x < 0 || facePoints[i].y < 0) b = false;
-		if (facePoints[i + 4].x < 0 || facePoints[i + 4].y < 0) b = false;
+
+	for (int i = 0; i < 8; i++){
+		cout << "x= " << i << " " << facePoints[i].x << endl;
+		cout << "y= " << i << " " << facePoints[i].y << endl;
+		cout << endl;
 	}
 
+	// Два глаза
+	if ((facePoints[0].x > 0 && facePoints[0].y > 0) && (facePoints[1].x > 0 && facePoints[1].y > 0)) {
 
-	/*for (int i = 0; i < 2; i++){
-		if (facePoints[i+2].x < 0 || facePoints[i+2].y < 0) n = false;
-		if (facePoints[i+5].x < 0 || facePoints[i+5].y < 0) n = false;
-		}
-		*/
-
-	if (b){
 		int w = small_img->width;
 		int h = small_img->height;
+
 		CvPoint pa = cvPoint((facePoints[0].x + facePoints[4].x) / 2, (facePoints[0].y + facePoints[4].y) / 2);
 		CvPoint pb = cvPoint((facePoints[1].x + facePoints[5].x) / 2, (facePoints[1].y + facePoints[5].y) / 2);
+
 		CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
+
+		cvLine(gray_img, pa, pb, CV_RGB(250, 0, 0), 1, 8);
+		cvShowImage("picture", gray_img);
 
 		double x = (pb.x - pa.x);
 		double y = (pb.y - pa.y);
@@ -189,19 +190,67 @@ void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, C
 		double angle = atan(y / x)*rad;
 
 		cv2DRotationMatrix(center, angle, 1, transmat);
+
 		cvWarpAffine(small_img, small_img, transmat);
-		cvReleaseMat(&transmat);
 
 	}
-	else {
+	// Для глаз и носа
+	else if ((facePoints[0].x > 0 && facePoints[0].y > 0) && (facePoints[2].x > 0 && facePoints[2].y > 0)){
+
 		int w = small_img->width;
 		int h = small_img->height;
-		CvPoint pa = cvPoint((facePoints[2].x + facePoints[6].x) / 2, (facePoints[2].y + facePoints[6].y) / 2);
-		CvPoint pb = cvPoint((facePoints[3].x + facePoints[7].x) / 2, (facePoints[3].y + facePoints[7].y) / 2);
+		double angle;
+
+		CvPoint pa = cvPoint((facePoints[0].x + facePoints[4].x) / 2, (facePoints[0].y + facePoints[4].y) / 2);
+		CvPoint pb = cvPoint((facePoints[2].x + facePoints[6].x) / 2, (facePoints[2].y + facePoints[6].y) / 2);
+
 		CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
 
 		cvLine(gray_img, pa, pb, CV_RGB(250, 0, 0), 1, 8);
-		//cvShowImage("David_Duhovniy", gray_img);
+		cvShowImage("picture", gray_img);
+
+		double x = (pb.x - pa.x);
+		double y = (pb.y - pa.y);
+		CvPoint2D32f center;
+
+		center = cvPoint2D32f(small_img->width / 2, small_img->height / 2);
+
+		int midEye = (facePoints[0].x + facePoints[4].x) / 2;
+		int midNose = (facePoints[2].x + facePoints[6].x) / 2;
+		 
+		cout << "midEye=" << midEye << endl;
+		cout << "idNose=" << midNose << endl;
+
+
+		if (midEye < midNose){
+			// Правый глаз и нос
+			angle = -atan(y / x)*rad;
+			angle += 30;
+		}
+		else {
+			// Левый глаз и нос
+			angle = atan(y / x)*rad;
+			angle += 57;
+		}
+
+		cv2DRotationMatrix(center, angle, 1, transmat);
+
+		cvWarpAffine(small_img, small_img, transmat);
+
+	}
+	// Рот и нос
+	else if ((facePoints[2].x > 0 && facePoints[2].y > 0) && (facePoints[3].x > 0 && facePoints[3].y > 0)){
+
+		int w = small_img->width;
+		int h = small_img->height;
+
+		CvPoint pa = cvPoint((facePoints[2].x + facePoints[6].x) / 2, (facePoints[2].y + facePoints[6].y) / 2);
+		CvPoint pb = cvPoint((facePoints[3].x + facePoints[7].x) / 2, (facePoints[3].y + facePoints[7].y) / 2);
+
+		CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
+
+		cvLine(gray_img, pa, pb, CV_RGB(250, 0, 0), 1, 8);
+		cvShowImage("picture", gray_img);
 
 		double x = (pb.x - pa.x);
 		double y = (pb.y - pa.y);
@@ -214,14 +263,93 @@ void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, C
 		angle -= 90;
 		angle /= 2;
 
+		cv2DRotationMatrix(center, angle, 1, transmat);
+
+		cvWarpAffine(small_img, small_img, transmat);
+	}
+
+	cvShowImage("rotate_picture", small_img);
+}
+
+
+void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[], CvPoint p1, CvPoint p2){
+
+	double rad = 57.295779513;
+	bool b = false;// true;
+	bool n = true;
+
+	for (int i = 0; i < 2; i++){
+		if (facePoints[i].x < 0 || facePoints[i].y < 0) b = false;
+		if (facePoints[i + 4].x < 0 || facePoints[i + 4].y < 0) b = false;
+	}
+
+
+	for (int i = 0; i < 2; i++){
+		if (facePoints[i + 2].x < 0 || facePoints[i + 2].y < 0) n = false;
+		if (facePoints[i + 5].x < 0 || facePoints[i + 5].y < 0) n = false;
+	}
+
+
+	if (b){
+
+		int w = small_img->width;
+		int h = small_img->height;
+		CvPoint pa = cvPoint((facePoints[0].x + facePoints[4].x) / 2, (facePoints[0].y + facePoints[4].y) / 2);
+		CvPoint pb = cvPoint((facePoints[1].x + facePoints[5].x) / 2, (facePoints[1].y + facePoints[5].y) / 2);
+		CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
+
+		cvLine(gray_img, pa, pb, CV_RGB(250, 0, 0), 1, 8);
+		cvShowImage("picture", gray_img);
+
+		double x = (pb.x - pa.x);
+		double y = (pb.y - pa.y);
+		CvPoint2D32f center;
+
+		center = cvPoint2D32f(small_img->width / 2, small_img->height / 2);
+
+		double angle = atan(y / x)*rad;
 
 		cv2DRotationMatrix(center, angle, 1, transmat);
 
 		cvWarpAffine(small_img, small_img, transmat);
-		cvReleaseMat(&transmat);
+
 	}
 
+	else {
+		int w = small_img->width;
+		int h = small_img->height;
+
+		//для левого глаза
+		//CvPoint pa = cvPoint((facePoints[0].x + facePoints[4].x) / 2, (facePoints[0].y + facePoints[4].y) / 2);
+		// для носa
+		CvPoint pa = cvPoint((facePoints[2].x + facePoints[6].x) / 2, (facePoints[2].y + facePoints[6].y) / 2);
+
+		// для рта
+		CvPoint pb = cvPoint((facePoints[3].x + facePoints[7].x) / 2, (facePoints[3].y + facePoints[7].y) / 2);
+
+		CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
+
+		cvLine(gray_img, pa, pb, CV_RGB(250, 0, 0), 1, 8);
+		cvShowImage("picture", gray_img);
+
+		double x = (pb.x - pa.x);
+		double y = (pb.y - pa.y);
+		CvPoint2D32f center;
+
+		center = cvPoint2D32f(small_img->width / 2, small_img->height / 2);
+
+		double angle = atan(y / x)*rad;
+
+		angle -= 90;
+		angle /= 2;
+
+		cv2DRotationMatrix(center, angle, 1, transmat);
+
+		cvWarpAffine(small_img, small_img, transmat);
+	}
+	//cvShowImage("rotate_picture", small_img);
 }
+
 
 //Детектирование лица (вызывается из main)
 void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults, IplImage *ret_img, CvMemStorage* strg, Ptr<FaceRecognizer> model){
@@ -273,14 +401,17 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 		descriptors_img = small_img;
 		char str[9]; sprintf(str, "%d", i);
 
-		rotateImage(gray_img, small_img, facePoints, p1, p2);											//поворот картинки по линии глаз
+		//	rotateImage(gray_img, small_img, facePoints, p1, p2);											//поворот картинки по линии глаз
+
+		//Тест
+		defineRotate(gray_img, small_img, facePoints, p1, p2);
 
 		IplImage *dist = cvCreateImage(cvSize(158, 158), small_img->depth, small_img->nChannels);
 		cvResize(small_img, dist, 1);
 		//eigenDetector->recognize(dist, imageResults, p1, i);														//Распознавание	
-		
+
 		eigenDetector_v2->recognize(model, dist, imageResults, p1);
-		
+
 		cvReleaseImage(&dist);
 		boolean b = drawEvidence(imageResults, facePoints, p1, p2);
 	}
