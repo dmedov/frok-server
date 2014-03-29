@@ -6,6 +6,5 @@ class EigenDetector_v2
 		void recognize(Ptr<FaceRecognizer> model, IplImage* image, IplImage* resultImage, CvPoint p);
 	private:
 		void loadBaseFace(char* dir, vector<Mat> * images, vector<int>* labels, int id);
-		int calcFaces(char* dir);
 };
 

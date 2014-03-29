@@ -6,7 +6,10 @@
 
 #include "opencv2/contrib/contrib.hpp"
 
-//Загрузка изображений в массив
+/*
+	Загрузка изображений в массив
+	dir - ./faces, из которой берутся изображения с лицом для обучения
+	*/
 void EigenDetector_v2::loadBaseFace(char* dir, vector<Mat> * images, vector<int>* labels, int id){
 
 	_finddata_t result;
@@ -40,32 +43,14 @@ void EigenDetector_v2::loadBaseFace(char* dir, vector<Mat> * images, vector<int>
 	cvReleaseImage(&base_face);
 }
 
-int EigenDetector_v2::calcFaces(char* dir){
-	_finddata_t result;
-	char name[512];
-	long done;
-	IplImage *base_face = 0;
-
-	sprintf(name, "%s\\*.jpg", dir);
-	memset(&result, 0, sizeof(result));
-	done = _findfirst(name, &result);
-
-	int nFaces = 0;
-	if (done != -1)
-	{
-		int res = 0;
-		while (res == 0){
-			nFaces++;
-			res = _findnext(done, &result);
-		}
-	}
-	return nFaces;
-}
-
+/*
+	Обучение FaceRecognizer по базе
+	model - модель FaceRecognizer, сохраняется после обучение в yml
+	path - путь до базы людей(папка для каждого человека названная его id, содержит в себе ./faces и ./photos)
+	*/
 Ptr<FaceRecognizer> EigenDetector_v2::learn(char* path, Ptr<FaceRecognizer> model){
 	vector<Mat> images;
 	vector<int> labels;
-	int nTrainFaces = 0;
 	char path_id[1024];
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hf;
@@ -78,9 +63,7 @@ Ptr<FaceRecognizer> EigenDetector_v2::learn(char* path, Ptr<FaceRecognizer> mode
 			if (strcmp(name, "..")){
 				char path_face[1024];
 				sprintf(path_face, "%s\\%s\\faces\\", path, name);
-				nTrainFaces += calcFaces(path_face);
 				loadBaseFace(path_face, &images, &labels, atoi(name));
-
 			}
 
 		}
@@ -108,9 +91,9 @@ void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, Ipl
 	CvFont font;
 	cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
 	char text[256];
-	if (predicted_Eigen > 0)	
+	if (predicted_Eigen > 0)
 		sprintf(text, "id: %d (%.2f%%)", predicted_Eigen, prob);
-	else 
+	else
 		sprintf(text, "id: ? (%.2f%%)", prob);
 	cvPutText(resultImage, text, cvPoint(p.x, p.y - 12), &font, textColor);
 

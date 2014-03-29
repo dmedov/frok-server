@@ -231,6 +231,7 @@ void ViolaJonesDetection::rotateImage(IplImage *gray_img, IplImage *small_img, C
 
 }
 
+//Наложение маски на изображение с лицом
 Mat ViolaJonesDetection::BEImage(cv::Mat _img, cv::Rect _roi, int _maxFadeDistance) {
 	cv::Mat fadeMask = cv::Mat(_img.size(), CV_32FC1, cv::Scalar(1));
 	cv::rectangle(fadeMask, _roi, cv::Scalar(0), -1);
@@ -270,6 +271,7 @@ Mat ViolaJonesDetection::BEImage(cv::Mat _img, cv::Rect _roi, int _maxFadeDistan
 	return out;
 }
 
+//Выделение лица из всего изображения с лицом
 IplImage* ViolaJonesDetection::imposeMask(IplImage *small_img){
 	Mat small_mat = Mat(small_img);
 	int x = small_mat.cols / 3.5
@@ -362,6 +364,8 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 	cvReleaseImage(&gray_img);
 }
 
+
+//ВЫрезание изображения с лицом
 void ViolaJonesDetection::rejectFace(IplImage* image, CvMemStorage* strg, char* dir, char* name){
 
 	if (!cascade){
