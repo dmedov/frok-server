@@ -4,13 +4,14 @@
 
 #include <io.h>
 
+int num_components = 10;
 
 int saveLearnModel(char* dir){
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 	char path_model[1024] = "";
 
 	//обучение FaceRecognizer
-	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(10, 2500);
+	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(num_components, 2500);
 	model = eigenDetector_v2->learn(dir, model);
 
 	sprintf(path_model, "%s//%s", dir, "eigenface.yml");
@@ -21,11 +22,29 @@ int saveLearnModel(char* dir){
 	return 0;
 }
 
+static Mat norm_0_255(InputArray _src) {
+	Mat src = _src.getMat();
+	// Create and return normalized image:
+	Mat dst;
+	switch (src.channels()) {
+	case 1:
+		cv::normalize(_src, dst, 0, 255, NORM_MINMAX, CV_8UC1);
+		break;
+	case 3:
+		cv::normalize(_src, dst, 0, 255, NORM_MINMAX, CV_8UC3);
+		break;
+	default:
+		src.copyTo(dst);
+		break;
+	}
+	return dst;
+}
+
 int recognizeFromModel(char *img_dir, char* dir){
 	CvMemStorage* storage = 0;
 	IplImage *img = 0, *imageResults = 0;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
-	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(10, 2500);
+	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(num_components, 2500);
 
 	char yml_dir[1024];
 	sprintf(yml_dir, "%s//%s", dir, "eigenface.yml");
@@ -45,6 +64,7 @@ int recognizeFromModel(char *img_dir, char* dir){
 	violaJonesDetection->cascadeDetect(img, imageResults, storage, model);
 	cvShowImage("img2", imageResults);
 
+	
 	while (1){ if (cvWaitKey(33) == 27)	break; }
 
 	cvReleaseImage(&img);
@@ -109,7 +129,7 @@ int main(int argc, char *argv[]) {
 
 	//<Путь до папки с id> -l
 	//C:\Face_detector_OK\tmp\ -l
-	if (key[1] == 'l'){					
+	if (key[1] == 'l'){
 		return saveLearnModel(argv[1]);
 	}
 	//<Путь до изображения> -r <путь до *.yml>
