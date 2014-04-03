@@ -159,6 +159,13 @@ int defineRotate(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[], 
 {
 	double rad = 57.295779513;
 
+
+	for (int i = 0; i < 8; i++){
+		cout << "x= " << i << " " << facePoints[i].x << endl;
+		cout << "y= " << i << " " << facePoints[i].y << endl;
+		cout << endl;
+	}
+
 	// Два глаза
 	if ((facePoints[0].x > 0 && facePoints[0].y > 0) && (facePoints[1].x > 0 && facePoints[1].y > 0)) {
 
@@ -186,53 +193,7 @@ int defineRotate(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[], 
 		cvWarpAffine(small_img, small_img, transmat);
 
 	}
-	// Для глаз и носа
-	else if ((facePoints[0].x > 0 && facePoints[0].y > 0) && (facePoints[2].x > 0 && facePoints[2].y > 0)){
-		//////////заглушка
-		return -1;
-		//////////заглушка
 
-		int w = small_img->width;
-		int h = small_img->height;
-		double angle;
-
-		CvPoint pa = cvPoint((facePoints[0].x + facePoints[4].x) / 2, (facePoints[0].y + facePoints[4].y) / 2);
-		CvPoint pb = cvPoint((facePoints[2].x + facePoints[6].x) / 2, (facePoints[2].y + facePoints[6].y) / 2);
-
-		CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
-
-		//cvLine(gray_img, pa, pb, CV_RGB(250, 0, 0), 1, 8);
-		//cvShowImage("picture", gray_img);
-
-		double x = (pb.x - pa.x);
-		double y = (pb.y - pa.y);
-		CvPoint2D32f center;
-
-		center = cvPoint2D32f(small_img->width / 2, small_img->height / 2);
-
-		int midEye = (facePoints[0].x + facePoints[4].x) / 2;
-		int midNose = (facePoints[2].x + facePoints[6].x) / 2;
-
-		//cout << "midEye=" << midEye << endl;
-		//cout << "idNose=" << midNose << endl;
-
-
-		if (midEye < midNose){
-			// Правый глаз и нос
-			angle = -atan(y / x)*rad;
-			angle += 30;
-		}
-		else {
-			// Левый глаз и нос
-			angle = atan(y / x)*rad;
-			angle += 57;
-		}
-
-		cv2DRotationMatrix(center, angle, 1, transmat);
-
-		cvWarpAffine(small_img, small_img, transmat);
-
-	}
 	// Рот и нос
 	else if ((facePoints[2].x > 0 && facePoints[2].y > 0) && (facePoints[3].x > 0 && facePoints[3].y > 0)){
 
@@ -261,6 +222,7 @@ int defineRotate(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[], 
 		cv2DRotationMatrix(center, angle, 1, transmat);
 
 		cvWarpAffine(small_img, small_img, transmat);
+
 	}
 	return 0;
 }
@@ -376,11 +338,13 @@ Mat ViolaJonesDetection::BEImage(cv::Mat _img, cv::Rect _roi, int _maxFadeDistan
 //Выделение лица из всего изображения с лицом и вырезаем из общей картинки
 IplImage* ViolaJonesDetection::imposeMask(IplImage *small_img, IplImage*gray_img, CvPoint p){
 	Mat small_mat = Mat(small_img);
-	int x = small_mat.cols / 3.5
-		, y = small_mat.rows / 6
-		, width = small_mat.cols *0.714 - small_mat.cols / 3.5
-		, height = small_mat.rows * 2 / 3
-		, maxFD = small_mat.cols / 8;
+	int x, y, width, height, maxFD;
+
+	x = (int)(small_mat.cols / 3.5);
+	y = small_mat.rows / 6;
+	width = (int)(small_mat.cols *0.714 - small_mat.cols / 3.5);
+	height = small_mat.rows * 2 / 3;
+	maxFD = small_mat.cols / 8;
 
 	small_mat = BEImage(small_mat																						//удаляем шумы
 		, cv::Rect(x, y, width, height)
@@ -420,7 +384,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 	gray_img = cvCreateImage(cvGetSize(image), 8, 1);
 	cvCvtColor(image, gray_img, CV_BGR2GRAY);
 
-	CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.2, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+	CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.12, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 
 	for (int i = 0; i < (faces ? faces->total : 0); i++){
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
@@ -456,7 +420,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 			IplImage *dist = cvCreateImage(cvSize(158, 214), small_img->depth, small_img->nChannels);
 			cvResize(small_img, dist, 1);
 
-			eigenDetector_v2->recognize(model, dist, imageResults, p1);//Распознавание
+			eigenDetector_v2->recognize(model, dist, imageResults, p1);//Распознавание	
 
 			cvReleaseImage(&dist);
 		}
