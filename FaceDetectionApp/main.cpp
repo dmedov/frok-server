@@ -4,16 +4,15 @@
 
 #include <io.h>
 
-
 int saveLearnModel(char* dir){
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 	char path_model[1024] = "";
 
 	//обучение FaceRecognizer
-	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(10, 2500);
+	Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
 	model = eigenDetector_v2->learn(dir, model);
 
-	sprintf(path_model, "%s//%s", dir, "eigenface.yml");
+	sprintf(path_model, "%s\\%s", dir, "eigenface.yml");
 	model->save(path_model);
 	cout << path_model << " has been saved." << endl;
 
@@ -25,10 +24,10 @@ int recognizeFromModel(char *img_dir, char* dir){
 	CvMemStorage* storage = 0;
 	IplImage *img = 0, *imageResults = 0;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
-	Ptr<FaceRecognizer> model = createEigenFaceRecognizer(10, 2500);
+	Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
 
 	char yml_dir[1024];
-	sprintf(yml_dir, "%s//%s", dir, "eigenface.yml");
+	sprintf(yml_dir, "%s\\%s", dir, "eigenface.yml");
 	model->load(yml_dir);
 
 	img = cvLoadImage(img_dir);
@@ -44,6 +43,7 @@ int recognizeFromModel(char *img_dir, char* dir){
 
 	violaJonesDetection->cascadeDetect(img, imageResults, storage, model);
 	cvShowImage("img2", imageResults);
+
 
 	while (1){ if (cvWaitKey(33) == 27)	break; }
 
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
 
 	//<Путь до папки с id> -l
 	//C:\Face_detector_OK\tmp\ -l
-	if (key[1] == 'l'){					
+	if (key[1] == 'l'){
 		return saveLearnModel(argv[1]);
 	}
 	//<Путь до изображения> -r <путь до *.yml>

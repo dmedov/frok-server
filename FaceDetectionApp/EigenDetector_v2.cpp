@@ -73,28 +73,56 @@ Ptr<FaceRecognizer> EigenDetector_v2::learn(char* path, Ptr<FaceRecognizer> mode
 	return model;
 }
 
+double getSimilarity(const Mat A, const Mat B) {
+	// Calculate the L2 relative error between the 2 images.
+	double errorL2 = norm(A, B, CV_L2);
+	// Scale the value since L2 is summed across all pixels.
+	double similarity = errorL2 / (double)(A.rows * A.cols);
+	return similarity;
+}
+
 void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, IplImage* resultImage, CvPoint p){
-	int
-		predicted_Eigen = -1;
+	int predicted_Eigen = 0;
+	double prob = 0, sim = 0;
+	Mat image_mat = Mat(image, true);
 
-	double predicted_confidence = 0, prob = 0, threshold = 0;
+	predicted_Eigen = model->predict(image_mat);
 
-	model->predict(Mat(image, true), predicted_Eigen, predicted_confidence);
+	// Get some required data from the FaceRecognizer model.
+	Mat eigenvectors = model->get<Mat>("eigenvectors");
+	Mat averageFaceRow = model->get<Mat>("mean");
+	// Project the input image onto the eigenspace.
+	Mat projection = subspaceProject(eigenvectors, averageFaceRow, image_mat.reshape(1, 1));
+	// Generate the reconstructed face back from the eigenspace.
+	Mat reconstructionRow = subspaceReconstruct(eigenvectors, averageFaceRow, projection);
+	// Make it a rectangular shaped image instead of a single row.
+	Mat reconstructionMat = reconstructionRow.reshape(1, image->height);
+	// Convert the floating-point pixels to regular 8-bit uchar.
+	Mat reconstructedFace = Mat(reconstructionMat.size(), CV_8U);
+	reconstructionMat.convertTo(reconstructedFace, CV_8U, 1, 0);
+	
+	char dig[1024];
 
-	cout << predicted_confidence << endl;
+	sprintf(dig, "repr %d", p.x + p.y);
 
-	threshold = model->getDouble("threshold");
-	if (predicted_Eigen != -1)
-		prob = (predicted_confidence / threshold) * 100;
+	imshow(dig, reconstructedFace);
+	sprintf(dig, "face %d", p.x + p.y);
+	imshow(dig, image_mat);
+
+	sim = getSimilarity(image_mat, reconstructedFace);
+
+
+
+	prob = sim;
 
 	CvScalar textColor = CV_RGB(0, 230, 255);	// light blue text
 	CvFont font;
 	cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
 	char text[256];
 	if (predicted_Eigen > 0)
-		sprintf(text, "id: %d (%.2f%%)", predicted_Eigen, prob);
+		sprintf(text, "id: %d (%.3f)", predicted_Eigen, prob);
 	else
-		sprintf(text, "id: ? (%.2f%%)", prob);
+		sprintf(text, "id: ?");
 	cvPutText(resultImage, text, cvPoint(p.x, p.y - 12), &font, textColor);
 
 }
