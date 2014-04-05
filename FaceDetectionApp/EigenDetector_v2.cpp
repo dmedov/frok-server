@@ -6,6 +6,7 @@
 
 #include "opencv2/contrib/contrib.hpp"
 
+
 /*
 	Загрузка изображений в массив
 	dir - ./faces, из которой берутся изображения с лицом для обучения
@@ -35,6 +36,8 @@ void EigenDetector_v2::loadBaseFace(char* dir, vector<Mat> * images, vector<int>
 
 			images->push_back(Mat(resize, true));
 			labels->push_back(id);
+
+			cout << name << endl;
 			count++;
 			res = _findnext(done, &result);
 		}
@@ -73,28 +76,70 @@ Ptr<FaceRecognizer> EigenDetector_v2::learn(char* path, Ptr<FaceRecognizer> mode
 	return model;
 }
 
+double EigenDetector_v2::getSimilarity(const Mat A, const Mat B) {
+
+	Mat dif = abs(A - B);
+	int koef = 0;
+	double err = 0;
+	for (int y(0); y < dif.rows; ++y){
+		for (int x(0); x < dif.cols; ++x){
+			int d = dif.at<unsigned char>(y, x);
+			if (d >= 10 && d <= 200)
+				koef += d - 10;
+		}
+	}
+
+	err = (double)koef/ (dif.cols*dif.rows* 20);
+
+	cout << err << " " << koef << endl;
+	if (err > 1) err = 1;
+	return (1 - err);
+}
+
 void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, IplImage* resultImage, CvPoint p){
-	int
-		predicted_Eigen = -1;
+	int predicted_Eigen = 0, koef = 0;
+	double prob = 0, err = 0;
+	Mat image_mat = Mat(image, true);
 
-	double predicted_confidence = 0, prob = 0, threshold = 0;
 
-	model->predict(Mat(image, true), predicted_Eigen, predicted_confidence);
+	predicted_Eigen = model->predict(image_mat);
 
-	cout << predicted_confidence << endl;
+	// Get some required data from the FaceRecognizer model.
+	Mat eigenvectors = model->get<Mat>("eigenvectors");
+	Mat averageFaceRow = model->get<Mat>("mean");
+	// Project the input image onto the eigenspace.
+	Mat projection = subspaceProject(eigenvectors, averageFaceRow, image_mat.reshape(1, 1));
+	// Generate the reconstructed face back from the eigenspace.
+	Mat reconstructionRow = subspaceReconstruct(eigenvectors, averageFaceRow, projection);
+	// Make it a rectangular shaped image instead of a single row.
+	Mat reconstructionMat = reconstructionRow.reshape(1, image->height);
+	// Convert the floating-point pixels to regular 8-bit uchar.
+	Mat reconstructedFace = Mat(reconstructionMat.size(), CV_8U);
+	reconstructionMat.convertTo(reconstructedFace, CV_8U, 1, 0);
 
-	threshold = model->getDouble("threshold");
-	if (predicted_Eigen != -1)
-		prob = (predicted_confidence / threshold) * 100;
+	char dig[1024];
+
+	sprintf(dig, "repr %d", p.x + p.y);
+
+	imshow(dig, reconstructedFace);
+	sprintf(dig, "face %d", p.x + p.y);
+	imshow(dig, image_mat);
+
+	sprintf(dig, "diff %d", p.x + p.y);
+	Mat dif = abs(image_mat - reconstructedFace);
+	imshow(dig, dif);
+
+	prob = getSimilarity(image_mat, reconstructedFace);
+	//predicted_Eigen = model->predict(reconstructedFace);
 
 	CvScalar textColor = CV_RGB(0, 230, 255);	// light blue text
 	CvFont font;
 	cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
 	char text[256];
-	if (predicted_Eigen > 0)
-		sprintf(text, "id: %d (%.2f%%)", predicted_Eigen, prob);
+	if (prob > 0 && predicted_Eigen >= 0)
+		sprintf(text, "id: %d (%.2f%%)", predicted_Eigen, prob * 100);
 	else
-		sprintf(text, "id: ? (%.2f%%)", prob);
+		sprintf(text, "id: ?");
 	cvPutText(resultImage, text, cvPoint(p.x, p.y - 12), &font, textColor);
 
 }
