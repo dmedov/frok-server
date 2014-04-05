@@ -26,8 +26,11 @@ ViolaJonesDetection::ViolaJonesDetection(){
 }
 
 //Запись ключевых точек в массив
-void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageResults, CvPoint p1, CvPoint p2, int type, int count){					//ресайз картинки	
+void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageResults, CvPoint p1, CvPoint p2, CvPoint p, int w, int h, int type, int count){					//ресайз картинки	
 	// Определять опатимальный вариант и брать его, сейчас берем не лучший, а первый (для носа и рта)
+
+	CvPoint center = cvPoint((p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
+
 	if (type == 0){
 		if (count == 0){
 			//первый глаз
@@ -45,20 +48,22 @@ void ViolaJonesDetection::writeFacePoints(CvPoint* facePoints, IplImage *imageRe
 
 	}
 	else if (type == 1
-		&& p1.y >= (facePoints[0].y/* + (facePoints[4].y - facePoints[0].y) / 1.5*/)){
+		&& p1.y >= (facePoints[0].y)){
 		// нос
 		facePoints[2] = p1; //cvPoint(p1.x,p1.y);
 		facePoints[6] = p2; //cvPoint(p2.x, p2.y);
 		//cvRectangle(imageResults, p1, p2, CV_RGB(255, 100, 255));
 	}
 	else if (type == 2
-		&& p1.y >= (facePoints[2].y/* + (facePoints[6].y - facePoints[2].y) / 1.5*/)
-		&& p1.y >= (facePoints[0].y + (facePoints[4].y - facePoints[0].y) / 1)){
+		&& p1.y >= (facePoints[2].y)
+		&& p1.y >= (facePoints[0].y)
+		&& center.y > h / 2 + p.y){
 		// рот
 		facePoints[3] = cvPoint(p1.x, p1.y);
 		facePoints[7] = cvPoint(p2.x, p2.y);
 		//cvRectangle(imageResults, p1, p2, CV_RGB(128, 0, 128));
 	}
+
 }
 
 //Детектирование ключевых точек лица 
@@ -101,7 +106,7 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd, IplImage
 		break;
 	}
 
-	objects = cvHaarDetectObjects(dst, cscd, strg, 1.1, 2, 0 | CV_HAAR_DO_CANNY_PRUNING, minSize);
+	objects = cvHaarDetectObjects(dst, cscd, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, minSize);
 
 	int count = 0;
 	for (int i = 0; i < (objects ? objects->total : 0); i++)
@@ -114,7 +119,7 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd, IplImage
 
 		CvPoint p1 = cvPoint(x + p.x, y + p.y), p2 = cvPoint(x + w + p.x, y + h + p.y);
 
-		writeFacePoints(facePoints, imageResults, p1, p2, type, count);
+		writeFacePoints(facePoints, imageResults, p1, p2, p, width, height, type, count);
 		if (type == 0) count++;
 		else break;
 
@@ -158,14 +163,6 @@ bool ViolaJonesDetection::drawEvidence(IplImage *imageResults, CvPoint facePoint
 int defineRotate(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[], CvPoint p1, CvPoint p2)
 {
 	double rad = 57.295779513;
-
-
-	for (int i = 0; i < 8; i++){
-		cout << "x= " << i << " " << facePoints[i].x << endl;
-		cout << "y= " << i << " " << facePoints[i].y << endl;
-		cout << endl;
-	}
-
 	// Два глаза
 	if ((facePoints[0].x > 0 && facePoints[0].y > 0) && (facePoints[1].x > 0 && facePoints[1].y > 0)) {
 
@@ -175,7 +172,7 @@ int defineRotate(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[], 
 		CvPoint pa = cvPoint((facePoints[0].x + facePoints[4].x) / 2, (facePoints[0].y + facePoints[4].y) / 2);
 		CvPoint pb = cvPoint((facePoints[1].x + facePoints[5].x) / 2, (facePoints[1].y + facePoints[5].y) / 2);
 
-		CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
+		CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);/////////////////удалить
 
 		//cvLine(gray_img, pa, pb, CV_RGB(250, 0, 0), 1, 8);
 		//cvShowImage("picture", gray_img);
@@ -213,11 +210,11 @@ int defineRotate(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[], 
 		CvPoint2D32f center;
 
 		center = cvPoint2D32f(small_img->width / 2, small_img->height / 2);
+		double angle = 0;
+		angle = atan(y / x)*rad;
+		if (angle = 90)	angle = 0;
 
-		double angle = atan(y / x)*rad;
-
-		angle -= 90;
-		angle /= 2;
+		cout << angle;
 
 		cv2DRotationMatrix(center, angle, 1, transmat);
 
@@ -346,10 +343,7 @@ IplImage* ViolaJonesDetection::imposeMask(IplImage *small_img, IplImage*gray_img
 	height = small_mat.rows * 2 / 3;
 	maxFD = small_mat.cols / 8;
 
-	small_mat = BEImage(small_mat																						//удаляем шумы
-		, cv::Rect(x, y, width, height)
-		, maxFD
-		);
+	//small_mat = BEImage(small_mat, cv::Rect(x, y, width, height), maxFD);
 
 	IplImage *out = cvCloneImage(&(IplImage)small_mat);
 	int w_roi = width + maxFD * 2, h_roi = height + maxFD * 2;
@@ -384,7 +378,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 	gray_img = cvCreateImage(cvGetSize(image), 8, 1);
 	cvCvtColor(image, gray_img, CV_BGR2GRAY);
 
-	CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.12, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+	CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 
 	for (int i = 0; i < (faces ? faces->total : 0); i++){
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
@@ -402,7 +396,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 		cvSetImageROI(gray_img, cvRect(x, y, w, h));
 		cvCopy(gray_img, small_img, NULL);
 		cvResetImageROI(gray_img);															//копируем лицо в отдельную картинку
-		cvEqualizeHist(small_img, small_img);												//нормализация гистограммы
+
 
 		for (int j = 0; j < 8; j++)	facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
 
@@ -415,17 +409,18 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 
 			defineRotate(gray_img, small_img, facePoints, p1, p2);
 
+
 			small_img = imposeMask(small_img, gray_img, p1);
 
 			IplImage *dist = cvCreateImage(cvSize(158, 214), small_img->depth, small_img->nChannels);
-			cvResize(small_img, dist, 1);
 
+			cvResize(small_img, dist, 1);
+			cvEqualizeHist(dist, dist);												//нормализация гистограммы
 			eigenDetector_v2->recognize(model, dist, imageResults, p1);//Распознавание	
 
 			cvReleaseImage(&dist);
 		}
 	}
-
 	// освобождаем ресурсы
 	delete descriptorDetection;
 	delete eigenDetector;

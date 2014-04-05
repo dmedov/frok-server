@@ -6,6 +6,7 @@
 
 #include "opencv2/contrib/contrib.hpp"
 
+
 /*
 	Загрузка изображений в массив
 	dir - ./faces, из которой берутся изображения с лицом для обучения
@@ -35,6 +36,8 @@ void EigenDetector_v2::loadBaseFace(char* dir, vector<Mat> * images, vector<int>
 
 			images->push_back(Mat(resize, true));
 			labels->push_back(id);
+
+			cout << name << endl;
 			count++;
 			res = _findnext(done, &result);
 		}
@@ -73,18 +76,31 @@ Ptr<FaceRecognizer> EigenDetector_v2::learn(char* path, Ptr<FaceRecognizer> mode
 	return model;
 }
 
-double getSimilarity(const Mat A, const Mat B) {
-	// Calculate the L2 relative error between the 2 images.
-	double errorL2 = norm(A, B, CV_L2);
-	// Scale the value since L2 is summed across all pixels.
-	double similarity = errorL2 / (double)(A.rows * A.cols);
-	return similarity;
+double EigenDetector_v2::getSimilarity(const Mat A, const Mat B) {
+
+	Mat dif = abs(A - B);
+	int koef = 0;
+	double err = 0;
+	for (int y(0); y < dif.rows; ++y){
+		for (int x(0); x < dif.cols; ++x){
+			int d = dif.at<unsigned char>(y, x);
+			if (d >= 10 && d <= 200)
+				koef += d - 10;
+		}
+	}
+
+	err = (double)koef/ (dif.cols*dif.rows* 20);
+
+	cout << err << " " << koef << endl;
+	if (err > 1) err = 1;
+	return (1 - err);
 }
 
 void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, IplImage* resultImage, CvPoint p){
-	int predicted_Eigen = 0;
-	double prob = 0, sim = 0;
+	int predicted_Eigen = 0, koef = 0;
+	double prob = 0, err = 0;
 	Mat image_mat = Mat(image, true);
+
 
 	predicted_Eigen = model->predict(image_mat);
 
@@ -100,7 +116,7 @@ void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, Ipl
 	// Convert the floating-point pixels to regular 8-bit uchar.
 	Mat reconstructedFace = Mat(reconstructionMat.size(), CV_8U);
 	reconstructionMat.convertTo(reconstructedFace, CV_8U, 1, 0);
-	
+
 	char dig[1024];
 
 	sprintf(dig, "repr %d", p.x + p.y);
@@ -109,18 +125,19 @@ void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, Ipl
 	sprintf(dig, "face %d", p.x + p.y);
 	imshow(dig, image_mat);
 
-	sim = getSimilarity(image_mat, reconstructedFace);
+	sprintf(dig, "diff %d", p.x + p.y);
+	Mat dif = abs(image_mat - reconstructedFace);
+	imshow(dig, dif);
 
-
-
-	prob = sim;
+	prob = getSimilarity(image_mat, reconstructedFace);
+	//predicted_Eigen = model->predict(reconstructedFace);
 
 	CvScalar textColor = CV_RGB(0, 230, 255);	// light blue text
 	CvFont font;
 	cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
 	char text[256];
-	if (predicted_Eigen > 0)
-		sprintf(text, "id: %d (%.3f)", predicted_Eigen, prob);
+	if (prob > 0 && predicted_Eigen >= 0)
+		sprintf(text, "id: %d (%.2f%%)", predicted_Eigen, prob * 100);
 	else
 		sprintf(text, "id: ?");
 	cvPutText(resultImage, text, cvPoint(p.x, p.y - 12), &font, textColor);
