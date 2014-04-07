@@ -16,11 +16,8 @@
 *.a
 *.suo
 *.filters
-*.user
 *.obj
 *.log
 *.tlog
 *.lastbuildstate
 *.idb
-*.pdb
-*.xml
