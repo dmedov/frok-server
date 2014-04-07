@@ -433,7 +433,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 }
 
 
-// Þנצא
+// Sharing on 3 gistagrams
 void equalizeFace(IplImage *faceImg) {
 
 	Mat matFaceImg = Mat(faceImg);
