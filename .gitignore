@@ -35,3 +35,10 @@ FaceDetectionApp/Debug/EigenDetector.obj
 *.vcxproj
 *.filters
 *.user
+*.obj
+*.log
+*.tlog
+*.lastbuildstate
+*.idb
+*.pdb
+Debug/FaceDetectionLib.lib
