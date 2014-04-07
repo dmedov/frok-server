@@ -45,6 +45,7 @@ int recognizeFromModel(char *img_dir, char* dir){
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
 	Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
 
+
 	char yml_dir[1024];
 	sprintf(yml_dir, "%s\\%s", dir, "eigenface.yml");
 	model->load(yml_dir);
@@ -64,8 +65,10 @@ int recognizeFromModel(char *img_dir, char* dir){
 	violaJonesDetection->cascadeDetect(img, imageResults, storage, model);
 	cvShowImage("img1", imageResults);
 
-	
-	while (1){ if (cvWaitKey(33) == 27)	break; }
+
+	while (1){
+		if (cvWaitKey(33) == 27)	break;
+	}
 
 	cvReleaseImage(&img);
 	cvReleaseImage(&imageResults);
@@ -129,7 +132,7 @@ int main(int argc, char *argv[]) {
 
 	//<Путь до папки с id> -l
 	//C:\Face_detector_OK\tmp\ -l
-	if (key[1] == 'l'){					
+	if (key[1] == 'l'){
 		return saveLearnModel(argv[1]);
 	}
 	//<Путь до изображения> -r <путь до *.yml>
