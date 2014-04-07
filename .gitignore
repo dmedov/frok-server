@@ -15,13 +15,9 @@
 *.la
 *.a
 *.suo
-*.vcxproj
 *.filters
-*.user
 *.obj
 *.log
 *.tlog
 *.lastbuildstate
 *.idb
-*.pdb
-Debug/FaceDetectionLib.lib
