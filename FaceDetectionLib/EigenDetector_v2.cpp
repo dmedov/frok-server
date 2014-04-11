@@ -121,13 +121,13 @@ void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, Ipl
 
 	sprintf(dig, "repr %d", p.x + p.y);
 
-	imshow(dig, reconstructedFace);
+	//imshow(dig, reconstructedFace);
 	sprintf(dig, "face %d", p.x + p.y);
 	imshow(dig, image_mat);
 
 	sprintf(dig, "diff %d", p.x + p.y);
 	Mat dif = abs(image_mat - reconstructedFace);
-	imshow(dig, dif);
+	//imshow(dig, dif);
 
 	prob = getSimilarity(image_mat, reconstructedFace);
 	//predicted_Eigen = model->predict(reconstructedFace);

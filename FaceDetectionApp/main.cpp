@@ -63,7 +63,7 @@ int recognizeFromModel(char *img_dir, char* dir){
 	storage = cvCreateMemStorage(0);										//Создание хранилища памяти
 
 	violaJonesDetection->cascadeDetect(img, imageResults, storage, model);
-	cvShowImage("img1", imageResults);
+	cvShowImage("img", imageResults);
 
 
 	while (1){

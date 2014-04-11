@@ -69,13 +69,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DescriptorDetection.cpp" />
-    <ClCompile Include="EigenDetector.cpp" />
     <ClCompile Include="EigenDetector_v2.cpp" />
     <ClCompile Include="ViolaJonesDetection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DescriptorDetection.h" />
-    <ClInclude Include="EigenDetector.h" />
     <ClInclude Include="EigenDetector_v2.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="ViolaJonesDetection.h" />
