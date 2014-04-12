@@ -65,7 +65,6 @@ int recognizeFromModel(char *img_dir, char* dir){
 	violaJonesDetection->cascadeDetect(img, imageResults, storage, model);
 	cvShowImage("img", imageResults);
 
-
 	while (1){
 		if (cvWaitKey(33) == 27)	break;
 	}
