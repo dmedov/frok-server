@@ -21,3 +21,8 @@
 *.tlog
 *.lastbuildstate
 *.idb
+*.exe
+*.ilk
+*.pdb
+*.lib
+*.user
