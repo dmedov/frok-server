@@ -240,6 +240,25 @@ int defineRotate(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[], 
 	return 0;
 }
 
+Mat ViolaJonesDetection::MaskFace(IplImage *img) {
+	Mat _img = Mat(img,true);
+	int x = _img.cols;
+	int y = _img.rows;
+	Mat mask = Mat(_img.size(), CV_8UC1, Scalar(255));
+	Point faceCenter = Point(cvRound(x * 0.5),
+		cvRound(y * 0.25));
+	Size size = Size(cvRound(x * 0.55), cvRound(y * 0.8));
+	ellipse(mask, faceCenter, size, 0, 0, 360, Scalar(0),
+		CV_FILLED);
+	// Apply the elliptical mask on the face, to remove corners.
+	// Sets corners to gray, without touching the inner face.
+
+	_img.setTo(Scalar(128), mask);
+	
+	return _img;
+	//cvShowImage("img6", imgout);
+}
+
 //¬ыделение лица из всего изображени€ с лицом и вырезаем из общей картинки
 IplImage* ViolaJonesDetection::imposeMask(IplImage *small_img, IplImage*gray_img, CvPoint p){
 	int x, y, width, height, width_roi, height_roi;
@@ -257,8 +276,7 @@ IplImage* ViolaJonesDetection::imposeMask(IplImage *small_img, IplImage*gray_img
 	cvSetImageROI(small_img, cvRect(x, y, width_roi, height_roi));
 	cvCopy(small_img, img, NULL);
 	cvResetImageROI(small_img);															//копируем лицо в отдельную картинку
-
-	cvShowImage("si", img);
+	
 	return img;
 }
 
@@ -325,6 +343,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 		if (drawEvidence(imageResults, facePoints, p1, p2, true)){
 			defineRotate(gray_img, small_img, facePoints, p1, p2);
 			small_img = imposeMask(small_img, gray_img, p1);
+			small_img  =  cvCloneImage(&(IplImage)MaskFace(small_img));
 			IplImage *dist = cvCreateImage(cvSize(158, 185), small_img->depth, small_img->nChannels);
 			cvResize(small_img, dist, 1);
 			//equalizeFace(small_img);
