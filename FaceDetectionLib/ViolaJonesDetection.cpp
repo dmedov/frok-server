@@ -242,27 +242,24 @@ int defineRotate(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[], 
 
 //Выделение лица из всего изображения с лицом и вырезаем из общей картинки
 IplImage* ViolaJonesDetection::imposeMask(IplImage *small_img, IplImage*gray_img, CvPoint p){
-	Mat small_mat = Mat(small_img);
-	int x, y, width, height, maxFD;
+	int x, y, width, height, width_roi, height_roi;
 
-	x = (int)(small_mat.cols / 3.5);
-	y = small_mat.rows / 6;
-	width = (int)(small_mat.cols *0.714 - small_mat.cols / 3.5);
-	height = small_mat.rows * 2 / 3;
-	maxFD = small_mat.cols / 8;
+	width = small_img->width;
+	height = small_img->height;
 
-	IplImage *out = cvCloneImage(&(IplImage)small_mat);
-	int w_roi = width + maxFD * 2, h_roi = height + maxFD * 2;
-	small_img = cvCreateImage(cvSize(w_roi, h_roi), out->depth, out->nChannels);
-	cvSetImageROI(out, cvRect(x - maxFD, y - maxFD, w_roi, h_roi));
-	cvCopy(out, small_img, NULL);
-	cvResetImageROI(out);
-	cvReleaseImage(&out);
+	x = (int)(width / 6);
+	y = (int)(height / 4);
+	width_roi = width - x*2;
+	height_roi = height;
 
-	cvRectangle(gray_img, cvPoint(p.x + x - maxFD, p.y + y - maxFD), cvPoint(p.x + x - maxFD + w_roi, p.y + y - maxFD + h_roi), cvScalar(128, 128, 128, 0),
-		-1, 8, 0);
+	IplImage *img = cvCreateImage(cvSize(width - x*2, height - y), small_img->depth, small_img->nChannels);
 
-	return small_img;
+	cvSetImageROI(small_img, cvRect(x, y, width_roi, height_roi));
+	cvCopy(small_img, img, NULL);
+	cvResetImageROI(small_img);															//копируем лицо в отдельную картинку
+
+	cvShowImage("si", img);
+	return img;
 }
 
 //Детектирование лица (вызывается из main)
@@ -328,7 +325,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 		if (drawEvidence(imageResults, facePoints, p1, p2, true)){
 			defineRotate(gray_img, small_img, facePoints, p1, p2);
 			small_img = imposeMask(small_img, gray_img, p1);
-			IplImage *dist = cvCreateImage(cvSize(158, 214), small_img->depth, small_img->nChannels);
+			IplImage *dist = cvCreateImage(cvSize(158, 185), small_img->depth, small_img->nChannels);
 			cvResize(small_img, dist, 1);
 			//equalizeFace(small_img);
 			eigenDetector_v2->recognize(model, dist, imageResults, p1);//Распознавание	
@@ -346,7 +343,7 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 	cvReleaseImage(&gray_img);
 }
 
-// Sharing on 3 gistagrams
+//Sharing on 3 gistagrams
 void equalizeFace(IplImage *faceImg) {
 
 	Mat matFaceImg = Mat(faceImg);
@@ -430,7 +427,7 @@ void ViolaJonesDetection::rejectFace(IplImage* image, CvMemStorage* strg, char* 
 			if (defineRotate(gray_img, small_img, facePoints, p1, p2) >= 0){
 				small_img = imposeMask(small_img, gray_img, p1);
 
-				IplImage *dist = cvCreateImage(cvSize(158, 214), small_img->depth, small_img->nChannels);
+				IplImage *dist = cvCreateImage(cvSize(158, 185), small_img->depth, small_img->nChannels);
 				cvResize(small_img, dist, 1);
 				//equalizeFace(dist);
 				if (faces->total == 1){

@@ -32,7 +32,7 @@ void EigenDetector_v2::loadBaseFace(char* dir, vector<Mat> * images, vector<int>
 			//cout << result.name << endl;
 			sprintf(name, "%s\\%s", dir, result.name);
 			IplImage *dist = cvLoadImage(name, CV_LOAD_IMAGE_GRAYSCALE);
-			IplImage *resize = cvCreateImage(cvSize(158, 214), dist->depth, dist->nChannels);
+			IplImage *resize = cvCreateImage(cvSize(158, 185), dist->depth, dist->nChannels);
 			cvResize(dist, resize, 1);
 
 			images->push_back(Mat(resize, true));
@@ -131,7 +131,7 @@ void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, Ipl
 
 	imshow(dig, reconstructedFace);
 	sprintf(dig, "face %d", p.x + p.y);
-	//imshow(dig, image_mat);
+	imshow(dig, image_mat);
 
 	sprintf(dig, "diff %d", p.x + p.y);
 	Mat dif = abs(image_mat - reconstructedFace);
