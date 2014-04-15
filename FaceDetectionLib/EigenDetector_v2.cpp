@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "EigenDetector_v2.h"
+#include "DescriptorDetection.h"
 #include <stdlib.h>
 #include <io.h>
 #include <Math.h>
@@ -31,7 +32,7 @@ void EigenDetector_v2::loadBaseFace(char* dir, vector<Mat> * images, vector<int>
 			//cout << result.name << endl;
 			sprintf(name, "%s\\%s", dir, result.name);
 			IplImage *dist = cvLoadImage(name, CV_LOAD_IMAGE_GRAYSCALE);
-			IplImage *resize = cvCreateImage(cvSize(158, 214), dist->depth, dist->nChannels);
+			IplImage *resize = cvCreateImage(cvSize(158, 185), dist->depth, dist->nChannels);
 			cvResize(dist, resize, 1);
 
 			images->push_back(Mat(resize, true));
@@ -83,6 +84,7 @@ double EigenDetector_v2::getSimilarity(const Mat A, const Mat B) {
 	double err = 0;
 	for (int y(0); y < dif.rows; ++y){
 		for (int x(0); x < dif.cols; ++x){
+
 			int d = dif.at<unsigned char>(y, x);
 			if (d >= 10 && d <= 200)
 				koef += d - 10;
@@ -94,6 +96,12 @@ double EigenDetector_v2::getSimilarity(const Mat A, const Mat B) {
 	cout << err << " " << koef << endl;
 	if (err > 1) err = 1;
 	return (1 - err);
+
+	//// Calculate the L2 relative error between the 2 images.
+	//double errorL2 = norm(A, B, CV_L2);
+	//// Scale the value since L2 is summed across all pixels.
+	//double similarity = errorL2 / (double)(A.rows * A.cols);
+	//return similarity;
 }
 
 void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, IplImage* resultImage, CvPoint p){
@@ -127,7 +135,7 @@ void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, Ipl
 
 	sprintf(dig, "diff %d", p.x + p.y);
 	Mat dif = abs(image_mat - reconstructedFace);
-	imshow(dig, dif);
+	//imshow(dig, dif);
 
 	prob = getSimilarity(image_mat, reconstructedFace);
 	//predicted_Eigen = model->predict(reconstructedFace);
@@ -136,8 +144,8 @@ void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, Ipl
 	CvFont font;
 	cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
 	char text[256];
-	if (prob > 0 && predicted_Eigen >= 0)
-		sprintf(text, "id: %d (%.2f%%)", predicted_Eigen, prob * 100);
+	if (prob > 0.65 && predicted_Eigen >= 0)
+		sprintf(text, "id: %d (%.2f%%)", predicted_Eigen, prob*100);
 	else
 		sprintf(text, "id: ?");
 	cvPutText(resultImage, text, cvPoint(p.x, p.y - 12), &font, textColor);

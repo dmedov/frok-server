@@ -39,9 +39,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)\FaceDetectionLib\;C:\opencv\build\include\opencv;C:\opencv\build\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\FaceDetectionLib;C:\opencv\build\include\opencv;C:\opencv\build\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)$(Configuration)\;C:\opencv\build\x86\vc12\lib;$(LibraryPath)</LibraryPath>
-    <OutDir>C:\Face_detector_OK\</OutDir>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

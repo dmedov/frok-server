@@ -8,7 +8,7 @@ public:
 	void rejectFace(IplImage* image, CvMemStorage* strg, char* dir, char* name);
 private:
 	bool drawEvidence(IplImage *imageResults, CvPoint facePoints[8], CvPoint p1, CvPoint p2, bool draw);
-	void writeFacePoints(CvPoint* facePoints, IplImage *imageResults, CvPoint p1, CvPoint p2, CvPoint p, int w, int h, int type, int count);
+	void writeFacePoints(CvPoint* facePoints, IplImage *imageResults, CvPoint p1, CvPoint p2, CvPoint p, int w, int h, int type);
 	void keysFaceDetect(CvHaarClassifierCascade*, IplImage*, IplImage*, CvMemStorage*, CvPoint, int, CvPoint*);
 	void rotateImage(IplImage *, IplImage *, CvPoint[], CvPoint, CvPoint);
 	Mat BEImage(cv::Mat _img, cv::Rect _roi, int _maxFadeDistance);
