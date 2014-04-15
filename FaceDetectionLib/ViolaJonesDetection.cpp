@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <io.h>
 
+
 static CvHaarClassifierCascade* cascade, *cascade_eyes, *cascade_eye, *cascade_righteye, *cascade_lefteye, *cascade_righteye2, *cascade_lefteye2, *cascade_nose, *cascade_mouth;
 void equalizeFace(IplImage *faceImg);
 
@@ -369,8 +370,6 @@ void equalizeFace(IplImage *faceImg) {
 	hconcat(leftSide, rightSide, leftSide);
 
 	faceImg = &IplImage(leftSide);
-
-	cvShowImage("pic1", faceImg);
 }
 
 //ВЫрезание изображения с лицом

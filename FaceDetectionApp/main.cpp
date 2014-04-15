@@ -21,24 +21,6 @@ int saveLearnModel(char* dir){
 	return 0;
 }
 
-static Mat norm_0_255(InputArray _src) {
-	Mat src = _src.getMat();
-	// Create and return normalized image:
-	Mat dst;
-	switch (src.channels()) {
-	case 1:
-		cv::normalize(_src, dst, 0, 255, NORM_MINMAX, CV_8UC1);
-		break;
-	case 3:
-		cv::normalize(_src, dst, 0, 255, NORM_MINMAX, CV_8UC3);
-		break;
-	default:
-		src.copyTo(dst);
-		break;
-	}
-	return dst;
-}
-
 int recognizeFromModel(char *img_dir, char* dir){
 	CvMemStorage* storage = 0;
 	IplImage *img = 0, *imageResults = 0;
@@ -63,7 +45,7 @@ int recognizeFromModel(char *img_dir, char* dir){
 	storage = cvCreateMemStorage(0);										//Создание хранилища памяти
 
 	violaJonesDetection->cascadeDetect(img, imageResults, storage, model);
-	cvShowImage("img", imageResults);
+	cvShowImage("img5", imageResults);
 
 	while (1){
 		if (cvWaitKey(33) == 27)	break;
