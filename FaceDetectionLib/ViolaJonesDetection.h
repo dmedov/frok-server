@@ -15,6 +15,7 @@ private:
 	IplImage* imposeMask(IplImage *small_img, IplImage*gray_img, CvPoint p);
 	void scanSIFT(char *dir, Mat, int);
 	void saveImageRandom(IplImage *face, char* dir);
+    Mat  ViolaJonesDetection::MaskFace(IplImage *img);
 };
 
 
