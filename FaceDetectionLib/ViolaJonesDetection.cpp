@@ -1,13 +1,14 @@
 #include "stdafx.h"
 #include "ViolaJonesDetection.h"
 #include "DescriptorDetection.h"
-#include "EigenDetector.h"
 #include "EigenDetector_v2.h"
+#include <fstream>
 #include <vector>
 #include <string>
 #include <Math.h>
 #include <stdlib.h>
 #include <io.h>
+
 
 
 static CvHaarClassifierCascade* cascade, *cascade_eyes, *cascade_eye, *cascade_righteye, *cascade_lefteye, *cascade_righteye2, *cascade_lefteye2, *cascade_nose, *cascade_mouth;
@@ -116,8 +117,8 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
 		double scale_factor = 1.01;
 	}
 	else if (type == 1){
-		minSize = cvSize(width / 6, height / 6);
-		maxSize = cvSize(width / 3.5, height / 3.5);
+		minSize = cvSize(width / 5, height / 6);
+		maxSize = cvSize((int)(width / 3.5), (int)(height / 3.5));
 	}
 	else if (type == 2){
 		minSize = cvSize(width / 5, height / 6);
@@ -240,25 +241,6 @@ int defineRotate(IplImage *gray_img, IplImage *small_img, CvPoint facePoints[], 
 	return 0;
 }
 
-Mat ViolaJonesDetection::MaskFace(IplImage *img) {
-	Mat _img = Mat(img,true);
-	int x = _img.cols;
-	int y = _img.rows;
-	Mat mask = Mat(_img.size(), CV_8UC1, Scalar(255));
-	Point faceCenter = Point(cvRound(x * 0.5),
-		cvRound(y * 0.25));
-	Size size = Size(cvRound(x * 0.55), cvRound(y * 0.8));
-	ellipse(mask, faceCenter, size, 0, 0, 360, Scalar(0),
-		CV_FILLED);
-	// Apply the elliptical mask on the face, to remove corners.
-	// Sets corners to gray, without touching the inner face.
-
-	_img.setTo(Scalar(128), mask);
-	
-	return _img;
-	//cvShowImage("img6", imgout);
-}
-
 //¬ыделение лица из всего изображени€ с лицом и вырезаем из общей картинки
 IplImage* ViolaJonesDetection::imposeMask(IplImage *small_img, IplImage*gray_img, CvPoint p){
 	int x, y, width, height, width_roi, height_roi;
@@ -266,22 +248,22 @@ IplImage* ViolaJonesDetection::imposeMask(IplImage *small_img, IplImage*gray_img
 	width = small_img->width;
 	height = small_img->height;
 
-	x = (int)(width / 6);
+	x = (int)(width / 5);
 	y = (int)(height / 4);
-	width_roi = width - x*2;
+	width_roi = width - x * 2;
 	height_roi = height;
 
-	IplImage *img = cvCreateImage(cvSize(width - x*2, height - y), small_img->depth, small_img->nChannels);
+	IplImage *img = cvCreateImage(cvSize(width - x * 2, height - y), small_img->depth, small_img->nChannels);
 
 	cvSetImageROI(small_img, cvRect(x, y, width_roi, height_roi));
 	cvCopy(small_img, img, NULL);
 	cvResetImageROI(small_img);															//копируем лицо в отдельную картинку
-	
+
 	return img;
 }
 
 //ƒетектирование лица (вызываетс€ из main)
-void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults, CvMemStorage* strg, Ptr<FaceRecognizer> model){
+void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults, CvMemStorage* strg, Ptr<FaceRecognizer> model, char* dir){
 	if (!cascade){
 		cout << "cascade error" << endl;
 		cvReleaseHaarClassifierCascade(&cascade);
@@ -289,7 +271,6 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 	}
 
 	DescriptorDetection *descriptorDetection = new DescriptorDetection();
-	EigenDetector *eigenDetector = new EigenDetector();
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 
 	IplImage
@@ -300,6 +281,8 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 	cvCvtColor(image, gray_img, CV_BGR2GRAY);
 
 	CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+
+	eigenDetector_v2->outJson.append("{ results: [");
 
 	for (int i = 0; i < (faces ? faces->total : 0); i++){
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
@@ -321,7 +304,8 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 
 		for (int j = 0; j < 8; j++)	facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
 
-		cvEqualizeHist(small_img, small_img);
+		Ptr<CLAHE> clahe = createCLAHE(2, Size(8, 8));
+		clahe->apply(Mat(small_img), Mat(small_img));
 		cvNormalize(small_img, small_img, 10, 250, CV_MINMAX);
 
 		keysFaceDetect(cascade_eye, image, small_img, strg, p1, 4, facePoints);				//правый общий
@@ -335,7 +319,6 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 
 		keysFaceDetect(cascade_eyes, image, small_img, strg, p1, 0, facePoints);			//глаза в очках
 
-
 		keysFaceDetect(cascade_nose, image, small_img, strg, p1, 1, facePoints);			//нос
 		keysFaceDetect(cascade_mouth, image, small_img, strg, p1, 2, facePoints);			//рот
 
@@ -343,19 +326,26 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 		if (drawEvidence(imageResults, facePoints, p1, p2, true)){
 			defineRotate(gray_img, small_img, facePoints, p1, p2);
 			small_img = imposeMask(small_img, gray_img, p1);
-			small_img  =  cvCloneImage(&(IplImage)MaskFace(small_img));
-			IplImage *dist = cvCreateImage(cvSize(158, 185), small_img->depth, small_img->nChannels);
+			small_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(small_img));
+			IplImage *dist = cvCreateImage(cvSize(158, 190), small_img->depth, small_img->nChannels);
 			cvResize(small_img, dist, 1);
-			//equalizeFace(small_img);
-			eigenDetector_v2->recognize(model, dist, imageResults, p1);//–аспознавание	
+			eigenDetector_v2->recognize(model, dist, imageResults, p1, p2, dir);//–аспознавание	
 
 			cvReleaseImage(&dist);
 
 		}
 	}
+	eigenDetector_v2->outJson.append(" ] }");
+	
+	ofstream out("results.json");
+	out << eigenDetector_v2->outJson;
+	out.close();
+
+	//cout << eigenDetector_v2->outJson << endl;
+
+
 	// освобождаем ресурсы
 	delete descriptorDetection;
-	delete eigenDetector;
 	delete eigenDetector_v2;
 
 	cvReleaseImage(&small_img);
@@ -396,6 +386,7 @@ void ViolaJonesDetection::rejectFace(IplImage* image, CvMemStorage* strg, char* 
 		cvReleaseHaarClassifierCascade(&cascade);
 		return;
 	}
+	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 
 	IplImage
 		*gray_img = 0,
@@ -403,6 +394,9 @@ void ViolaJonesDetection::rejectFace(IplImage* image, CvMemStorage* strg, char* 
 
 	gray_img = cvCreateImage(cvGetSize(image), 8, 1);
 	cvCvtColor(image, gray_img, CV_BGR2GRAY);
+	//cvEqualizeHist(gray_img, gray_img);
+	Ptr<CLAHE> clahe = createCLAHE(2, Size(8, 8));
+	clahe->apply(Mat(gray_img), Mat(gray_img));
 
 	CvSeq *faces = cvHaarDetectObjects(gray_img, cascade, strg, 1.12, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 	for (int i = 0; i < (faces ? faces->total : 0); i++){
@@ -422,11 +416,7 @@ void ViolaJonesDetection::rejectFace(IplImage* image, CvMemStorage* strg, char* 
 		cvResetImageROI(gray_img);															//копируем лицо в отдельную картинку
 
 		for (int j = 0; j < 8; j++)	facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
-
-		cvEqualizeHist(small_img, small_img);
-		cvNormalize(small_img, small_img, 10, 250, CV_MINMAX);
-
-
+		
 		keysFaceDetect(cascade_lefteye2, image, small_img, strg, p1, 3, facePoints);		//правый 
 		keysFaceDetect(cascade_righteye, image, small_img, strg, p1, 3, facePoints);		//правый альтернатива
 		keysFaceDetect(cascade_eye, image, small_img, strg, p1, 3, facePoints);				//правый альтернатива
@@ -438,15 +428,15 @@ void ViolaJonesDetection::rejectFace(IplImage* image, CvMemStorage* strg, char* 
 
 		keysFaceDetect(cascade_eyes, image, small_img, strg, p1, 0, facePoints);			//глаза в очках
 
-
 		keysFaceDetect(cascade_nose, image, small_img, strg, p1, 1, facePoints);			//нос
 		keysFaceDetect(cascade_mouth, image, small_img, strg, p1, 2, facePoints);			//рот
 
 		if (drawEvidence(image, facePoints, p1, p2, false)){
 			if (defineRotate(gray_img, small_img, facePoints, p1, p2) >= 0){
 				small_img = imposeMask(small_img, gray_img, p1);
+				small_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(small_img));
 
-				IplImage *dist = cvCreateImage(cvSize(158, 185), small_img->depth, small_img->nChannels);
+				IplImage *dist = cvCreateImage(cvSize(158, 190), small_img->depth, small_img->nChannels);
 				cvResize(small_img, dist, 1);
 				//equalizeFace(dist);
 				if (faces->total == 1){
@@ -460,7 +450,7 @@ void ViolaJonesDetection::rejectFace(IplImage* image, CvMemStorage* strg, char* 
 
 		}
 	}
-
+	delete eigenDetector_v2;
 	cvReleaseImage(&small_img);			// освобождаем ресурсы
 	cvReleaseImage(&gray_img);
 }
@@ -503,7 +493,6 @@ void ViolaJonesDetection::scanSIFT(char *dir, Mat ffDescriptors, int faceNumber)
 					if (p >= max_p){
 						max_p = p;
 						sprintf(name, "F%d", faceNumber);
-
 						//cvShowImage(name, base_face);
 					}
 				}

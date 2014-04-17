@@ -26,3 +26,4 @@
 *.pdb
 *.lib
 *.user
+*.json

@@ -4,7 +4,7 @@ class ViolaJonesDetection
 public:
 	ViolaJonesDetection();
 	~ViolaJonesDetection();
-	void cascadeDetect(IplImage* image, IplImage *imageResults, CvMemStorage* strg, Ptr<FaceRecognizer> model);
+	void cascadeDetect(IplImage* image, IplImage *imageResults, CvMemStorage* strg, Ptr<FaceRecognizer> model, char* dir);
 	void rejectFace(IplImage* image, CvMemStorage* strg, char* dir, char* name);
 private:
 	bool drawEvidence(IplImage *imageResults, CvPoint facePoints[8], CvPoint p1, CvPoint p2, bool draw);
@@ -15,7 +15,6 @@ private:
 	IplImage* imposeMask(IplImage *small_img, IplImage*gray_img, CvPoint p);
 	void scanSIFT(char *dir, Mat, int);
 	void saveImageRandom(IplImage *face, char* dir);
-    Mat  ViolaJonesDetection::MaskFace(IplImage *img);
 };
 
 

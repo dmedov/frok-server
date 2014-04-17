@@ -29,7 +29,7 @@ int DescriptorDetection::matchDescriptors(Mat ffd, Mat bfd){
 }
 
 //Поиск дескрипторов и вывод изображений с найденными дескрипторами
-Mat DescriptorDetection::findDescriptors(IplImage *face, char* name, bool b){
+Mat DescriptorDetection::findDescriptors(Mat face, char* name, bool b){
 	//-- Этап 1. Нахождение ключевых точек.
 
 	//FeatureDetector * detector = new GFTTDetector();

@@ -2,7 +2,7 @@
 class DescriptorDetection
 {
 public:
-	Mat findDescriptors(IplImage *, char*, bool);
+	Mat findDescriptors(Mat, char*, bool);
 	int matchDescriptors(Mat, Mat);
 };
 
