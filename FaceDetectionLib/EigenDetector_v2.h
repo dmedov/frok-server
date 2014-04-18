@@ -2,9 +2,8 @@
 class EigenDetector_v2
 {
 public:
-	string outJson;
 	void learn(char* path, char* id);
-	void recognize(Ptr<FaceRecognizer> model, IplImage* image, IplImage* resultImage, CvPoint p1, CvPoint p2, char *dir);
+	void recognize(vector <Ptr<FaceRecognizer>> models, vector<int> *ids, vector<CvPoint> *p1s, vector<CvPoint> *p2s, vector<double> *probs, IplImage* image, IplImage* resultImage, CvPoint p1, CvPoint p2, char *dir);
 	Mat  MaskFace(IplImage *img);
 private:
 	void loadBaseFace(char* dir, vector<Mat> * images, vector<int>* labels, int id);

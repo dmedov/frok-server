@@ -7,7 +7,7 @@ int DescriptorDetection::matchDescriptors(Mat ffd, Mat bfd){
 	vector<DMatch> matches;
 	matcher.match(ffd, bfd, matches);
 
-	double max_dist = 0; double min_dist = 80;
+	double max_dist = 0; double min_dist = 100;
 
 	//-- Quick calculation of max and min distances between keypoints
 	for (int i = 0; i < ffd.rows; i++)	{
@@ -39,8 +39,8 @@ Mat DescriptorDetection::findDescriptors(Mat face, char* name, bool b){
 	//FeatureDetector * detector = new BRISK();
 	//FeatureDetector * detector = new MSER();
 	//FeatureDetector * detector = new ORB();
-	//FeatureDetector * detector = new SURF(600.0);
-	FeatureDetector * detector = new SIFT(600);
+	FeatureDetector * detector = new SURF(600.0);
+	//FeatureDetector * detector = new SIFT(600);
 
 	vector<KeyPoint> keypoints;
 	detector->detect(face, keypoints);

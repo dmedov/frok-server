@@ -21,12 +21,29 @@ int recognizeFromModel(char *img_dir, char* dir){
 	CvMemStorage* storage = 0;
 	IplImage *img = 0, *imageResults = 0;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
-	Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
+	vector <Ptr<FaceRecognizer>> models;// = createEigenFaceRecognizer();
 
-
-	//char yml_dir[1024];
+	char path_id[1024], yml_dir[1024];
 	//sprintf(yml_dir, "%s\\%s", dir, "eigenface.yml");
-	//model->load(yml_dir);
+	//model->load(yml_dir);	
+
+	WIN32_FIND_DATA FindFileData;
+	HANDLE hf;
+
+	sprintf(path_id, "%s//*", dir);
+	hf = FindFirstFile(path_id, &FindFileData);
+	if (hf != INVALID_HANDLE_VALUE){
+		while (FindNextFile(hf, &FindFileData) != 0){
+			char* name = FindFileData.cFileName;
+			if (strcmp(name, "..")){
+				Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
+				sprintf(yml_dir, "%s\\%s\\%s", dir,name, "eigenface.yml");
+				model->load(yml_dir);
+				models.push_back(model);
+			}
+		}
+		FindClose(hf);
+	}
 
 
 	img = cvLoadImage(img_dir);
@@ -40,8 +57,8 @@ int recognizeFromModel(char *img_dir, char* dir){
 
 	storage = cvCreateMemStorage(0);										//Создание хранилища памяти
 
-	violaJonesDetection->cascadeDetect(img, imageResults, storage, model, dir);
-	cvShowImage("image", imageResults);
+	violaJonesDetection->cascadeDetect(img, imageResults, storage, models, dir);
+	cvShowImage("image1", imageResults);
 
 	while (1){
 		if (cvWaitKey(33) == 27)	break;

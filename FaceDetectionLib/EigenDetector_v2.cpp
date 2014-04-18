@@ -8,7 +8,7 @@
 #include "opencv2/contrib/contrib.hpp"
 
 
-static string outJson;
+
 
 /*
 	Загрузка изображений в массив
@@ -126,29 +126,76 @@ double EigenDetector_v2::getSimilarity(const Mat A, const Mat B) {
 		for (int x(0); x < dif.cols; ++x){
 
 			int d = dif.at<unsigned char>(y, x);
-			if (d >= 10 && d <= 200)
-				koef += d - 10;
+			if (d <= 200)
+				koef += d;
+			/*if (d > 100 && d < 150) koef++;*/
 		}
 	}
 
-	err = (double)koef / (dif.cols*dif.rows * 20);
+	err = (double)koef / (dif.cols*dif.rows * 32);
 
 	//cout << err << " " << koef << endl;
 	if (err > 1) err = 1;
 	return (1 - err);
+
 }
 
-void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, IplImage* resultImage, CvPoint p1, CvPoint p2, char *dir){
+// сравнение объектов по моментам их контуров 
+double testMatch(IplImage* image, IplImage* dif){
+	assert(image != 0);
+	assert(dif != 0);
+
+	IplImage* binI = cvCreateImage(cvGetSize(image), 8, 1);
+	IplImage* binT = cvCreateImage(cvGetSize(dif), 8, 1);
+
+	// получаем границы изображения и шаблона
+	cvCanny(image, binI, 10, 300, 3);
+	cvCanny(dif, binT, 10, 300, 3);
+
+	Mat image_mat = Mat(binI, true);
+	Mat dif_mat = Mat(binT, true);
+	int koef_image = 0, koef_dif = 0;;
+	for (int y(0); y < image_mat.rows; ++y){
+		for (int x(0); x < image_mat.cols; ++x){
+			if (image_mat.at<unsigned char>(y, x) > 0)	koef_image++;
+			if (dif_mat.at<unsigned char>(y, x) > 0)	koef_dif++;
+		}
+	}
+
+	cvShowImage("binI", binI);
+	cvShowImage("binT", binT);
+
+	//cvWaitKey(0);
+
+	cvReleaseImage(&binI);
+	cvReleaseImage(&binT);
+	double probability = ((double)koef_image / (double)koef_dif) / 1.7;
+	if (probability >= 1) probability = 0.99;
+
+	return probability;
+}
+
+double getSimilarity2(const Mat A, const Mat B) {
+	// Calculate the L2 relative error between the 2 images.
+	double errorL2 = norm(A, B, CV_L2);
+	// Scale the value since L2 is summed across all pixels.
+	double similarity = errorL2 / (double)(A.rows * A.cols);
+	return similarity / 1.7;
+}
+
+
+void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, vector<int> *ids, vector<CvPoint> *p1s, vector<CvPoint> *p2s, vector<double> *probs, IplImage* image, IplImage* resultImage, CvPoint p1, CvPoint p2, char *dir){
 
 	double old_prob = 0;
 
-
 	char path_id[1024];
 	char path_yml[1024];
-	char result_name[512] = "?";
+	char result_name[512] = "-1";
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hf;
 
+	Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
+	int i = 0;
 	sprintf(path_id, "%s//*", dir);
 	hf = FindFirstFile(path_id, &FindFileData);
 	if (hf != INVALID_HANDLE_VALUE){
@@ -157,7 +204,9 @@ void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, Ipl
 			if (strcmp(name, "..")){
 				sprintf(path_yml, "%s\\%s\\eigenface.yml", dir, name);
 
-				model->load(path_yml);
+				//models.pop_back->load(path_yml);
+				model = models[i];
+				i++;
 				double prob = 0;
 
 				Mat image_mat = Mat(image, true);
@@ -175,23 +224,22 @@ void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, Ipl
 				Mat reconstructedFace = Mat(reconstructionMat.size(), CV_8U);
 				reconstructionMat.convertTo(reconstructedFace, CV_8U, 1, 0);
 
-				char dig[1024];
+				Mat dif = abs(image_mat - reconstructedFace);
 
-				sprintf(dig, "repr %d", p1.x + p1.y);
-				imshow(dig, reconstructedFace);
-				sprintf(dig, "face %d", p1.x + p1.y);
-				imshow(dig, image_mat);
-				sprintf(dig, "diff %d", p1.x + p1.y);
-				//Mat dif = abs(image_mat - reconstructedFace);
-				//imshow(dig, dif);
+				cout << name << " ";
+				testMatch(image, &(IplImage)dif);
 
-				//Mat inputFaceDescriptors = descriptorDetection->findDescriptors(image_mat, "inputFace", false);
-				//Mat reconstructedFaceDescriptors = descriptorDetection->findDescriptors(reconstructedFace, "reconstructedFace", false);
-				//int match = descriptorDetection->matchDescriptors(inputFaceDescriptors, reconstructedFaceDescriptors);
 
-				prob = getSimilarity(image_mat, reconstructedFace);
+				prob = (testMatch(image, &(IplImage)reconstructedFace) + getSimilarity(image_mat, reconstructedFace) + getSimilarity2(image_mat, reconstructedFace)) / 2;
 
 				if (prob > old_prob){
+					char dig[1024];
+					sprintf(dig, "repr %d", p1.x + p1.y);
+					imshow(dig, reconstructedFace);
+					sprintf(dig, "face %d", p1.x + p1.y);
+					imshow(dig, image_mat);
+					sprintf(dig, "diff %d", p1.x + p1.y);
+					imshow(dig, dif);
 					old_prob = prob;
 					sprintf(result_name, "%s", name);
 				}
@@ -201,19 +249,9 @@ void EigenDetector_v2::recognize(Ptr<FaceRecognizer> model, IplImage* image, Ipl
 		FindClose(hf);
 	}
 
-	CvScalar textColor = CV_RGB(0, 230, 255);	// light blue text
-	CvFont font;
-	cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
-	char text[256];
-	if (old_prob > 0)
-		sprintf(text, "id: %s (%.1f%%)", result_name, old_prob * 100);
-	else
-		sprintf(text, "id: ?");
-	cvPutText(resultImage, text, cvPoint(p1.x, p1.y - 12), &font, textColor);
-	//Сортировку надо
-	char appParams[512];
-	sprintf(appParams, "{ \"id\": \"%s\", \"x1\": \"%d\", \"y1\": \"%d\", \"x2\": \"%d\", \"y2\": \"%d\", \"P\": \"%.1f\" }", result_name, p1.x, p1.y, p2.x, p2.y, old_prob * 100);
-	outJson.append(appParams);
+	ids->push_back(atoi(result_name));
+	probs->push_back(old_prob * 100);
+	p1s->push_back(p1);
+	p2s->push_back(p2);
 
-	//delete descriptorDetection;
 }
