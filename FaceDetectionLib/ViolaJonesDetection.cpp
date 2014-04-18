@@ -309,10 +309,10 @@ void ViolaJonesDetection::cascadeDetect(IplImage* image, IplImage *imageResults,
 
 
 		for (int j = 0; j < 8; j++)	facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
-
+		
 		Ptr<CLAHE> clahe = createCLAHE(2, Size(8, 8));
 		clahe->apply(Mat(small_img), Mat(small_img));
-		//cvNormalize(small_img, small_img, 10, 250, CV_MINMAX);
+		cvNormalize(small_img, small_img, 10, 250, CV_MINMAX);
 
 		keysFaceDetect(cascade_eye, image, small_img, strg, p1, 4, facePoints);				//правый общий
 		keysFaceDetect(cascade_righteye2, image, small_img, strg, p1, 4, facePoints);		//правый 

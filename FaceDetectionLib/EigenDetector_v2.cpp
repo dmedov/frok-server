@@ -117,27 +117,46 @@ Mat EigenDetector_v2::MaskFace(IplImage *img) {
 	return _img;
 }
 
-double EigenDetector_v2::getSimilarity(const Mat A, const Mat B) {
 
-	Mat dif = abs(A - B);
+//double EigenDetector_v2::getSimilarity(const Mat dif) {
+//	int koef = 0;
+//	double err = 0;
+//	for (int y(0); y < dif.rows; ++y){
+//		for (int x(0); x < dif.cols; ++x){
+//			//dif.at<unsigned char>(y, x);
+//			double d = cvGet2D(&(IplImage)dif, y, x).val[0];
+//			koef += d;
+//		}
+//	}
+//	err = (double)koef / (dif.cols*dif.rows / 2000);
+//	if (err > 1) err = 1;
+//	return (1 - err);
+//
+//}
+
+double EigenDetector_v2::getSimilarity(const Mat dif) {
 	int koef = 0;
 	double err = 0;
 	for (int y(0); y < dif.rows; ++y){
 		for (int x(0); x < dif.cols; ++x){
-
 			int d = dif.at<unsigned char>(y, x);
-			if (d <= 200)
+			if (d <= 150)
 				koef += d;
-			/*if (d > 100 && d < 150) koef++;*/
 		}
 	}
+		err = (double)koef / (dif.cols*dif.rows * 50);
 
-	err = (double)koef / (dif.cols*dif.rows * 32);
-
-	//cout << err << " " << koef << endl;
 	if (err > 1) err = 1;
 	return (1 - err);
 
+}
+
+double getSimilarity2(const Mat A, const Mat B) {
+	// Calculate the L2 relative error between the 2 images.
+	double errorL2 = norm(A, B, CV_L2);
+	// Scale the value since L2 is summed across all pixels.
+	double similarity = errorL2 / (double)(A.rows * A.cols);
+	return similarity;
 }
 
 // сравнение объектов по моментам их контуров 
@@ -149,39 +168,67 @@ double testMatch(IplImage* image, IplImage* dif){
 	IplImage* binT = cvCreateImage(cvGetSize(dif), 8, 1);
 
 	// получаем границы изображения и шаблона
-	cvCanny(image, binI, 10, 300, 3);
-	cvCanny(dif, binT, 10, 300, 3);
+	cvCanny(image, binI, 10, 200, 3);
+	cvCanny(dif, binT, 10, 400, 3);
 
 	Mat image_mat = Mat(binI, true);
 	Mat dif_mat = Mat(binT, true);
-	int koef_image = 0, koef_dif = 0;;
-	for (int y(0); y < image_mat.rows; ++y){
-		for (int x(0); x < image_mat.cols; ++x){
-			if (image_mat.at<unsigned char>(y, x) > 0)	koef_image++;
-			if (dif_mat.at<unsigned char>(y, x) > 0)	koef_dif++;
+
+
+	// для хранения контуров
+	CvMemStorage* storage1 = cvCreateMemStorage(0);
+	CvMemStorage* storage2 = cvCreateMemStorage(0);
+	CvSeq* contoursI = 0, *contoursT = 0;
+
+	// находим контуры изображения
+	int contoursCont = cvFindContours(binI, storage1, &contoursI, sizeof(CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+
+	// находим контуры шаблона
+	int contoursCont2 = cvFindContours(binT, storage2, &contoursT, sizeof(CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+
+
+	CvSeq* seqT = 0;
+	double perimT = 0;
+
+	if (contoursT != 0){
+		// находим самый длинный контур 
+		for (CvSeq* seq0 = contoursT; seq0 != 0; seq0 = seq0->h_next){
+			double perim = cvContourPerimeter(seq0);
+			if (perim > perimT){
+				perimT = perim;
+				seqT = seq0;
+			}
+		}
+	}
+
+	double matchM = 0;
+	// обходим контуры изображения 
+	int counter = 0;
+	if (contoursI != 0 && contoursT != 0){
+		// поиск лучшего совпадения контуров по их моментам 
+		for (CvSeq* seq0 = contoursI; seq0 != 0; seq0 = seq0->h_next){
+			double match0 = cvMatchShapes(seq0, seqT, CV_CONTOURS_MATCH_I3);
+			if (match0 > matchM){
+				matchM = match0;
+			}
 		}
 	}
 
 	cvShowImage("binI", binI);
 	cvShowImage("binT", binT);
 
-	//cvWaitKey(0);
+	cvWaitKey(0);
 
 	cvReleaseImage(&binI);
 	cvReleaseImage(&binT);
-	double probability = ((double)koef_image / (double)koef_dif) / 1.7;
-	if (probability >= 1) probability = 0.99;
+	cout << matchM << endl;
+	//double probability = ((double)koef_image / (double)koef_dif) / 1.7;
+	//if (probability >= 1) probability = 0.99;
 
-	return probability;
+	return 0;
 }
 
-double getSimilarity2(const Mat A, const Mat B) {
-	// Calculate the L2 relative error between the 2 images.
-	double errorL2 = norm(A, B, CV_L2);
-	// Scale the value since L2 is summed across all pixels.
-	double similarity = errorL2 / (double)(A.rows * A.cols);
-	return similarity / 1.7;
-}
+
 
 
 void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, vector<int> *ids, vector<CvPoint> *p1s, vector<CvPoint> *p2s, vector<double> *probs, IplImage* image, IplImage* resultImage, CvPoint p1, CvPoint p2, char *dir){
@@ -224,13 +271,18 @@ void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, vector<int
 				Mat reconstructedFace = Mat(reconstructionMat.size(), CV_8U);
 				reconstructionMat.convertTo(reconstructedFace, CV_8U, 1, 0);
 
+				
+				cvErode(&(IplImage)image_mat, &(IplImage)image_mat, 0, 2);
+				cvErode(&(IplImage)reconstructedFace, &(IplImage)reconstructedFace, 0, 2);
+				//IplImage *img2 = cvCreateImage(cvSize(reconstructedFace.cols, reconstructedFace.rows), IPL_DEPTH_32F, 1);
+				//IplImage *img1 = cvCreateImage(cvSize(image_mat.cols, image_mat.rows), IPL_DEPTH_32F, 1);
+
+				//cvCornerMinEigenVal(&(IplImage)image_mat, img1, 2, 7);
+				//cvCornerMinEigenVal(&(IplImage)reconstructedFace, img2, 2, 7);
+
 				Mat dif = abs(image_mat - reconstructedFace);
-
-				cout << name << " ";
-				testMatch(image, &(IplImage)dif);
-
-
-				prob = (testMatch(image, &(IplImage)reconstructedFace) + getSimilarity(image_mat, reconstructedFace) + getSimilarity2(image_mat, reconstructedFace)) / 2;
+				prob = getSimilarity(dif);
+				cout << prob << endl;
 
 				if (prob > old_prob){
 					char dig[1024];

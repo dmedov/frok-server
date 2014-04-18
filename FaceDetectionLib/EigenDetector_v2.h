@@ -7,7 +7,7 @@ public:
 	Mat  MaskFace(IplImage *img);
 private:
 	void loadBaseFace(char* dir, vector<Mat> * images, vector<int>* labels, int id);
-	double getSimilarity(const Mat A, const Mat B);
+	double getSimilarity(const Mat dif);
 	void loadAndRecognize(char* dir, IplImage* image, IplImage* resultImage, CvPoint p1, CvPoint p2);
 };
 
