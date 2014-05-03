@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <io.h>
 #include <Math.h>
+#include <algorithm>
 
 #include "opencv2/contrib/contrib.hpp"
 
@@ -117,59 +118,89 @@ Mat EigenDetector_v2::MaskFace(IplImage *img) {
 	return _img;
 }
 
+double getSimilarity(const Mat image_mat, const Mat reconstructedFace) {
 
-//double EigenDetector_v2::getSimilarity(const Mat dif) {
-//	int koef = 0;
-//	double err = 0;
-//	for (int y(0); y < dif.rows; ++y){
-//		for (int x(0); x < dif.cols; ++x){
-//			//dif.at<unsigned char>(y, x);
-//			double d = cvGet2D(&(IplImage)dif, y, x).val[0];
-//			koef += d;
-//		}
-//	}
-//	err = (double)koef / (dif.cols*dif.rows / 2000);
-//	if (err > 1) err = 1;
-//	return (1 - err);
-//
-//}
+	IplImage *blr_img = cvCloneImage(&(IplImage)image_mat);
+	IplImage *blr_rec = cvCloneImage(&(IplImage)reconstructedFace);
+	cvErode(blr_img, blr_img, 0, 0);
+	cvErode(blr_rec, blr_rec, 0, 0);
 
-double EigenDetector_v2::getSimilarity(const Mat dif) {
+	Mat dif = abs(Mat(blr_img) - Mat(blr_rec));
+
 	int koef = 0;
 	double err = 0;
 	for (int y(0); y < dif.rows; ++y){
 		for (int x(0); x < dif.cols; ++x){
 			int d = dif.at<unsigned char>(y, x);
-			if (d <= 150)
-				koef += d;
+			if (d >= 40)
+			koef += d;
 		}
 	}
-		err = (double)koef / (dif.cols*dif.rows * 50);
+	err = (double)koef / (dif.cols*dif.rows * 40);
 
-	if (err > 1) err = 1;
-	return (1 - err);
+
+
+	double prob = (1 - err);
+
+	if (prob > 1) prob = 0.99;
+	if (prob < 0) prob = 0.01;
+
+
+	return prob;
 
 }
 
-double getSimilarity2(const Mat A, const Mat B) {
-	// Calculate the L2 relative error between the 2 images.
-	double errorL2 = norm(A, B, CV_L2);
-	// Scale the value since L2 is summed across all pixels.
-	double similarity = errorL2 / (double)(A.rows * A.cols);
-	return similarity;
-}
+double getSimilarity2(const Mat projected_mat, const Mat face_mat) {
 
+	CvSize imagesSize = cvSize(projected_mat.cols, projected_mat.rows);
+	IplImage *projectedStorage = cvCreateImage(imagesSize, IPL_DEPTH_32F, 1);
+	IplImage *faceSorage = cvCreateImage(imagesSize, IPL_DEPTH_32F, 1);
+
+	cvCornerMinEigenVal(&(IplImage)projected_mat, projectedStorage, 15, 7);
+	cvCornerMinEigenVal(&(IplImage)face_mat, faceSorage, 15, 7);
+
+	Mat dif_mat = abs(Mat(projectedStorage) - Mat(faceSorage));
+	//imshow("dif", dif);
+
+
+	IplImage *dif_img = &(IplImage)dif_mat;
+
+	double err = 0;
+	for (int y = 0; y < dif_mat.rows; ++y){
+		for (int x = 0; x < dif_mat.cols; ++x){
+			err += cvGet2D(dif_img, y, x).val[0];
+		}
+	}
+
+
+	err /= (dif_mat.rows*dif_mat.cols);
+	imshow("dif", dif_mat);
+	imshow("rep", projected_mat);
+	imshow("img", face_mat);
+
+	cvReleaseImage(&projectedStorage);
+	cvReleaseImage(&faceSorage);
+
+	err *= 2.5;
+	double prob = (1 - err);
+	if (prob > 1) prob = 0.99;
+	if (prob < 0) prob = 0.01;
+	prob -= 0.65;
+	prob *= 3;
+
+	return prob;
+}
 // сравнение объектов по моментам их контуров 
-double testMatch(IplImage* image, IplImage* dif){
+double testMatch(IplImage* image, IplImage* rec){
 	assert(image != 0);
-	assert(dif != 0);
+	assert(rec != 0);
 
 	IplImage* binI = cvCreateImage(cvGetSize(image), 8, 1);
-	IplImage* binT = cvCreateImage(cvGetSize(dif), 8, 1);
+	IplImage* binT = cvCreateImage(cvGetSize(rec), 8, 1);
 
 	// получаем границы изображения и шаблона
 	cvCanny(image, binI, 10, 200, 3);
-	cvCanny(dif, binT, 10, 400, 3);
+	cvCanny(rec, binT, 10, 300, 3);
 
 	Mat image_mat = Mat(binI, true);
 	Mat dif_mat = Mat(binT, true);
@@ -217,18 +248,73 @@ double testMatch(IplImage* image, IplImage* dif){
 	cvShowImage("binI", binI);
 	cvShowImage("binT", binT);
 
-	cvWaitKey(0);
 
 	cvReleaseImage(&binI);
 	cvReleaseImage(&binT);
 	cout << matchM << endl;
-	//double probability = ((double)koef_image / (double)koef_dif) / 1.7;
-	//if (probability >= 1) probability = 0.99;
+	/*double probability = ((double)koef_image / (double)koef_dif) / 1.7;
+	if (probability >= 1) probability = 0.99;*/
 
 	return 0;
 }
 
+__int64 calcImageHash(IplImage* src, bool show_results)
+{
+	if (!src){
+		return 0;
+	}
 
+	IplImage *res = 0, *bin = 0;
+
+	res = cvCreateImage(cvSize(8, 8), src->depth, src->nChannels);
+	bin = cvCreateImage(cvSize(8, 8), IPL_DEPTH_8U, 1);
+
+	// уменьшаем картинку
+	cvResize(src, res);
+
+	// вычисляем среднее
+	CvScalar average = cvAvg(res);
+	// получим бинарное изображение относительно среднего
+	// для этого воспользуемся пороговым преобразованием
+	cvThreshold(res, bin, average.val[0], 255, CV_THRESH_BINARY);
+
+	// построим хэш
+	__int64 hash = 0;
+
+	int i = 0;
+	// пробегаемся по всем пикселям изображения
+	for (int y = 0; y < bin->height; y++) {
+		uchar* ptr = (uchar*)(bin->imageData + y * bin->widthStep);
+		for (int x = 0; x < bin->width; x++) {
+			// 1 канал
+			if (ptr[x]){
+				// hash |= 1<<i;  // warning C4334: '<<' : result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)
+				hash |= 1i64 << i;
+			}
+			i++;
+		}
+	}
+
+	// освобождаем ресурсы
+	cvReleaseImage(&res);
+	cvReleaseImage(&bin);
+
+	return hash;
+}
+
+__int64 calcHammingDistance(__int64 x, __int64 y)
+{
+	__int64 dist = 0, val = x ^ y;
+
+	// Count the number of set bits
+	while (val)
+	{
+		++dist;
+		val &= val - 1;
+	}
+
+	return dist;
+}
 
 
 void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, vector<int> *ids, vector<CvPoint> *p1s, vector<CvPoint> *p2s, vector<double> *probs, IplImage* image, IplImage* resultImage, CvPoint p1, CvPoint p2, char *dir){
@@ -241,7 +327,7 @@ void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, vector<int
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hf;
 
-	Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
+	Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
 	int i = 0;
 	sprintf(path_id, "%s//*", dir);
 	hf = FindFirstFile(path_id, &FindFileData);
@@ -271,35 +357,39 @@ void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, vector<int
 				Mat reconstructedFace = Mat(reconstructionMat.size(), CV_8U);
 				reconstructionMat.convertTo(reconstructedFace, CV_8U, 1, 0);
 
-				
-				cvErode(&(IplImage)image_mat, &(IplImage)image_mat, 0, 2);
-				cvErode(&(IplImage)reconstructedFace, &(IplImage)reconstructedFace, 0, 2);
-				//IplImage *img2 = cvCreateImage(cvSize(reconstructedFace.cols, reconstructedFace.rows), IPL_DEPTH_32F, 1);
-				//IplImage *img1 = cvCreateImage(cvSize(image_mat.cols, image_mat.rows), IPL_DEPTH_32F, 1);
+				__int64 hashO = calcImageHash(&(IplImage)reconstructedFace, true);
+				__int64 hashI = calcImageHash(image, false);
+				__int64 dist = calcHammingDistance(hashO, hashI);
+				if (dist <= 11){  // если хэш больше 8, то вероятность -> 0
 
-				//cvCornerMinEigenVal(&(IplImage)image_mat, img1, 2, 7);
-				//cvCornerMinEigenVal(&(IplImage)reconstructedFace, img2, 2, 7);
+					double prob2 = getSimilarity2(reconstructedFace, image_mat);
+					double prob1 = getSimilarity(reconstructedFace, image_mat);
 
-				Mat dif = abs(image_mat - reconstructedFace);
-				prob = getSimilarity(dif);
-				cout << prob << endl;
+					prob = max(prob2, prob1)/2;
+					
 
-				if (prob > old_prob){
-					char dig[1024];
-					sprintf(dig, "repr %d", p1.x + p1.y);
-					imshow(dig, reconstructedFace);
-					sprintf(dig, "face %d", p1.x + p1.y);
-					imshow(dig, image_mat);
-					sprintf(dig, "diff %d", p1.x + p1.y);
-					imshow(dig, dif);
-					old_prob = prob;
-					sprintf(result_name, "%s", name);
+					cout << name << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
+
+					if (prob > old_prob){
+						char dig[1024];
+						sprintf(dig, "repr %d", p1.x + p1.y);
+						//imshow(dig, reconstructedFace);
+						sprintf(dig, "face %d", p1.x + p1.y);
+						//imshow(dig, image_mat);
+
+						old_prob = prob;
+						sprintf(result_name, "%s", name);
+
+					}
+					cvWaitKey(0);
 				}
+
 
 			}
 		}
 		FindClose(hf);
 	}
+	cout << endl;
 
 	ids->push_back(atoi(result_name));
 	probs->push_back(old_prob * 100);

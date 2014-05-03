@@ -37,7 +37,7 @@ int recognizeFromModel(char *img_dir, char* dir){
 			char* name = FindFileData.cFileName;
 			if (strcmp(name, "..")){
 				Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
-				sprintf(yml_dir, "%s\\%s\\%s", dir,name, "eigenface.yml");
+				sprintf(yml_dir, "%s\\%s\\%s", dir, name, "eigenface.yml");
 				model->load(yml_dir);
 				models.push_back(model);
 			}
@@ -49,18 +49,18 @@ int recognizeFromModel(char *img_dir, char* dir){
 	img = cvLoadImage(img_dir);
 
 	if (!img) {
+		system("cls");
 		cerr << "image load error" << endl;
-		return -1;
 	}
+	else{
+		storage = cvCreateMemStorage(0);										//Создание хранилища памяти
 
-	else imageResults = cvCloneImage(img);
-
-	storage = cvCreateMemStorage(0);										//Создание хранилища памяти
-
-	violaJonesDetection->cascadeDetect(img, imageResults, storage, models, dir);
-	cvShowImage("image1", imageResults);
-
+		imageResults = cvCloneImage(img);
+		violaJonesDetection->cascadeDetect(img, imageResults, storage, models, dir);
+		cvShowImage("image", imageResults);
+	}
 	while (1){
+
 		if (cvWaitKey(33) == 27)	break;
 	}
 
@@ -102,10 +102,11 @@ int rejectFaceForLearn(char* dir){
 				cerr << "image load error: " << name << endl;
 				return -1;
 			}
-			cout << r_name << endl;
 
+			cout << r_name;
 			storage = cvCreateMemStorage(0);										//Создание хранилища памяти
 			violaJonesDetection->rejectFace(img, storage, dir, r_name);
+			cout << endl;
 			res = _findnext(done, &result);
 		}
 	}
@@ -126,19 +127,19 @@ int main(int argc, char *argv[]) {
 	char *key = argv[2];
 
 	//<Путь до папки с id> -l
-	//C:\Face_detector_OK\tmp\ -l
+	//C:\OK\tmp\ -l
 	if (key[1] == 'l'){
 		if (argc != 4) argv[3] = "-1";
 		return saveLearnModel(argv[1], argv[3]);
 	}
 	//<Путь до изображения> -r <путь до *.yml>
-	//C:\Face_detector_OK\test_photo\29.jpg -r C:\Face_detector_OK\tmp\
+	//C:\OK\test_photos\36.jpg -r C:\OK\tmp\
 
 	else if (key[1] == 'r'){
 		return recognizeFromModel(argv[1], argv[3]);
 	}
 	// <Путь до папки с fotos> -f		
-	// C:\Face_detector_OK\tmp\5\ -f
+	// C:\OK\tmp\5\ -f
 	else if (key[1] == 'f'){
 		return rejectFaceForLearn(argv[1]);
 	}
