@@ -19,13 +19,11 @@ int saveLearnModel(char* dir, char* id){
 
 int recognizeFromModel(char *img_dir, char* dir){
 	CvMemStorage* storage = 0;
-	IplImage *img = 0, *imageResults = 0;
+	IplImage *img = 0;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
-	vector <Ptr<FaceRecognizer>> models;// = createEigenFaceRecognizer();
+	vector <Ptr<FaceRecognizer>> models;
 
 	char path_id[1024], yml_dir[1024];
-	//sprintf(yml_dir, "%s\\%s", dir, "eigenface.yml");
-	//model->load(yml_dir);	
 
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hf;
@@ -54,10 +52,8 @@ int recognizeFromModel(char *img_dir, char* dir){
 	}
 	else{
 		storage = cvCreateMemStorage(0);										//Создание хранилища памяти
-
-		imageResults = cvCloneImage(img);
-		violaJonesDetection->cascadeDetect(img, imageResults, storage, models, dir);
-		cvShowImage("image", imageResults);
+		violaJonesDetection->dir = dir;
+		violaJonesDetection->cascadeDetect(img, models);
 	}
 	while (1){
 
@@ -65,7 +61,6 @@ int recognizeFromModel(char *img_dir, char* dir){
 	}
 
 	cvReleaseImage(&img);
-	cvReleaseImage(&imageResults);
 	cvClearMemStorage(storage);
 	cvDestroyAllWindows();
 	delete violaJonesDetection;
@@ -73,7 +68,6 @@ int recognizeFromModel(char *img_dir, char* dir){
 }
 
 int rejectFaceForLearn(char* dir){
-	CvMemStorage* storage = 0;
 	IplImage *img = 0, *imageResults = 0;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
 
@@ -104,15 +98,14 @@ int rejectFaceForLearn(char* dir){
 			}
 
 			cout << r_name;
-			storage = cvCreateMemStorage(0);										//Создание хранилища памяти
-			violaJonesDetection->rejectFace(img, storage, dir, r_name);
+			violaJonesDetection->dir = dir;
+			violaJonesDetection->rejectFace(img,r_name);
 			cout << endl;
 			res = _findnext(done, &result);
 		}
 	}
 
 	cvReleaseImage(&img);
-	cvClearMemStorage(storage);
 	cvDestroyAllWindows();
 	delete violaJonesDetection;
 	return 0;

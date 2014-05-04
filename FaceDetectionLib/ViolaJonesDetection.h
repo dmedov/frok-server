@@ -2,19 +2,37 @@
 class ViolaJonesDetection
 {
 public:
+	char* dir;
+
 	ViolaJonesDetection();
 	~ViolaJonesDetection();
-	void cascadeDetect(IplImage* image, IplImage *imageResults, CvMemStorage* strg, vector <Ptr<FaceRecognizer>> models, char* dir);
-	void rejectFace(IplImage* image, CvMemStorage* strg, char* dir, char* name);
+
+	void cascadeDetect(IplImage *inputImage
+		, vector <Ptr<FaceRecognizer>> models);
+
+	void rejectFace(IplImage *inputImage, char* name);
+
 private:
-	bool drawEvidence(IplImage *imageResults, CvPoint facePoints[8], CvPoint p1, CvPoint p2, bool draw);
-	void writeFacePoints(CvPoint* facePoints, IplImage *imageResults, CvPoint p1, CvPoint p2, CvPoint p, int w, int h, int type);
-	void keysFaceDetect(CvHaarClassifierCascade*, IplImage*, IplImage*, CvMemStorage*, CvPoint, int, CvPoint*);
-	void rotateImage(IplImage *, IplImage *, CvPoint[], CvPoint, CvPoint);
-	Mat BEImage(cv::Mat _img, cv::Rect _roi, int _maxFadeDistance);
-	IplImage* imposeMask(IplImage *small_img, IplImage*gray_img, CvPoint p);
-	void scanSIFT(char *dir, Mat, int);
-	void saveImageRandom(IplImage *face, char* dir);
+	bool drawEvidence(struct imageCoordinats pointFase, bool draw);
+
+	void writeFacePoints(struct imageCoordinats pointKeyFase, struct imageCoordinats pointFase, int type);
+
+	void keysFaceDetect(CvHaarClassifierCascade* cscd, CvPoint pointFace, int type);
+
+	void allKeysFaceDetection(CvPoint point);
+
+	int defineRotate();
+
+	Mat BEImage(Mat img
+		, Rect roi
+		, int maxFadeDistance);
+
+	IplImage* imposeMask(CvPoint p);
+
+	void scanSIFT(Mat, int);
 };
+
+
+
 
 

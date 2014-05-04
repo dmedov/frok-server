@@ -8,9 +8,6 @@
 
 #include "opencv2/contrib/contrib.hpp"
 
-
-
-
 /*
 	Загрузка изображений в массив
 	dir - ./faces, из которой берутся изображения с лицом для обучения
@@ -44,24 +41,6 @@ void EigenDetector_v2::loadBaseFace(char* dir, vector<Mat> * images, vector<int>
 	}
 	_findclose(done);
 	cvReleaseImage(&base_face);
-}
-
-static Mat norm_0_255(InputArray _src) {
-	Mat src = _src.getMat();
-	// Create and return normalized image:
-	Mat dst;
-	switch (src.channels()) {
-	case 1:
-		cv::normalize(_src, dst, 0, 255, NORM_MINMAX, CV_8UC1);
-		break;
-	case 3:
-		cv::normalize(_src, dst, 0, 255, NORM_MINMAX, CV_8UC3);
-		break;
-	default:
-		src.copyTo(dst);
-		break;
-	}
-	return dst;
 }
 
 /*
@@ -317,10 +296,9 @@ __int64 calcHammingDistance(__int64 x, __int64 y)
 }
 
 
-void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, vector<int> *ids, vector<CvPoint> *p1s, vector<CvPoint> *p2s, vector<double> *probs, IplImage* image, IplImage* resultImage, CvPoint p1, CvPoint p2, char *dir){
+void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, dataJson djson, IplImage* image, IplImage* resultImage, char *dir){
 
 	double old_prob = 0;
-
 	char path_id[1024];
 	char path_yml[1024];
 	char result_name[512] = "-1";
@@ -336,14 +314,11 @@ void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, vector<int
 			char* name = FindFileData.cFileName;
 			if (strcmp(name, "..")){
 				sprintf(path_yml, "%s\\%s\\eigenface.yml", dir, name);
-
-				//models.pop_back->load(path_yml);
 				model = models[i];
 				i++;
 				double prob = 0;
 
 				Mat image_mat = Mat(image, true);
-
 				// Get some required data from the FaceRecognizer model.
 				Mat eigenvectors = model->get<Mat>("eigenvectors");
 				Mat averageFaceRow = model->get<Mat>("mean");
@@ -355,31 +330,24 @@ void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, vector<int
 				Mat reconstructionMat = reconstructionRow.reshape(1, image->height);
 				// Convert the floating-point pixels to regular 8-bit uchar.
 				Mat reconstructedFace = Mat(reconstructionMat.size(), CV_8U);
-				reconstructionMat.convertTo(reconstructedFace, CV_8U, 1, 0);
+				reconstructionMat.convertTo(reconstructedFace, CV_8U, 1, 0);//-> to introduce to function
 
 				__int64 hashO = calcImageHash(&(IplImage)reconstructedFace, true);
 				__int64 hashI = calcImageHash(image, false);
-				__int64 dist = calcHammingDistance(hashO, hashI);
+				__int64 dist = calcHammingDistance(hashO, hashI);//-> to introduce to function
+
 				if (dist <= 11){  // если хэш больше 8, то вероятность -> 0
 
 					double prob2 = getSimilarity2(reconstructedFace, image_mat);
 					double prob1 = getSimilarity(reconstructedFace, image_mat);
 
-					prob = max(prob2, prob1)/2;
-					
+					prob = max(prob2, prob1)/2;					
 
 					cout << name << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
 
 					if (prob > old_prob){
-						char dig[1024];
-						sprintf(dig, "repr %d", p1.x + p1.y);
-						//imshow(dig, reconstructedFace);
-						sprintf(dig, "face %d", p1.x + p1.y);
-						//imshow(dig, image_mat);
-
 						old_prob = prob;
 						sprintf(result_name, "%s", name);
-
 					}
 					cvWaitKey(0);
 				}
@@ -391,9 +359,7 @@ void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, vector<int
 	}
 	cout << endl;
 
-	ids->push_back(atoi(result_name));
-	probs->push_back(old_prob * 100);
-	p1s->push_back(p1);
-	p2s->push_back(p2);
+	djson.ids->push_back(atoi(result_name));
+	djson.probs->push_back(old_prob * 100);
 
 }

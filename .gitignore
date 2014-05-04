@@ -27,3 +27,5 @@
 *.lib
 *.user
 *.json
+*.psess
+*.vspx
