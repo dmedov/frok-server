@@ -112,7 +112,7 @@ double getSimilarity(const Mat image_mat, const Mat reconstructedFace) {
 		for (int x(0); x < dif.cols; ++x){
 			int d = dif.at<unsigned char>(y, x);
 			if (d >= 40)
-			koef += d;
+				koef += d;
 		}
 	}
 	err = (double)koef / (dif.cols*dif.rows * 40);
@@ -153,9 +153,9 @@ double getSimilarity2(const Mat projected_mat, const Mat face_mat) {
 
 
 	err /= (dif_mat.rows*dif_mat.cols);
-	imshow("dif", dif_mat);
-	imshow("rep", projected_mat);
-	imshow("img", face_mat);
+	//imshow("dif", dif_mat);
+	//imshow("rep", projected_mat);
+	//imshow("img", face_mat);
 
 	cvReleaseImage(&projectedStorage);
 	cvReleaseImage(&faceSorage);
@@ -295,8 +295,7 @@ __int64 calcHammingDistance(__int64 x, __int64 y)
 	return dist;
 }
 
-
-void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, dataJson djson, IplImage* image, IplImage* resultImage, char *dir){
+void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, DataJson dataJson, IplImage* image, char *dir){
 
 	double old_prob = 0;
 	char path_id[1024];
@@ -341,7 +340,7 @@ void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, dataJson d
 					double prob2 = getSimilarity2(reconstructedFace, image_mat);
 					double prob1 = getSimilarity(reconstructedFace, image_mat);
 
-					prob = max(prob2, prob1)/2;					
+					prob = max(prob2, prob1) / 2;
 
 					cout << name << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
 
@@ -349,7 +348,7 @@ void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, dataJson d
 						old_prob = prob;
 						sprintf(result_name, "%s", name);
 					}
-					cvWaitKey(0);
+					//cvWaitKey(0);
 				}
 
 
@@ -359,7 +358,7 @@ void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, dataJson d
 	}
 	cout << endl;
 
-	djson.ids->push_back(atoi(result_name));
-	djson.probs->push_back(old_prob * 100);
+	dataJson.ids->push_back(atoi(result_name));
+	dataJson.probs->push_back(old_prob * 100);
 
 }
