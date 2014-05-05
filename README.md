@@ -7,7 +7,7 @@ How to install in Windows:
 1) Donwload and install to C:\ opencv from http://sourceforge.net/projects/opencvlibrary/files/opencv-win/2.4.8/opencv-2.4.8.exe/download
 
 2) Download dll-installer https://vk.com/away.php?to=https%3A%2F%2Fwww.dropbox.com%2Fs%2F69t1nmsk54v7ga8%2Fopencv_inst.rar
-3) Launch dll-installer (MS Visual studiio 2008+ must be installed before launching) with following parameters:
+3) Launch dll-installer as admin (MS Visual studiio 2008+ must be installed before launching) with following parameters:
 <path to dll-installer> <32/64 version of Windows> <MS Visual studio version>
 Example: D:\dll-installer D:\ 64 13
 
@@ -22,4 +22,7 @@ Import Library = opencv_core248d.lib opencv_imgproc248d.lib opencv_highgui248d.l
 
 P.S. note that Additional Library Directories should consider path to libraries with current configuration (C:\opencv\build\x86... for 64 bin, C:\opencv\build\x86 for 32)
 
-6) Build project and run with parameters <path to image>
+7) Download and install Doxygen http://www.stack.nl/~dimitri/doxygen/download.html
+6) Run as admin in cmd
+ "REG ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v EnableLUA /t REG_DWORD /d 0 /f"
+7) Build project and see FaceDetection_manual for additional information

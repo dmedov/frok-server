@@ -47,6 +47,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <UndefinePreprocessorDefinitions>WIN32 </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -70,11 +71,13 @@
   <ItemGroup>
     <ClCompile Include="DescriptorDetection.cpp" />
     <ClCompile Include="EigenDetector_v2.cpp" />
+    <ClCompile Include="network.cpp" />
     <ClCompile Include="ViolaJonesDetection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DescriptorDetection.h" />
     <ClInclude Include="EigenDetector_v2.h" />
+    <ClInclude Include="network.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="ViolaJonesDetection.h" />
   </ItemGroup>

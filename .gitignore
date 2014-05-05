@@ -29,3 +29,5 @@
 *.json
 *.psess
 *.vspx
+FaceDetectionLib/doc/
+FaceDetection_manual.chm

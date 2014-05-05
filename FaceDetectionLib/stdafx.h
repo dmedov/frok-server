@@ -1,10 +1,21 @@
 #include <cv.h>
 #include <highgui.h>
 
+#pragma comment(lib, "Ws2_32.lib")
+
+#include <stdio.h>
+#include <tchar.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdlib.h>
+#include <windows.h>
+#include <assert.h>
+#include <signal.h>
+#include <memory.h>
+
 #include <windows.h>
 #include <stdio.h>
 #include <iostream> 
-
 
 #include <opencv2/legacy/legacy.hpp>
 #include <opencv2/core/core.hpp>
