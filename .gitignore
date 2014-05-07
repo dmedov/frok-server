@@ -5,6 +5,7 @@
 *.slo
 *.lo
 *.o
+*.bak
 
 # Compiled Dynamic libraries
 *.so
