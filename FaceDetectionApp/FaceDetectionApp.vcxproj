@@ -39,7 +39,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)\JsonParserLib;$(SolutionDir)\FaceDetectionLib;C:\opencv\build\include\opencv;C:\opencv\build\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\FaceDetectionLib;C:\opencv\build\include\opencv;C:\opencv\build\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)$(Configuration)\;C:\opencv\build\x86\vc12\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
   </PropertyGroup>
@@ -51,7 +51,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>JsonParserLib.lib;opencv_core248d.lib;opencv_imgproc248d.lib;opencv_highgui248d.lib;opencv_video248d.lib;opencv_objdetect248d.lib;opencv_calib3d248d.lib;opencv_features2d248d.lib;opencv_nonfree248d.lib;opencv_flann248d.lib;opencv_legacy248d.lib;opencv_contrib248d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>FaceDetectionLib.lib;opencv_core248d.lib;opencv_imgproc248d.lib;opencv_highgui248d.lib;opencv_video248d.lib;opencv_objdetect248d.lib;opencv_calib3d248d.lib;opencv_features2d248d.lib;opencv_nonfree248d.lib;opencv_flann248d.lib;opencv_legacy248d.lib;opencv_contrib248d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

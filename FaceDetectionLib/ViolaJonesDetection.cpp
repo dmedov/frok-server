@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "common.h"
 #include "ViolaJonesDetection.h"
 #include "DescriptorDetection.h"
 #include "EigenDetector_v2.h"

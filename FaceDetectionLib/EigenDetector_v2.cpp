@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "common.h"
 #include "EigenDetector_v2.h"
 #include "DescriptorDetection.h"
 #include <stdlib.h>

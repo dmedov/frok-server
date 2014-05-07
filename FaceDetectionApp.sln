@@ -10,8 +10,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FaceDetectionApp", "FaceDet
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FaceDetectionLib", "FaceDetectionLib\FaceDetectionLib.vcxproj", "{60F9BE9E-27AB-470B-9F1E-8986145CC08A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JsonParserLib", "JsonParserLib\JsonParserLib.vcxproj", "{B2F02C7B-5084-4474-A554-27A429557B14}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -26,10 +24,6 @@ Global
 		{60F9BE9E-27AB-470B-9F1E-8986145CC08A}.Debug|Win32.Build.0 = Debug|Win32
 		{60F9BE9E-27AB-470B-9F1E-8986145CC08A}.Release|Win32.ActiveCfg = Release|Win32
 		{60F9BE9E-27AB-470B-9F1E-8986145CC08A}.Release|Win32.Build.0 = Release|Win32
-		{B2F02C7B-5084-4474-A554-27A429557B14}.Debug|Win32.ActiveCfg = Debug|Win32
-		{B2F02C7B-5084-4474-A554-27A429557B14}.Debug|Win32.Build.0 = Debug|Win32
-		{B2F02C7B-5084-4474-A554-27A429557B14}.Release|Win32.ActiveCfg = Release|Win32
-		{B2F02C7B-5084-4474-A554-27A429557B14}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
