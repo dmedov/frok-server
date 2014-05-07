@@ -3,10 +3,9 @@
 #include "EigenDetector_v2.h"
 #include "DescriptorDetection.h"
 #include <stdlib.h>
-#include <io.h>
 #include <Math.h>
 #include <algorithm>
-
+#include "io.h"
 #include "opencv2/contrib/contrib.hpp"
 
 /*
@@ -296,70 +295,54 @@ __int64 calcHammingDistance(__int64 x, __int64 y)
 	return dist;
 }
 
-void EigenDetector_v2::recognize(vector <Ptr<FaceRecognizer>> models, DataJson dataJson, IplImage* image, char *dir){
+void EigenDetector_v2::recognize(map <string, Ptr<FaceRecognizer>> models, DataJson dataJson, IplImage* image){
 
 	double old_prob = 0;
-	char path_id[1024];
-	char path_yml[1024];
-	char result_name[512] = "-1";
-	WIN32_FIND_DATA FindFileData;
-	HANDLE hf;
+	string result_name = "-1";
 
-	Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
-	int i = 0;
-	sprintf(path_id, "%s//*", dir);
-	hf = FindFirstFile(path_id, &FindFileData);
-	if (hf != INVALID_HANDLE_VALUE){
-		while (FindNextFile(hf, &FindFileData) != 0){
-			char* name = FindFileData.cFileName;
-			if (strcmp(name, "..")){
-				sprintf(path_yml, "%s\\%s\\eigenface.yml", dir, name);
-				model = models[i];
-				i++;
-				double prob = 0;
+	for (map <string, Ptr<FaceRecognizer>>::iterator it = models.begin(); it != models.end(); it++)
+	{
+		Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
+		model = (*it).second;
 
-				Mat image_mat = Mat(image, true);
-				// Get some required data from the FaceRecognizer model.
-				Mat eigenvectors = model->get<Mat>("eigenvectors");
-				Mat averageFaceRow = model->get<Mat>("mean");
-				// Project the input image onto the eigenspace.
-				Mat projection = subspaceProject(eigenvectors, averageFaceRow, image_mat.reshape(1, 1));
-				// Generate the reconstructed face back from the eigenspace.
-				Mat reconstructionRow = subspaceReconstruct(eigenvectors, averageFaceRow, projection);
-				// Make it a rectangular shaped image instead of a single row.
-				Mat reconstructionMat = reconstructionRow.reshape(1, image->height);
-				// Convert the floating-point pixels to regular 8-bit uchar.
-				Mat reconstructedFace = Mat(reconstructionMat.size(), CV_8U);
-				reconstructionMat.convertTo(reconstructedFace, CV_8U, 1, 0);//-> to introduce to function
+		double prob = 0;
 
-				__int64 hashO = calcImageHash(&(IplImage)reconstructedFace, true);
-				__int64 hashI = calcImageHash(image, false);
-				__int64 dist = calcHammingDistance(hashO, hashI);//-> to introduce to function
+		Mat image_mat = Mat(image, true);
+		// Get some required data from the FaceRecognizer model.
+		Mat eigenvectors = model->get<Mat>("eigenvectors");
+		Mat averageFaceRow = model->get<Mat>("mean");
+		// Project the input image onto the eigenspace.
+		Mat projection = subspaceProject(eigenvectors, averageFaceRow, image_mat.reshape(1, 1));
+		// Generate the reconstructed face back from the eigenspace.
+		Mat reconstructionRow = subspaceReconstruct(eigenvectors, averageFaceRow, projection);
+		// Make it a rectangular shaped image instead of a single row.
+		Mat reconstructionMat = reconstructionRow.reshape(1, image->height);
+		// Convert the floating-point pixels to regular 8-bit uchar.
+		Mat reconstructedFace = Mat(reconstructionMat.size(), CV_8U);
+		reconstructionMat.convertTo(reconstructedFace, CV_8U, 1, 0);//-> to introduce to function
 
-				if (dist <= 11){  // если хэш больше 8, то вероятность -> 0
+		__int64 hashO = calcImageHash(&(IplImage)reconstructedFace, true);
+		__int64 hashI = calcImageHash(image, false);
+		__int64 dist = calcHammingDistance(hashO, hashI);//-> to introduce to function
 
-					double prob2 = getSimilarity2(reconstructedFace, image_mat);
-					double prob1 = getSimilarity(reconstructedFace, image_mat);
+		if (dist <= 11){  // если хэш больше 8, то вероятность -> 0
 
-					prob = max(prob2, prob1) / 2;
+			double prob2 = getSimilarity2(reconstructedFace, image_mat);
+			double prob1 = getSimilarity(reconstructedFace, image_mat);
 
-					cout << name << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
+			prob = max(prob2, prob1) / 2;
 
-					if (prob > old_prob){
-						old_prob = prob;
-						sprintf(result_name, "%s", name);
-					}
-					//cvWaitKey(0);
-				}
+			cout << (*it).first << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
 
-
+			if (prob > old_prob){
+				old_prob = prob;
+				result_name = (*it).first;
 			}
 		}
-		FindClose(hf);
 	}
+
 	cout << endl;
 
-	dataJson.ids->push_back(atoi(result_name));
+	dataJson.ids->push_back(atoi(result_name.c_str()));
 	dataJson.probs->push_back(old_prob * 100);
-
 }

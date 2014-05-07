@@ -3,6 +3,7 @@
 
 #define	NET_CMD_RECOGNIZE	"recognize"
 #define NET_CMD_LEARN		"learn"
+#define NET_CMD_CUT			"cut"
 
 #define ID_PATH				"C:\\OK\\test_photos\\"
 #define TARGET_PATH			"C:\\OK\\tmp\\"
@@ -12,10 +13,15 @@ Network net;
 #pragma pack(push, 1)
 struct ContextForRecognize{
 	SOCKET sock;
-	string pcTargetImg;
+	string targetImg;
 	json::Array arrFrinedsList;
 };
-#pragma pop
+
+struct ContextForCutFace{
+	SOCKET sock;
+	json::Array arrIds;
+};
+#pragma pack(pop)
 
 int saveLearnModel(char* dir_tmp, char* id){
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
@@ -27,42 +33,29 @@ int saveLearnModel(char* dir_tmp, char* id){
 	return 0;
 }
 
-int recognizeFromModel(void *pContext){    //SOCKET sock, char *img_dir, char* dir
+int recognizeFromModel(void *pContext)
+{
 	ContextForRecognize *psContext = (ContextForRecognize*)pContext;
-	CvMemStorage* storage = 0;
-	IplImage *img = 0;
+	CvMemStorage* storage = NULL;
+	IplImage *img = NULL;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
-	vector <Ptr<FaceRecognizer>> models;
-
-	/*char path_id[1024], yml_dir[1024];
-
-	WIN32_FIND_DATA FindFileData;
-	HANDLE hf;
-
-	sprintf(path_id, "%s//*", psContext->dir);
-	hf = FindFirstFile(path_id, &FindFileData);
-	if (hf != INVALID_HANDLE_VALUE){
-		while (FindNextFile(hf, &FindFileData) != 0){
-			char* name = FindFileData.cFileName;
-			if (strcmp(name, "..")){
-				Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
-				sprintf(yml_dir, "%s\\%s\\%s", psContext->dir, name, "eigenface.yml");
-				model->load(yml_dir);
-				models.push_back(model);
-			}
-		}
-		FindClose(hf);
-	}*/
-
-	/*img = cvLoadImage(psContext->dir_img);
+	map <string, Ptr<FaceRecognizer>> models;
+	
+	for (unsigned i = 0; i < psContext->arrFrinedsList.size(); i++)
+	{
+		Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
+		model->load(((string)(ID_PATH)).append(psContext->arrFrinedsList[i].operator std::string()));
+		models[psContext->arrFrinedsList[i].operator std::string()] = model;
+	}
+	
+	img = cvLoadImage(((string)(TARGET_PATH)).append(psContext->targetImg).c_str());
 
 	if (!img) {
 		system("cls");
 		cerr << "image load error" << endl;
 	}
 	else{
-		storage = cvCreateMemStorage(0);										//Создание хранилища памяти
-		violaJonesDetection->dir = psContext->dir;
+		storage = cvCreateMemStorage(0);					// Создание хранилища памяти
 		violaJonesDetection->faceDetect(img, models);
 	}
 
@@ -73,57 +66,46 @@ int recognizeFromModel(void *pContext){    //SOCKET sock, char *img_dir, char* d
 
 	cvReleaseImage(&img);
 	cvClearMemStorage(storage);
-	cvDestroyAllWindows();*/
+	cvDestroyAllWindows();
 	delete violaJonesDetection;
 	delete psContext;
 	return 0;
 }
 
-int rejectFaceForLearn(char* dir_tmp, char *id){
-	IplImage *img = 0, *imageResults = 0;
+int cutFaces(void *pContext){
+	ContextForCutFace *psContext = (ContextForCutFace*) pContext;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
-
-
 	_finddata_t result;
-	char name[1024];
-	long done;
-	IplImage *base_face = 0;
 
-	sprintf(name, "%s\\%s\\photos\\*.jpg", dir_tmp, id);
-	memset(&result, 0, sizeof(result));
-	done = _findfirst(name, &result);
-
-
-	int nFaces = 0;
-	if (done != -1)
+	for (unsigned i = 0; i < psContext->arrIds.size(); i++)
 	{
-		int res = 0;
-		while (res == 0){
+		memset(&result, 0, sizeof(result));
+		string photoName = ((string)ID_PATH).append(psContext->arrIds[i].operator std::string()).append("\\photos\\*.jpg");
 
-			char image_dir[1024];
-			if (strcmp(id, "-1")){
-				sprintf(name, "%s\\%s\\photos\\%s", dir_tmp, id, result.name);
-				sprintf(image_dir, "%s\\%s\\", dir_tmp, id);
-
-				img = cvLoadImage(name);
-
-				if (!img) {
-					cerr << "image load error: " << name << endl;
-					return -1;
+		intptr_t firstHandle = _findfirst(photoName.c_str(), &result);
+		if (firstHandle != -1)
+		{
+			do
+			{
+				photoName = ((string)ID_PATH).append(psContext->arrIds[i].operator std::string()).append("\\photos\\").append(result.name);
+				IplImage *img = cvLoadImage(photoName.c_str());
+				if (img == NULL)
+				{
+					cerr << "image load error: " << photoName << endl;
+					continue;
 				}
 
-				cout << result.name;
+				cout << "Cutting face from image " << result.name;
 
+				violaJonesDetection->cutFace(img, ((string)ID_PATH).append(psContext->arrIds[i].operator std::string()).append("\\faces\\").append(result.name).c_str());
 
-				violaJonesDetection->dir = image_dir;
-				violaJonesDetection->rejectFace(img, result.name);
+				cvReleaseImage(&img);
 				cout << endl;
-			}
-			res = _findnext(done, &result);
+
+			} while (_findnext(firstHandle, &result) == 0);
 		}
 	}
-
-	cvReleaseImage(&img);
+	
 	cvDestroyAllWindows();
 	delete violaJonesDetection;
 	return 0;
@@ -148,15 +130,8 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 		}
 		case
 		NET_RECEIVED_REMOTE_DATA:
-		{            
-			
-			
-			
-
-			string tmp = (string)((char*)param);
-			json::Value v = json::Deserialize(tmp);
-			json::Object objInputJson = v.operator json::Object();
-			//json::Object objInputJson = ((json::Value)json::Deserialize((string)((char*)param))).operator json::Object();
+		{
+			json::Object objInputJson = ((json::Value)json::Deserialize((string)((char*)param))).operator json::Object();
 			if (!objInputJson.HasKey("cmd"))
 			{
 				printf("Invalid input JSON: no cmd field\n");
@@ -181,32 +156,34 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 					return;
 				}
 
-				printf("photo_id: %s\n", objInputJson["photo_id"].operator std::string().c_str());
-
-				json::Array arrFrinedsList = objInputJson["friends"].operator json::Array();
-				printf("photo ids: ");
-				for (int i = 0; i < arrFrinedsList.size(); i++)
-				{
-					printf("%s ", arrFrinedsList[i].operator std::string().c_str());
-				}
-				printf("\n");
-
-				// Recognize smth
-				/*ContextForRecognize *psContext = new ContextForRecognize;
+				ContextForRecognize *psContext = new ContextForRecognize;
 				memset(psContext, 0, sizeof(ContextForRecognize));
-				psContext->dir = new char[strlen("C:\\OK\\tmp\0")];
-				memset(psContext->dir, 0, strlen("C:\\OK\\tmp\0"));
-				strcpy(psContext->dir, "C:\\OK\\tmp\0");
-				psContext->dir_img = new char[strlen("C:\\OK\\test_photos\\36.jpg\0")];
-				memset(psContext->dir_img, 0, strlen("C:\\OK\\test_photos\\36.jpg\0"));
-				strcpy(psContext->dir_img, "C:\\OK\\test_photos\\36.jpg\0");
+				psContext->arrFrinedsList = objInputJson["friends"].operator json::Array();
+				psContext->targetImg = objInputJson["photo_id"];
 				psContext->sock = sock;
 
-				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recognizeFromModel, psContext, 0, NULL);*/
-				break;
+				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recognizeFromModel, psContext, 0, NULL);
+				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
 			else if (objInputJson["cmd"].operator string() == NET_CMD_LEARN)
 			{
+			}
+			else if (objInputJson["cmd"].operator string() == NET_CMD_CUT)
+			{
+				if (!objInputJson.HasKey("ids"))
+				{
+					printf("Invalid input JSON: no ids field\n");
+					net.SendData(sock, "Error. Invalid JSON received: no ids field\n\0", strlen("Error. Invalid JSON received: no ids field\n\0"));
+					return;
+				}
+
+				ContextForCutFace *psContext = new ContextForCutFace;
+				memset(psContext, 0, sizeof(ContextForCutFace));
+				psContext->arrIds = objInputJson["ids"].operator json::Array();
+				psContext->sock = sock;
+
+				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)cutFaces, psContext, 0, NULL);
+				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
 			else
 			{			

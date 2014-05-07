@@ -3,7 +3,7 @@ class EigenDetector_v2
 {
 public:
 	void learn(char* path, char* id);
-	void recognize(vector <Ptr<FaceRecognizer>> models, struct DataJson dataJson, IplImage* image, char *dir);
+	void recognize(map <string, Ptr<FaceRecognizer>> models, struct DataJson dataJson, IplImage* image);
 	Mat  MaskFace(IplImage *img);
 
 

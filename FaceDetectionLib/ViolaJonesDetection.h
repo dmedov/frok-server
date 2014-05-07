@@ -1,15 +1,36 @@
 #pragma once
+
+struct FaceCascades{
+	//Загрузка базы данных, обученной на детектирование лиц в Фас
+	CvHaarClassifierCascade *face = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml", 0, 0, 0);
+	//Загрузка быза данных, обученной для детектирования глаз
+	CvHaarClassifierCascade *eyes = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml", 0, 0, 0);
+	CvHaarClassifierCascade *righteye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_righteye.xml", 0, 0, 0);
+	CvHaarClassifierCascade *lefteye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_lefteye.xml", 0, 0, 0);
+	CvHaarClassifierCascade *righteye2 = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_righteye_2splits.xml", 0, 0, 0);
+	CvHaarClassifierCascade *lefteye2 = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_lefteye_2splits.xml", 0, 0, 0);
+	CvHaarClassifierCascade *eye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye.xml", 0, 0, 0);
+	//Загрузка быза данных, обученной для детектирования носа
+	CvHaarClassifierCascade *nose = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_nose.xml", 0, 0, 0);
+	//Загрузка быза данных, обученной для детектирования рта
+	CvHaarClassifierCascade *mouth = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_mouth.xml", 0, 0, 0);
+};
+
 class ViolaJonesDetection
 {
+protected:
+	IplImage *image, *imageResults, *face_img, *gray_img;
+	CvPoint facePoints[8];
+	CvMemStorage* strg;
+	FaceCascades faceCascades;
 public:
-	char* dir;
-
 	ViolaJonesDetection();
 	~ViolaJonesDetection();
 
-	void faceDetect(IplImage *inputImage, vector <Ptr<FaceRecognizer>> models);
+	void faceDetect(IplImage *inputImage, map <string, Ptr<FaceRecognizer>> models);
 
-	void rejectFace(IplImage *inputImage, char* name);
+	// return -1 for failure, 0 in case of success
+	int cutFace(IplImage *inputImage, const char* destPath);
 
 private:
 	bool drawEvidence(struct ImageCoordinats pointFase, bool draw);
@@ -27,24 +48,7 @@ private:
 	IplImage* imposeMask(CvPoint p);
 
 	void scanSIFT(Mat, int);
-};
 
-struct FaceCascades{
-	//Загрузка базы данных, обученной на детектирование лиц в Фас
-	CvHaarClassifierCascade *face = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml", 0, 0, 0);
-
-	//Загрузка быза данных, обученной для детектирования глаз
-	CvHaarClassifierCascade *eyes = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml", 0, 0, 0);
-	CvHaarClassifierCascade *righteye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_righteye.xml", 0, 0, 0);
-	CvHaarClassifierCascade *lefteye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_lefteye.xml", 0, 0, 0);
-	CvHaarClassifierCascade *righteye2 = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_righteye_2splits.xml", 0, 0, 0);
-	CvHaarClassifierCascade *lefteye2 = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_lefteye_2splits.xml", 0, 0, 0);
-	CvHaarClassifierCascade *eye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye.xml", 0, 0, 0);
-
-	//Загрузка быза данных, обученной для детектирования носа
-	CvHaarClassifierCascade *nose = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_nose.xml", 0, 0, 0);
-
-	//Загрузка быза данных, обученной для детектирования рта
-	CvHaarClassifierCascade *mouth = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_mouth.xml", 0, 0, 0);
-
+	void createJson(DataJson dataJson);		// [TBD] change it to smth like show on photo or send response etc
+	void normalizateHistFace();
 };

@@ -8,14 +8,8 @@
 #include <string>
 #include <Math.h>
 #include <stdlib.h>
-#include <io.h>
-
-
-static IplImage *image, *imageResults, *face_img, *gray_img;
-static CvPoint facePoints[8];
-static CvMemStorage* strg;
-static char *dir;
-static FaceCascades faceCascades;
+#include "io.h"
+#include "json.h"
 
 ViolaJonesDetection::ViolaJonesDetection(){
 	faceCascades = FaceCascades();
@@ -183,7 +177,7 @@ IplImage* ViolaJonesDetection::imposeMask(CvPoint p){
 	return img;
 }
 
-void createJson(DataJson dataJson){
+void ViolaJonesDetection::createJson(DataJson dataJson){
 	string outJson;
 	outJson.append("{ results: [");
 
@@ -321,14 +315,14 @@ void ViolaJonesDetection::allKeysFaceDetection(CvPoint point){
 	keysFaceDetect(faceCascades.mouth, point, 2);				//рот
 }
 
-void normalizateHistFace(){
+void ViolaJonesDetection::normalizateHistFace(){
 	Ptr<CLAHE> clahe = createCLAHE(2, Size(8, 8));
 	clahe->apply(Mat(face_img), Mat(face_img));
 	cvNormalize(face_img, face_img, 10, 250, CV_MINMAX);
 }
 
 //Детектирование лица (вызывается из main)
-void ViolaJonesDetection::faceDetect(IplImage *inputImage, vector <Ptr<FaceRecognizer>> models){
+void ViolaJonesDetection::faceDetect(IplImage *inputImage, map <string, Ptr<FaceRecognizer>> models){
 	if (!faceCascades.face){
 		cout << "cascade error" << endl;
 		cvReleaseHaarClassifierCascade(&faceCascades.face);
@@ -377,14 +371,13 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, vector <Ptr<FaceRecog
 			face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
 			IplImage *dist = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
 			cvResize(face_img, dist, 1);
-			eigenDetector_v2->recognize(models, dataJson, dist, dir);//Распознавание
+			eigenDetector_v2->recognize(models, dataJson, dist);//Распознавание
 			dataJson.p1s->push_back(points.p1);
 			dataJson.p2s->push_back(points.p2);
 			cvReleaseImage(&dist);//-> to introduce to function
 		}
-
 	}
-
+	
 	createJson(dataJson);
 	cvShowImage("image", imageResults);
 
@@ -426,12 +419,12 @@ void equalizeFace(IplImage *faceImg) {
 }
 
 //ВЫрезание изображения с лицом
-void ViolaJonesDetection::rejectFace(IplImage *inputImage, char* name){
+int ViolaJonesDetection::cutFace(IplImage *inputImage, const char* destPath){
 
 	if (!faceCascades.face){
 		cout << "cascade error" << endl;
 		cvReleaseHaarClassifierCascade(&faceCascades.face);
-		return;
+		return -1;
 	}
 
 	image = cvCloneImage(inputImage);
@@ -459,9 +452,10 @@ void ViolaJonesDetection::rejectFace(IplImage *inputImage, char* name){
 		face_img = cvCreateImage(cvSize(w, h), gray_img->depth, gray_img->nChannels);
 		cvSetImageROI(gray_img, cvRect(x, y, w, h));
 		cvCopy(gray_img, face_img, NULL);
-		cvResetImageROI(gray_img);															//копируем лицо в отдельную картинку
+		cvResetImageROI(gray_img);									//копируем лицо в отдельную картинку
 
-		for (int j = 0; j < 8; j++)	facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
+		for (int j = 0; j < 8; j++)	
+			facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
 
 		allKeysFaceDetection(points.p1);
 
@@ -472,16 +466,14 @@ void ViolaJonesDetection::rejectFace(IplImage *inputImage, char* name){
 				face_img = imposeMask(points.p1);
 				face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
 
-				IplImage *dist = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
-				cvResize(face_img, dist, 1);
+				IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
+				cvResize(face_img, dest, 1);
 				//equalizeFace(dist);
 				if (faces->total == 1){
-					char save_dir[1024];
-					sprintf(save_dir, "%s\\faces\\%s", dir, name);
-					if (cvSaveImage(save_dir, dist))
+					if (cvSaveImage(destPath, dest))
 						cout << "\t->\t person found and saved";
 				}
-				cvReleaseImage(&dist);
+				cvReleaseImage(&dest);
 			}
 
 		}
@@ -493,9 +485,12 @@ void ViolaJonesDetection::rejectFace(IplImage *inputImage, char* name){
 	cvReleaseImage(&gray_img);
 	cvReleaseImage(&image);
 	cvReleaseImage(&imageResults);
+
+	return 0;
 }
 
 //Сканирование по SIFT 
+/*
 void ViolaJonesDetection::scanSIFT(Mat ffDescriptors, int faceNumber){
 	DescriptorDetection *descriptorDetection = new DescriptorDetection();
 	_finddata_t result;
@@ -503,7 +498,7 @@ void ViolaJonesDetection::scanSIFT(Mat ffDescriptors, int faceNumber){
 	long done;
 	IplImage *base_face = 0, *gray_face = 0;
 
-	sprintf(name, "%s\\*.jpg", dir);
+	sprintf(name, "%s\\*.jpg", currentUserPath);
 
 	memset(&result, 0, sizeof(result));
 	done = _findfirst(name, &result);
@@ -512,10 +507,10 @@ void ViolaJonesDetection::scanSIFT(Mat ffDescriptors, int faceNumber){
 	if (done != -1)
 	{
 		int res = 0;
-		while (res == 0){
-
+		while (res == 0)
+		{
 			cout << result.name;
-			sprintf(name, "%s\\%s", dir, result.name);
+			sprintf(name, "%s\\faces\\%s", currentUserPath, result.name);
 			base_face = cvLoadImage(name);
 
 			if (!base_face) {
@@ -543,7 +538,7 @@ void ViolaJonesDetection::scanSIFT(Mat ffDescriptors, int faceNumber){
 	cvReleaseImage(&base_face);
 	cvReleaseImage(&gray_face);
 	delete descriptorDetection;
-}
+}*/
 
 ViolaJonesDetection::~ViolaJonesDetection(){
 	cout << "delete all" << endl;
