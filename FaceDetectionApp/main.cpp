@@ -1,13 +1,21 @@
 #include "stdafx.h"
 #include "LibInclude.h"
 
+#define	NET_CMD_RECOGNIZE	"recognize"
+#define NET_CMD_LEARN		"learn"
+
+#define ID_PATH				"C:\\OK\\test_photos\\"
+#define TARGET_PATH			"C:\\OK\\tmp\\"
+
 Network net;
 
+#pragma pack(push, 1)
 struct ContextForRecognize{
 	SOCKET sock;
-	char *dir_img;
-	char *dir;
+	string pcTargetImg;
+	json::Array arrFrinedsList;
 };
+#pragma pop
 
 int saveLearnModel(char* dir_tmp, char* id){
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
@@ -26,7 +34,7 @@ int recognizeFromModel(void *pContext){    //SOCKET sock, char *img_dir, char* d
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
 	vector <Ptr<FaceRecognizer>> models;
 
-	char path_id[1024], yml_dir[1024];
+	/*char path_id[1024], yml_dir[1024];
 
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hf;
@@ -44,9 +52,9 @@ int recognizeFromModel(void *pContext){    //SOCKET sock, char *img_dir, char* d
 			}
 		}
 		FindClose(hf);
-	}
+	}*/
 
-	img = cvLoadImage(psContext->dir_img);
+	/*img = cvLoadImage(psContext->dir_img);
 
 	if (!img) {
 		system("cls");
@@ -65,7 +73,7 @@ int recognizeFromModel(void *pContext){    //SOCKET sock, char *img_dir, char* d
 
 	cvReleaseImage(&img);
 	cvClearMemStorage(storage);
-	cvDestroyAllWindows();
+	cvDestroyAllWindows();*/
 	delete violaJonesDetection;
 	delete psContext;
 	return 0;
@@ -123,6 +131,7 @@ int rejectFaceForLearn(char* dir_tmp, char *id){
 
 void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 {
+	
 	switch (evt)
 	{
 		case
@@ -139,9 +148,15 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 		}
 		case
 		NET_RECEIVED_REMOTE_DATA:
-		{
-			//json::Value v = json::Deserialize("{\n  \"a\": 1,\n  \"b\": 2\n}");
-			json::Object objInputJson = ((json::Value)json::Deserialize(((string)((char*)param)))).operator json::Object;
+		{            
+			
+			
+			
+
+			string tmp = (string)((char*)param);
+			json::Value v = json::Deserialize(tmp);
+			json::Object objInputJson = v.operator json::Object();
+			//json::Object objInputJson = ((json::Value)json::Deserialize((string)((char*)param))).operator json::Object();
 			if (!objInputJson.HasKey("cmd"))
 			{
 				printf("Invalid input JSON: no cmd field\n");
@@ -150,37 +165,54 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 			}
 
 			// Parse cmd
-			switch (objInputJson["cmd"].operator int)
+			if (objInputJson["cmd"].operator string() == NET_CMD_RECOGNIZE)
 			{
-				case
-				NET_CMD_RECOGNIZE:
+				if (!objInputJson.HasKey("friends"))
 				{
-				// Recognize smth
-					ContextForRecognize *psContext = new ContextForRecognize;
-					memset(psContext, 0, sizeof(ContextForRecognize));
-					psContext->dir = new char[strlen("C:\\OK\\tmp\0")];
-					memset(psContext->dir, 0, strlen("C:\\OK\\tmp\0"));
-					strcpy(psContext->dir, "C:\\OK\\tmp\0");
-					psContext->dir_img = new char[strlen("C:\\OK\\test_photos\\36.jpg\0")];
-					memset(psContext->dir_img, 0, strlen("C:\\OK\\test_photos\\36.jpg\0"));
-					strcpy(psContext->dir_img, "C:\\OK\\test_photos\\36.jpg\0");
-					psContext->sock = sock;
+					printf("Invalid input JSON: no friends field\n");
+					net.SendData(sock, "Error. Invalid JSON received: no friends field\n\0", strlen("Error. Invalid JSON received: no friends field\n\0"));
+					return;
+				}
+				
+				if (!objInputJson.HasKey("photo_id"))
+				{
+					printf("Invalid input JSON: no frineds field\n");
+					net.SendData(sock, "Error. Invalid JSON received: no frineds field\n\0", strlen("Error. Invalid JSON received: no frineds field\n\0"));
+					return;
+				}
 
-					CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recognizeFromModel, psContext, 0, NULL);
-					break;
-				}
-				case
-				NET_CMD_LEARN:
+				printf("photo_id: %s\n", objInputJson["photo_id"].operator std::string().c_str());
+
+				json::Array arrFrinedsList = objInputJson["friends"].operator json::Array();
+				printf("photo ids: ");
+				for (int i = 0; i < arrFrinedsList.size(); i++)
 				{
-					// LYORN BLYA
-					break;
+					printf("%s ", arrFrinedsList[i].operator std::string().c_str());
 				}
-				default:
-				{
-						printf("Invalid input JSON: invalid cmd received\n");
-						net.SendData(sock, "Error. Invalid JSON received: invalid cmd\n\0", strlen("Error. Invalid JSON received: invalid cmd\n\0"));
-						return;
-				}
+				printf("\n");
+
+				// Recognize smth
+				/*ContextForRecognize *psContext = new ContextForRecognize;
+				memset(psContext, 0, sizeof(ContextForRecognize));
+				psContext->dir = new char[strlen("C:\\OK\\tmp\0")];
+				memset(psContext->dir, 0, strlen("C:\\OK\\tmp\0"));
+				strcpy(psContext->dir, "C:\\OK\\tmp\0");
+				psContext->dir_img = new char[strlen("C:\\OK\\test_photos\\36.jpg\0")];
+				memset(psContext->dir_img, 0, strlen("C:\\OK\\test_photos\\36.jpg\0"));
+				strcpy(psContext->dir_img, "C:\\OK\\test_photos\\36.jpg\0");
+				psContext->sock = sock;
+
+				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recognizeFromModel, psContext, 0, NULL);*/
+				break;
+			}
+			else if (objInputJson["cmd"].operator string() == NET_CMD_LEARN)
+			{
+			}
+			else
+			{			
+				printf("Invalid input JSON: invalid cmd received\n");
+				net.SendData(sock, "Error. Invalid JSON received: invalid cmd\n\0", strlen("Error. Invalid JSON received: invalid cmd\n\0"));
+				return;
 			}
 			break;
 		}
@@ -197,6 +229,11 @@ int main(int argc, char *argv[]) {
 
 	net.StartNetworkServer(callback, PORT);
 
+
+	//json::Value v = json::Deserialize("{\n  \"a\": 1,\n  \"b\": 2\n}");
+	char param[] = "{\"cmd\":\"recognize\", \"friends\":[\"12345\", \"123456\"], \"photo_id\":\"12\"}\0";
+
+	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(param), param);
 	getchar();
 
 	/*if (argc != 3 && argc != 4){
