@@ -10,8 +10,14 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="json.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="json.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{42B1DA90-4EFA-4241-9673-4438F38FB170}</ProjectGuid>
+    <ProjectGuid>{B2F02C7B-5084-4474-A554-27A429557B14}</ProjectGuid>
     <RootNamespace>JsonParserLib</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -39,8 +45,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(LibraryPath)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -66,27 +71,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="autolink.h" />
-    <ClInclude Include="config.h" />
-    <ClInclude Include="features.h" />
-    <ClInclude Include="forwards.h" />
-    <ClInclude Include="json.h" />
-    <ClInclude Include="json_batchallocator.h" />
-    <ClInclude Include="reader.h" />
-    <ClInclude Include="value.h" />
-    <ClInclude Include="writer.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="json_internalarray.inl" />
-    <None Include="json_internalmap.inl" />
-    <None Include="json_valueiterator.inl" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="json_reader.cpp" />
-    <ClCompile Include="json_value.cpp" />
-    <ClCompile Include="json_writer.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
