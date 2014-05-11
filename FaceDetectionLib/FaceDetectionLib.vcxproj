@@ -69,6 +69,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="common.cpp" />
     <ClCompile Include="DescriptorDetection.cpp" />
     <ClCompile Include="EigenDetector_v2.cpp" />
     <ClCompile Include="json.cpp" />

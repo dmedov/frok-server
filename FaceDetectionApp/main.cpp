@@ -57,17 +57,23 @@ int recognizeFromModel(void *pContext)
 		}
 		catch (...)
 		{
-			printf("Learn was not called for user %d. Continue\n");
+			FilePrintMessage(NULL, _WARN("Learn was not called for user %d. Continue..."));
 			continue;
 		}
 		models[psContext->arrFrinedsList[i].operator std::string()] = model;
+	}
+
+	if (models.empty())
+	{
+		FilePrintMessage(NULL, _FAIL("No models loaded."));
+		return -1;
 	}
 	
 	img = cvLoadImage(((string)(TARGET_PATH)).append(psContext->targetImg).c_str());
 
 	if (!img) {
-		system("cls");
-		cerr << "image load error" << endl;
+		FilePrintMessage(NULL, _FAIL("Failed to load image %s"), ((string)(TARGET_PATH)).append(psContext->targetImg).c_str());
+		return -1;
 	}
 	else{
 		storage = cvCreateMemStorage(0);					// Создание хранилища памяти
@@ -106,7 +112,7 @@ int cutFaces(void *pContext){
 				IplImage *img = cvLoadImage(photoName.c_str());
 				if (img == NULL)
 				{
-					cerr << "image load error: " << photoName << endl;
+					FilePrintMessage(NULL, _WARN("Failed to load image %s. Continue..."), photoName.c_str());
 					continue;
 				}
 
@@ -128,7 +134,11 @@ int cutFaces(void *pContext){
 
 void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 {
-	
+	if (sock == INVALID_SOCKET)
+	{
+		FilePrintMessage(NULL, _FAIL("Something went wrong. Msg received from invalid socket."));
+		return;
+	}
 	switch (evt)
 	{
 		case
@@ -153,14 +163,15 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 			}
 			catch (...)
 			{
-				printf("Failed to parse incoming JSON: %s", (char*)param);
+				FilePrintMessage(NULL, _FAIL("Failed to parse incoming JSON: %s"), (char*)param);
+				net.SendData(sock, "{ \"error\":\"bad command\" }", strlen("{ \"error\":\"bad command\" }"));
 				return;
 			}
 			
 			if (!objInputJson.HasKey("cmd"))
 			{
-				printf("Invalid input JSON: no cmd field\n");
-				net.SendData(sock, "Error. Invalid JSON received: no cmd field\n\0", strlen("Error. Invalid JSON received: no cmd field\n\0"));
+				FilePrintMessage(NULL, _FAIL("Invalid input JSON: no cmd field (%s)"), (char*)param);
+				net.SendData(sock, "{ \"error\":\"no cmd field\" }", strlen("{ \"error\":\"no cmd field\" }"));
 				return;
 			}
 
@@ -169,15 +180,15 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 			{
 				if (!objInputJson.HasKey("friends"))
 				{
-					printf("Invalid input JSON: no friends field\n");
-					net.SendData(sock, "Error. Invalid JSON received: no friends field\n\0", strlen("Error. Invalid JSON received: no friends field\n\0"));
+					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no friends field (%s)"), (char*)param);
+					net.SendData(sock, "{ \"error\":\"no friends field\" }", strlen("{ \"error\":\"no friends field\" }"));
 					return;
 				}
 				
 				if (!objInputJson.HasKey("photo_id"))
 				{
-					printf("Invalid input JSON: no frineds field\n");
-					net.SendData(sock, "Error. Invalid JSON received: no frineds field\n\0", strlen("Error. Invalid JSON received: no frineds field\n\0"));
+					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no photo_id field (%s)"), (char*)param);
+					net.SendData(sock, "{ \"error\":\"no photo_id field\" }", strlen("{ \"error\":\"no photo_id field\" }"));
 					return;
 				}
 
@@ -197,8 +208,8 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 			{
 				if (!objInputJson.HasKey("ids"))
 				{
-					printf("Invalid input JSON: no ids field\n");
-					net.SendData(sock, "Error. Invalid JSON received: no ids field\n\0", strlen("Error. Invalid JSON received: no ids field\n\0"));
+					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no ids field (%s)"), (char*)param);
+					net.SendData(sock, "{ \"error\":\"no ids field\" }", strlen("{ \"error\":\"no ids field\" }"));
 					return;
 				}
 
@@ -211,16 +222,17 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
 			else
-			{			
-				printf("Invalid input JSON: invalid cmd received\n");
-				net.SendData(sock, "Error. Invalid JSON received: invalid cmd\n\0", strlen("Error. Invalid JSON received: invalid cmd\n\0"));
+			{
+				FilePrintMessage(NULL, _FAIL("Invalid input JSON: invalid cmd received (%s)"), (char*)param);
+				net.SendData(sock, "{ \"error\":\"invalid cmd\" }", strlen("{ \"error\":\"invalid cmd\" }"));
 				return;
 			}
 			break;
 		}
-		default:
+		default
+			:
 		{
-			printf("Unknown event");
+			FilePrintMessage(NULL, _FAIL("Unknown event 0x%x"), evt);
 			break;
 		}
 	}
