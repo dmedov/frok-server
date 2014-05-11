@@ -51,7 +51,15 @@ int recognizeFromModel(void *pContext)
 	for (unsigned i = 0; i < psContext->arrFrinedsList.size(); i++)
 	{
 		Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
-		model->load(((string)(ID_PATH)).append(psContext->arrFrinedsList[i].operator std::string()));
+		try
+		{
+			model->load(((string)(ID_PATH)).append(psContext->arrFrinedsList[i].operator std::string()));
+		}
+		catch (...)
+		{
+			printf("Learn was not called for user %d. Continue\n");
+			continue;
+		}
 		models[psContext->arrFrinedsList[i].operator std::string()] = model;
 	}
 	
@@ -224,8 +232,9 @@ int main(int argc, char *argv[])
 	net.StartNetworkServer(callback, PORT);
 	
 	//json::Value v = json::Deserialize("{\n  \"a\": 1,\n  \"b\": 2\n}");
-	char param[] = "{\"cmd\":\"cut\", \"ids\":[\"1\", \"2\"]}\0";
-
+	//char param[] = "{\"cmd\":\"cut\", \"ids\":[\"1\", \"2\"]}\0";		// cut faces
+	char param[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"1\"}\0";
+	
 	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(param), param);
 	getchar();
 
