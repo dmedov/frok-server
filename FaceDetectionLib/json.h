@@ -357,13 +357,42 @@ namespace json
 
 		
 			// non-operator versions
-			int 		ToInt() const		{assert(IsNumeric()); return mIntVal;}
-			float 		ToFloat() const		{assert(IsNumeric()); return mFloatVal;}
-			double 		ToDouble() const	{assert(IsNumeric()); return mDoubleVal;}
-			bool 		ToBool() const		{assert(mValueType == BoolVal); return mBoolVal;}
-			std::string	ToString() const	{assert(mValueType == StringVal); return mStringVal;}
-			Object 		ToObject() const	{assert(mValueType == ObjectVal); return mObjectVal;}
-			Array 		ToArray() const		{assert(mValueType == ArrayVal); return mArrayVal;}
+			int 		ToInt() const		{
+				if (!IsNumeric())
+					throw 0;
+				return mIntVal;
+			}
+			float 		ToFloat() const		{
+				if (!IsNumeric())
+					throw 0;
+				return mFloatVal;
+			}
+			double 		ToDouble() const	{
+				if (!IsNumeric())
+					throw 0;
+				return mDoubleVal;
+			}
+			bool 		ToBool() const		{
+				if(!(mValueType == BoolVal))
+					throw 0; 
+				return mBoolVal;
+			}
+			std::string	ToString() const	{
+				if (!(mValueType == StringVal))
+					throw 0;
+				return mStringVal;
+			}
+			Object 		ToObject() const	{
+				if (mValueType != ObjectVal)
+					throw 0;
+
+				return mObjectVal;
+			}
+			Array 		ToArray() const		{
+				if (!(mValueType == ArrayVal))
+					throw 0;
+				return mArrayVal;
+			}
 			
 			// Please note that as per C++ rules, implicitly casting a Value to a std::string won't work.
 			// This is because it could use the int/float/double/bool operators as well. So to assign a

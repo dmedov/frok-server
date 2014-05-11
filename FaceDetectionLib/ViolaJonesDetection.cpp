@@ -15,6 +15,18 @@ ViolaJonesDetection::ViolaJonesDetection(){
 	faceCascades = FaceCascades();
 }
 
+
+ViolaJonesDetection::~ViolaJonesDetection(){
+	cout << "delete all" << endl;
+	cvReleaseHaarClassifierCascade(&faceCascades.face);
+	cvReleaseHaarClassifierCascade(&faceCascades.eyes);
+	cvReleaseHaarClassifierCascade(&faceCascades.nose);
+	cvReleaseHaarClassifierCascade(&faceCascades.mouth);
+	cvReleaseHaarClassifierCascade(&faceCascades.eye);
+	cvReleaseHaarClassifierCascade(&faceCascades.righteye2);
+	cvReleaseHaarClassifierCascade(&faceCascades.lefteye2);
+}
+
 //Запись ключевых точек в массив
 void ViolaJonesDetection::writeFacePoints(ImageCoordinats pointKeyFase, ImageCoordinats pointFase, int type){
 	CvPoint p1 = pointKeyFase.p1;
@@ -356,25 +368,25 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, map <string, Ptr<Face
 
 		cvSetImageROI(gray_img, cvRect(x, y, w, h));
 		cvCopy(gray_img, face_img, NULL);
-		cvResetImageROI(gray_img);															//копируем лицо в отдельную картинку//-> to introduce to function
+		cvResetImageROI(gray_img);									//копируем лицо в отдельную картинку//-> to introduce to function
 
-		for (int j = 0; j < 8; j++)	facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
+		for (int j = 0; j < 8; j++)
+			facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
 
 		normalizateHistFace();
 
 		allKeysFaceDetection(points.p1);
 
-		char str[9]; sprintf(str, "%d", i);
 		if (drawEvidence(points, true)){
 			defineRotate();
 			face_img = imposeMask(points.p1);
 			face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
-			IplImage *dist = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
-			cvResize(face_img, dist, 1);
-			eigenDetector_v2->recognize(models, dataJson, dist);//Распознавание
+			IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
+			cvResize(face_img, dest, 1);
+			eigenDetector_v2->recognize(models, dataJson, dest);//Распознавание
 			dataJson.p1s->push_back(points.p1);
 			dataJson.p2s->push_back(points.p2);
-			cvReleaseImage(&dist);//-> to introduce to function
+			cvReleaseImage(&dest);//-> to introduce to function
 		}
 	}
 	
@@ -490,8 +502,11 @@ int ViolaJonesDetection::cutFace(IplImage *inputImage, const char* destPath){
 }
 
 //Сканирование по SIFT 
-/*
+
 void ViolaJonesDetection::scanSIFT(Mat ffDescriptors, int faceNumber){
+
+	cerr << "Function not supported!" << endl;
+	/*
 	DescriptorDetection *descriptorDetection = new DescriptorDetection();
 	_finddata_t result;
 	char name[512];
@@ -537,16 +552,5 @@ void ViolaJonesDetection::scanSIFT(Mat ffDescriptors, int faceNumber){
 	_findclose(done);
 	cvReleaseImage(&base_face);
 	cvReleaseImage(&gray_face);
-	delete descriptorDetection;
-}*/
-
-ViolaJonesDetection::~ViolaJonesDetection(){
-	cout << "delete all" << endl;
-	cvReleaseHaarClassifierCascade(&faceCascades.face);
-	cvReleaseHaarClassifierCascade(&faceCascades.eyes);
-	cvReleaseHaarClassifierCascade(&faceCascades.nose);
-	cvReleaseHaarClassifierCascade(&faceCascades.mouth);
-	cvReleaseHaarClassifierCascade(&faceCascades.eye);
-	cvReleaseHaarClassifierCascade(&faceCascades.righteye2);
-	cvReleaseHaarClassifierCascade(&faceCascades.lefteye2);
+	delete descriptorDetection;*/
 }

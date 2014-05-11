@@ -48,9 +48,9 @@ void EigenDetector_v2::loadBaseFace(char* dir, vector<Mat> * images, vector<int>
 	model - модель FaceRecognizer, сохраняется после обучение в yml
 	path - путь до базы людей(папка для каждого человека названная его id, содержит в себе ./faces и ./photos)
 	*/
-void EigenDetector_v2::learn(char* path, char* id){
+void EigenDetector_v2::learn(const char* idPath){
 
-	char path_id[1024];
+	/*char path_id[1024];
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hf;
 
@@ -59,7 +59,7 @@ void EigenDetector_v2::learn(char* path, char* id){
 	if (hf != INVALID_HANDLE_VALUE){
 		while (FindNextFile(hf, &FindFileData) != 0){
 			char* name = FindFileData.cFileName;
-			if (strcmp(name, "..") && ((!strcmp(name, id)) || (!strcmp(id, "-1")))){
+			if (strcmp(name, "..") && ((!strcmp(name, id)) || (!strcmp(id, "-1")))){ ///????????
 				vector<Mat> images;
 				vector<int> labels;
 				Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
@@ -76,7 +76,7 @@ void EigenDetector_v2::learn(char* path, char* id){
 			}
 		}
 		FindClose(hf);
-	}
+	}*/
 }
 
 Mat EigenDetector_v2::MaskFace(IplImage *img) {
@@ -295,9 +295,9 @@ __int64 calcHammingDistance(__int64 x, __int64 y)
 	return dist;
 }
 
-void EigenDetector_v2::recognize(map <string, Ptr<FaceRecognizer>> models, DataJson dataJson, IplImage* image){
-
-	double old_prob = 0;
+void EigenDetector_v2::recognize(map <string, Ptr<FaceRecognizer>> models, DataJson dataJson, IplImage* image)
+{
+	double oldProb = 0;		// probability
 	string result_name = "-1";
 
 	for (map <string, Ptr<FaceRecognizer>>::iterator it = models.begin(); it != models.end(); it++)
@@ -334,15 +334,16 @@ void EigenDetector_v2::recognize(map <string, Ptr<FaceRecognizer>> models, DataJ
 
 			cout << (*it).first << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
 
-			if (prob > old_prob){
-				old_prob = prob;
+			if (prob > oldProb){
+				oldProb = prob;
 				result_name = (*it).first;
 			}
 		}
+
+		cout << endl;
 	}
 
-	cout << endl;
-
 	dataJson.ids->push_back(atoi(result_name.c_str()));
-	dataJson.probs->push_back(old_prob * 100);
+	dataJson.probs->push_back(oldProb * 100);
+
 }

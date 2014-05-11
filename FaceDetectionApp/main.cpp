@@ -5,7 +5,7 @@
 #define NET_CMD_LEARN		"learn"
 #define NET_CMD_CUT			"cut"
 
-#define ID_PATH				"C:\\OK\\test_photos\\"
+#define ID_PATH				"D:\\HerFace\\Faces\\"
 #define TARGET_PATH			"C:\\OK\\tmp\\"
 
 Network net;
@@ -21,14 +21,21 @@ struct ContextForCutFace{
 	SOCKET sock;
 	json::Array arrIds;
 };
+
+struct ContextForLearn{
+	SOCKET sock;
+	string id;
+};
+
 #pragma pack(pop)
 
-int saveLearnModel(char* dir_tmp, char* id){
+int saveLearnModel(void *pContext){
+	ContextForLearn *psContect = (ContextForLearn*)pContext;
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
-	char path_model[1024] = "";
 
 	//обучение FaceRecognizer
-	eigenDetector_v2->learn(dir_tmp, id);
+	eigenDetector_v2->learn((((string)ID_PATH).append(psContect->id)).c_str());
+	delete psContect;
 	delete eigenDetector_v2;
 	return 0;
 }
@@ -131,7 +138,17 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 		case
 		NET_RECEIVED_REMOTE_DATA:
 		{
-			json::Object objInputJson = ((json::Value)json::Deserialize((string)((char*)param))).operator json::Object();
+			json::Object objInputJson;
+			try
+			{
+				objInputJson = ((json::Value)json::Deserialize((string)((char*)param))).ToObject();
+			}
+			catch (...)
+			{
+				printf("Failed to parse incoming JSON: %s", (char*)param);
+				return;
+			}
+			
 			if (!objInputJson.HasKey("cmd"))
 			{
 				printf("Invalid input JSON: no cmd field\n");
@@ -202,13 +219,12 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 	return;
 }
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[]) 
+{
 	net.StartNetworkServer(callback, PORT);
-
-
+	
 	//json::Value v = json::Deserialize("{\n  \"a\": 1,\n  \"b\": 2\n}");
-	char param[] = "{\"cmd\":\"recognize\", \"friends\":[\"12345\", \"123456\"], \"photo_id\":\"12\"}\0";
+	char param[] = "{\"cmd\":\"cut\", \"ids\":[\"1\", \"2\"]}\0";
 
 	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(param), param);
 	getchar();
