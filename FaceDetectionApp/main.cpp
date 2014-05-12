@@ -7,7 +7,7 @@
 #define NET_CMD_CUT			"cut"
 
 #define ID_PATH				"D:\\HerFace\\Faces\\"
-#define TARGET_PATH			"C:\\OK\\tmp\\"
+#define TARGET_PATH			"D:\\HerFace\\Faces\\1\\"
 
 Network net;
 
@@ -58,11 +58,11 @@ int recognizeFromModel(void *pContext)
 		Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
 		try
 		{
-			model->load(((string)(ID_PATH)).append(psContext->arrFrinedsList[i].operator std::string()));
+			model->load(((string)(ID_PATH)).append(psContext->arrFrinedsList[i].operator std::string().append("//eigenface.yml")));
 		}
 		catch (...)
 		{
-			FilePrintMessage(NULL, _WARN("Learn was not called for user %d. Continue..."));
+			FilePrintMessage(NULL, _WARN("Failed to load model base for user %d. Continue..."), psContext->arrFrinedsList[i].operator std::string());
 			continue;
 		}
 		models[psContext->arrFrinedsList[i].operator std::string()] = model;
@@ -76,7 +76,7 @@ int recognizeFromModel(void *pContext)
 		return -1;
 	}
 	
-	img = cvLoadImage(((string)(TARGET_PATH)).append(psContext->targetImg).c_str());
+	img = cvLoadImage(((string)(TARGET_PATH)).append(psContext->targetImg.append(".jpg")).c_str());
 
 	if (!img)
 	{
@@ -228,6 +228,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				psContext->targetImg = objInputJson["photo_id"];
 				psContext->sock = sock;
 
+				FilePrintMessage(NULL, _SUCC("Recognizing started."));
 				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recognizeFromModel, psContext, 0, NULL);
 				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
@@ -245,6 +246,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				psContext->arrIds = objInputJson["ids"].ToArray();
 				psContext->sock = sock;
 
+				FilePrintMessage(NULL, _SUCC("Learning started."));
 				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)saveLearnModel, psContext, 0, NULL);
 				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
@@ -262,6 +264,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				psContext->arrIds = objInputJson["ids"].ToArray();
 				psContext->sock = sock;
 
+				FilePrintMessage(NULL, _SUCC("Cutting faces started."));
 				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)cutFaces, psContext, 0, NULL);
 				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
@@ -312,11 +315,14 @@ int main(int argc, char *argv[])
 	}
 	FilePrintMessage(NULL, _SUCC("Network server started!"));
 	
-	char param[] = "{\"cmd\":\"cut\", \"ids\":[\"1\", \"2\"]}\0";		// cut faces
-	//char param[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"1\"}\0";	// recognize name = 1.jpg
-	//char param[] = "{\"cmd\":\"learn\", \"ids\":[\"1\"]}\0";	// Learn base
+	char cut[] = "{\"cmd\":\"cut\", \"ids\":[\"1\"]}\0";		// cut faces
+	char learn[] = "{\"cmd\":\"learn\", \"ids\":[\"1\"]}\0";	// Learn base
+	char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"1\"}\0";	// recognize name = 1.jpg
 	
-	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(param), param);
+	
+	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(cut), cut);
+	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(learn), learn);
+	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
 	getchar();
 
 	cvReleaseHaarClassifierCascade(&faceCascades.face);
