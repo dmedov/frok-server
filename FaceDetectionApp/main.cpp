@@ -299,14 +299,17 @@ void usage()
 
 int main(int argc, char *argv[]) 
 {
+	InitializeCriticalSection(&faceDetectionCS);
+	InitializeCriticalSection(&fileCS);
+
 	if (argc != 2)
 	{
 		FilePrintMessage(NULL, _FAIL("Invalid input patemeters."));
 		usage();
+		DeleteCriticalSection(&faceDetectionCS);
+		DeleteCriticalSection(&fileCS);
 		return -1;
 	}
-	InitializeCriticalSection(&faceDetectionCS);
-	InitializeCriticalSection(&fileCS);
 	
 	unsigned uPort = atoi(argv[1]);
 
