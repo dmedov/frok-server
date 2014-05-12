@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include "io.h"
 #include "json.h"
+#include "network.h"
 
 FaceCascades faceCascades;
 CRITICAL_SECTION faceDetectionCS;
@@ -183,7 +184,9 @@ IplImage* ViolaJonesDetection::imposeMask(CvPoint p){
 	return img;
 }
 
-void ViolaJonesDetection::createJson(DataJson dataJson){
+void ViolaJonesDetection::createJson(DataJson dataJson, SOCKET sock){
+	//{ results:[{ "id": "1", "x1" : "503", "y1" : "182", "x2" : "812", "y2" : "491", "P" : "30.4" }] }
+	json::Object obj;
 	string outJson;
 	outJson.append("{ results: [");
 
@@ -225,9 +228,12 @@ void ViolaJonesDetection::createJson(DataJson dataJson){
 	}
 	outJson.append(" ] }");
 
-	ofstream out("results.json");
-	out << outJson;
-	out.close();
+	//ofstream out("results.json");
+
+	// outJson;
+	net.SendData(sock, outJson.c_str(), strlen(outJson.c_str()));
+	
+//	out.close();
 	delete dataJson.ids;
 	delete dataJson.p1s;
 	delete dataJson.p2s;
@@ -327,7 +333,8 @@ void ViolaJonesDetection::normalizateHistFace(){
 }
 
 //Детектирование лица (вызывается из main)
-void ViolaJonesDetection::faceDetect(IplImage *inputImage, map <string, Ptr<FaceRecognizer>> models){
+void ViolaJonesDetection::faceDetect(IplImage *inputImage, map <string, Ptr<FaceRecognizer>> models, SOCKET outSock)
+{
 	if (!faceCascades.face){
 		cout << "cascade error" << endl;
 		cvReleaseHaarClassifierCascade(&faceCascades.face);
@@ -383,7 +390,7 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, map <string, Ptr<Face
 		}
 	}
 	
-	createJson(dataJson);
+	createJson(dataJson, outSock);
 	cvShowImage("image", imageResults);
 
 	// освобождаем ресурсы

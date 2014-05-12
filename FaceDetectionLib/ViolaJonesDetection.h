@@ -28,7 +28,7 @@ public:
 	ViolaJonesDetection();
 	~ViolaJonesDetection();
 
-	void faceDetect(IplImage *inputImage, map <string, Ptr<FaceRecognizer>> models);
+	void faceDetect(IplImage *inputImage, map <string, Ptr<FaceRecognizer>> models, SOCKET outSock = INVALID_SOCKET);
 
 	// return -1 for failure, 0 in case of success
 	static DWORD WINAPI cutFaceThread(LPVOID params);
@@ -50,7 +50,7 @@ private:
 
 	void scanSIFT(Mat, int);
 
-	void createJson(DataJson dataJson);		// [TBD] change it to smth like show on photo or send response etc
+	void createJson(DataJson dataJson, SOCKET sock);		// [TBD] change it to smth like show on photo or send response etc
 	void normalizateHistFace();
 };
 

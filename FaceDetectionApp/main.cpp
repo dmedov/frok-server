@@ -87,7 +87,7 @@ int recognizeFromModel(void *pContext)
 	}
 	
 	storage = cvCreateMemStorage(0);					// Создание хранилища памяти
-	violaJonesDetection->faceDetect(img, models);
+	violaJonesDetection->faceDetect(img, models, psContext->sock);
 
 	while (1){
 		if (cvWaitKey(0) == 27)
@@ -318,11 +318,10 @@ int main(int argc, char *argv[])
 	char cut[] = "{\"cmd\":\"cut\", \"ids\":[\"1\"]}\0";		// cut faces
 	char learn[] = "{\"cmd\":\"learn\", \"ids\":[\"1\"]}\0";	// Learn base
 	char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"1\"}\0";	// recognize name = 1.jpg
-	
-	
+
 	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(cut), cut);
 	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(learn), learn);
-	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
+	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
 	getchar();
 
 	cvReleaseHaarClassifierCascade(&faceCascades.face);
