@@ -40,6 +40,8 @@ int saveLearnModel(void *pContext){
 		eigenDetector_v2->learn((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str());
 	}
 
+	net.SendData(psContext->sock, "{ \"success\":\"learn succeed\" }", strlen("{ \"success\":\"learn succeed\" }"));
+
 	delete psContext;
 	delete eigenDetector_v2;
 	return 0;
@@ -93,6 +95,8 @@ int recognizeFromModel(void *pContext)
 		if (cvWaitKey(0) == 27)
 			break;
 	}
+
+	net.SendData(psContext->sock, "{ \"success\":\"recognize faces succeed\" }", strlen("{ \"success\":\"recognize faces succeed\" }"));
 
 	cvReleaseImage(&img);
 	cvClearMemStorage(storage);
@@ -158,6 +162,7 @@ DWORD cutFaces(void *pContext)
 	}
 
 	cvDestroyAllWindows();
+	net.SendData(psContext->sock, "{ \"success\":\"cut faces succeed\" }", strlen("{ \"success\":\"cut faces succeed\" }"));
 	FilePrintMessage(NULL, _SUCC("Cutting succeed. Time elapsed %.4lf\n"), (clock() - startTime));
 	return 0;
 }
