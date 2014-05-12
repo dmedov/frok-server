@@ -3,8 +3,7 @@
 #include <ctime>
 
 #define	NET_CMD_RECOGNIZE	"recognize"
-#define NET_CMD_LEARN		"learn"
-#define NET_CMD_CUT			"cut"
+#define NET_CMD_TRAIN		"train"
 
 #define ID_PATH				"D:\\HerFace\\Faces\\"
 #define TARGET_PATH			"D:\\HerFace\\Faces\\1\\"
@@ -18,34 +17,12 @@ struct ContextForRecognize{
 	json::Array arrFrinedsList;
 };
 
-struct ContextForCutFace{
-	SOCKET sock;
-	json::Array arrIds;
-};
-
-struct ContextForLearn{
+struct ContextForTrain{
 	SOCKET sock;
 	json::Array arrIds;
 };
 
 #pragma pack(pop)
-
-int saveLearnModel(void *pContext){
-	ContextForLearn *psContext = (ContextForLearn*)pContext;
-	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
-
-	//обучение FaceRecognizer
-	for (unsigned i = 0; i < psContext->arrIds.size(); i++)
-	{
-		eigenDetector_v2->learn((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str());
-	}
-
-	net.SendData(psContext->sock, "{ \"success\":\"learn succeed\" }", strlen("{ \"success\":\"learn succeed\" }"));
-
-	delete psContext;
-	delete eigenDetector_v2;
-	return 0;
-}
 
 int recognizeFromModel(void *pContext)
 {
@@ -106,11 +83,11 @@ int recognizeFromModel(void *pContext)
 	return 0;
 }
 
-DWORD cutFaces(void *pContext)
+DWORD generateAndTrainBase(void *pContext)
 {
 	double startTime = clock();
 
-	ContextForCutFace *psContext = (ContextForCutFace*)pContext;
+	ContextForTrain *psContext = (ContextForTrain*)pContext;
 	_finddata_t result;
 	HANDLE *phEventTaskCompleted = new HANDLE[psContext->arrIds.size()];
 	std::vector <HANDLE> threads;
@@ -158,12 +135,25 @@ DWORD cutFaces(void *pContext)
 				CloseHandle(threads[j]);
 			}
 			threads.clear();
+
+			EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
+
+			//train FaceRecognizer
+			try
+			{
+				eigenDetector_v2->train((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str());
+			}
+			catch (...)
+			{
+				FilePrintMessage(NULL, _FAIL("Some error has occured during Learn call."));
+			}
+			delete eigenDetector_v2;
 		}
 	}
 
 	cvDestroyAllWindows();
-	net.SendData(psContext->sock, "{ \"success\":\"cut faces succeed\" }", strlen("{ \"success\":\"cut faces succeed\" }"));
-	FilePrintMessage(NULL, _SUCC("Cutting succeed. Time elapsed %.4lf\n"), (clock() - startTime));
+	net.SendData(psContext->sock, "{ \"success\":\"train succeed\" }", strlen("{ \"success\":\"train succeed\" }"));
+	FilePrintMessage(NULL, _SUCC("Train succeed. Time elapsed %.4lf\n"), (clock() - startTime));
 	return 0;
 }
 
@@ -211,7 +201,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 			}
 
 			// Parse cmd
-			if (objInputJson["cmd"].operator string() == NET_CMD_RECOGNIZE)
+			if (objInputJson["cmd"].ToString() == NET_CMD_RECOGNIZE)
 			{
 				if (!objInputJson.HasKey("friends"))
 				{
@@ -233,11 +223,11 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				psContext->targetImg = objInputJson["photo_id"];
 				psContext->sock = sock;
 
-				FilePrintMessage(NULL, _SUCC("Recognizing started."));
+				FilePrintMessage(NULL, _SUCC("Recognizing started..."));
 				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recognizeFromModel, psContext, 0, NULL);
 				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
-			else if (objInputJson["cmd"].operator string() == NET_CMD_LEARN)
+			else if (objInputJson["cmd"].ToString() == NET_CMD_TRAIN)
 			{
 				if (!objInputJson.HasKey("ids"))
 				{
@@ -246,31 +236,13 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 					return;
 				}
 
-				ContextForLearn *psContext = new ContextForLearn;
-				memset(psContext, 0, sizeof(ContextForLearn));
+				ContextForTrain *psContext = new ContextForTrain;
+				memset(psContext, 0, sizeof(ContextForTrain));
 				psContext->arrIds = objInputJson["ids"].ToArray();
 				psContext->sock = sock;
 
-				FilePrintMessage(NULL, _SUCC("Learning started."));
-				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)saveLearnModel, psContext, 0, NULL);
-				// Notice that psContext should be deleted in recognizeFromModel function!
-			}
-			else if (objInputJson["cmd"].operator string() == NET_CMD_CUT)
-			{
-				if (!objInputJson.HasKey("ids"))
-				{
-					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no ids field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no ids field\" }", strlen("{ \"error\":\"no ids field\" }"));
-					return;
-				}
-
-				ContextForCutFace *psContext = new ContextForCutFace;
-				memset(psContext, 0, sizeof(ContextForCutFace));
-				psContext->arrIds = objInputJson["ids"].ToArray();
-				psContext->sock = sock;
-
-				FilePrintMessage(NULL, _SUCC("Cutting faces started."));
-				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)cutFaces, psContext, 0, NULL);
+				FilePrintMessage(NULL, _SUCC("Training started..."));
+				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)generateAndTrainBase, psContext, 0, NULL);
 				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
 			else
@@ -323,12 +295,10 @@ int main(int argc, char *argv[])
 	}
 	FilePrintMessage(NULL, _SUCC("Network server started!"));
 	
-	char cut[] = "{\"cmd\":\"cut\", \"ids\":[\"1\"]}\0";		// cut faces
-	char learn[] = "{\"cmd\":\"learn\", \"ids\":[\"1\"]}\0";	// Learn base
+	char train[] = "{\"cmd\":\"train\", \"ids\":[\"1\"]}\0";	// cut faces and train base
 	char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"1\"}\0";	// recognize name = 1.jpg
 
-	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(cut), cut);
-	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(learn), learn);
+	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), learn);
 	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
 	getchar();
 

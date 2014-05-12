@@ -47,7 +47,7 @@ void EigenDetector_v2::loadBaseFace(const char* facesPath, vector<Mat> * images,
 	model - модель FaceRecognizer, сохраняется после обучение в yml
 	path - путь до базы людей(папка для каждого человека названная его id, содержит в себе ./faces и ./photos)
 	*/
-void EigenDetector_v2::learn(const char* idPath){
+void EigenDetector_v2::train(const char* idPath){
 
 	string facesPath = ((string)idPath).append("\\faces\\");
 	
