@@ -2,9 +2,11 @@
 #include "common.h"
 
 HANDLE	hStdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+CRITICAL_SECTION fileCS;
 
 void FilePrintMessage(char* file, char* expr...)
 {
+	EnterCriticalSection(&fileCS);
 	char message[LOG_MESSAGE_MAX_LENGTH];
 	va_list args;
 
@@ -36,6 +38,7 @@ void FilePrintMessage(char* file, char* expr...)
 		}
 		va_end(args);
 	}
+	LeaveCriticalSection(&fileCS);
 }
 
 void ChooseTextColor(char* msg)

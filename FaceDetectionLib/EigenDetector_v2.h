@@ -8,7 +8,7 @@ public:
 
 
 private:
-	void loadBaseFace(char* dir, vector<Mat> * images, vector<int>* labels, int id);
-	void loadAndRecognize(char* dir, IplImage* image, IplImage* resultImage, CvPoint p1, CvPoint p2);
+	void loadBaseFace(const char* facesPath, vector<Mat> * images, vector<int>* labels, int id);
+	//void loadAndRecognize(const char* dir, IplImage* image, IplImage* resultImage, CvPoint p1, CvPoint p2);
 };
 

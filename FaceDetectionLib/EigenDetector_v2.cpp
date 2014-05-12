@@ -12,23 +12,22 @@
 	Загрузка изображений в массив
 	dir - ./faces, из которой берутся изображения с лицом для обучения
 	*/
-void EigenDetector_v2::loadBaseFace(char* dir, vector<Mat> * images, vector<int>* labels, int id){
+void EigenDetector_v2::loadBaseFace(const char* facesPath, vector<Mat> * images, vector<int>* labels, int id){
 
 	_finddata_t result;
-	char name[1024];
+	string name = ((string)facesPath).append("\\*.jpg");
 	long done;
 	IplImage *base_face = 0;
 
-	sprintf(name, "%s\\*.jpg", dir);
 	memset(&result, 0, sizeof(result));
-	done = _findfirst(name, &result);
+	done = _findfirst(name.c_str(), &result);
 
 	if (done != -1)
 	{
 		int res = 0;
 		while (res == 0){
-			sprintf(name, "%s\\%s", dir, result.name);
-			IplImage *dist = cvLoadImage(name, CV_LOAD_IMAGE_GRAYSCALE);
+			name = ((string)facesPath).append("\\").append(result.name);
+			IplImage *dist = cvLoadImage(name.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
 			IplImage *resize = cvCreateImage(cvSize(158, 190), dist->depth, dist->nChannels);
 			cvResize(dist, resize, 1);
 
@@ -50,33 +49,43 @@ void EigenDetector_v2::loadBaseFace(char* dir, vector<Mat> * images, vector<int>
 	*/
 void EigenDetector_v2::learn(const char* idPath){
 
-	/*char path_id[1024];
-	WIN32_FIND_DATA FindFileData;
-	HANDLE hf;
+	string facesPath = ((string)idPath).append("\\faces\\");
+	
+	vector<Mat> images;
+	vector<int> labels;
+	Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
+	try
+	{
+		loadBaseFace(facesPath.c_str(), &images, &labels, 0);
+	}
+	catch (...)
+	{
+		FilePrintMessage(NULL, _FAIL("Failed to load images for learning (path = %s)."), facesPath.c_str());
+		return;
+	}
+	
+	try
+	{
+		model->train(images, labels);
+	}
+	catch(...)
+	{
+		FilePrintMessage(NULL, _FAIL("Failed to train model."));
+		return;
+	}
+	
+	try
+	{
+		model->save(((string)idPath).append("\\eigenface.yml").c_str());
+	}
+	catch (...)
+	{
+		FilePrintMessage(NULL, _FAIL("Failed to save %s"), ((string)idPath).append("\\eigenface.yml").c_str());
+		return;
+	}
 
-	sprintf(path_id, "%s//*", path);
-	hf = FindFirstFile(path_id, &FindFileData);
-	if (hf != INVALID_HANDLE_VALUE){
-		while (FindNextFile(hf, &FindFileData) != 0){
-			char* name = FindFileData.cFileName;
-			if (strcmp(name, "..") && ((!strcmp(name, id)) || (!strcmp(id, "-1")))){ ///????????
-				vector<Mat> images;
-				vector<int> labels;
-				Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
-				char path_face[1024];
-				char path_eigen[1024];
-				sprintf(path_face, "%s\\%s\\faces\\", path, name);
-				loadBaseFace(path_face, &images, &labels, atoi(name));
-				model->train(images, labels);
-
-				sprintf(path_eigen, "%s\\%s\\%s", path, name, "eigenface.yml");
-				model->save(path_eigen);
-				cout << path_eigen << " has been saved.\n" << endl;
-
-			}
-		}
-		FindClose(hf);
-	}*/
+	FilePrintMessage(NULL, _SUCC("Learning completed. See resulting file eigenface.yml in %s folder"), idPath);
+	return;
 }
 
 Mat EigenDetector_v2::MaskFace(IplImage *img) {

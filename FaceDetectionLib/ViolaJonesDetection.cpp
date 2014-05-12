@@ -11,20 +11,14 @@
 #include "io.h"
 #include "json.h"
 
+FaceCascades faceCascades;
+CRITICAL_SECTION faceDetectionCS;
+
 ViolaJonesDetection::ViolaJonesDetection(){
-	faceCascades = FaceCascades();
 }
 
 
 ViolaJonesDetection::~ViolaJonesDetection(){
-	cout << "delete all" << endl;
-	cvReleaseHaarClassifierCascade(&faceCascades.face);
-	cvReleaseHaarClassifierCascade(&faceCascades.eyes);
-	cvReleaseHaarClassifierCascade(&faceCascades.nose);
-	cvReleaseHaarClassifierCascade(&faceCascades.mouth);
-	cvReleaseHaarClassifierCascade(&faceCascades.eye);
-	cvReleaseHaarClassifierCascade(&faceCascades.righteye2);
-	cvReleaseHaarClassifierCascade(&faceCascades.lefteye2);
 }
 
 //Запись ключевых точек в массив
@@ -313,18 +307,17 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
 }
 
 void ViolaJonesDetection::allKeysFaceDetection(CvPoint point){
-	keysFaceDetect(faceCascades.eye, point, 4);				//правый общий
+	EnterCriticalSection(&faceDetectionCS);
+	keysFaceDetect(faceCascades.eye, point, 4);					//правый общий
 	keysFaceDetect(faceCascades.righteye2, point, 4);			//правый 
 	keysFaceDetect(faceCascades.righteye, point, 4);			//правый альтернатива
-
-	keysFaceDetect(faceCascades.eye, point, 3);				//левый общий
+	keysFaceDetect(faceCascades.eye, point, 3);					//левый общий
 	keysFaceDetect(faceCascades.lefteye2, point, 3);			//левый 
-	keysFaceDetect(faceCascades.lefteye, point, 3);			//левый альтернатива
-
+	keysFaceDetect(faceCascades.lefteye, point, 3);				//левый альтернатива
 	keysFaceDetect(faceCascades.eyes, point, 0);				//глаза в очках
-
 	keysFaceDetect(faceCascades.nose, point, 1);				//нос
 	keysFaceDetect(faceCascades.mouth, point, 2);				//рот
+	LeaveCriticalSection(&faceDetectionCS);
 }
 
 void ViolaJonesDetection::normalizateHistFace(){
@@ -431,26 +424,23 @@ void equalizeFace(IplImage *faceImg) {
 }
 
 //ВЫрезание изображения с лицом
-int ViolaJonesDetection::cutFace(IplImage *inputImage, const char* destPath){
+DWORD WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
+	cutFaceThreadParams *psParams = (cutFaceThreadParams*)params;
 
-	if (!faceCascades.face){
-		cout << "cascade error" << endl;
-		cvReleaseHaarClassifierCascade(&faceCascades.face);
-		return -1;
-	}
-
-	image = cvCloneImage(inputImage);
+	psParams->pThis->image = cvCloneImage(psParams->inputImage);
 
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 
-	gray_img = cvCreateImage(cvGetSize(image), 8, 1);
-	cvCvtColor(image, gray_img, CV_BGR2GRAY);
+	psParams->pThis->gray_img = cvCreateImage(cvGetSize(psParams->pThis->image), 8, 1);
+	cvCvtColor(psParams->pThis->image, psParams->pThis->gray_img, CV_BGR2GRAY);
 
 	//Ptr<CLAHE> clahe = createCLAHE(2, Size(8, 8));
 	//clahe->apply(Mat(gray_img), Mat(gray_img));
 
-	strg = cvCreateMemStorage(0);										//Создание хранилища памяти
-	CvSeq *faces = cvHaarDetectObjects(gray_img, faceCascades.face, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+	psParams->pThis->strg = cvCreateMemStorage(0);										//Создание хранилища памяти
+	EnterCriticalSection(&faceDetectionCS);
+	CvSeq *faces = cvHaarDetectObjects(psParams->pThis->gray_img, faceCascades.face, psParams->pThis->strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+	LeaveCriticalSection(&faceDetectionCS);
 	for (int i = 0; i < (faces ? faces->total : 0); i++){
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
 		ImageCoordinats points;
@@ -461,30 +451,39 @@ int ViolaJonesDetection::cutFace(IplImage *inputImage, const char* destPath){
 		points.p1 = cvPoint(x, y);
 		points.p2 = cvPoint(x + w, y + h);
 
-		face_img = cvCreateImage(cvSize(w, h), gray_img->depth, gray_img->nChannels);
-		cvSetImageROI(gray_img, cvRect(x, y, w, h));
-		cvCopy(gray_img, face_img, NULL);
-		cvResetImageROI(gray_img);									//копируем лицо в отдельную картинку
+		psParams->pThis->face_img = cvCreateImage(cvSize(w, h), psParams->pThis->gray_img->depth, psParams->pThis->gray_img->nChannels);
+		cvSetImageROI(psParams->pThis->gray_img, cvRect(x, y, w, h));
+		cvCopy(psParams->pThis->gray_img, psParams->pThis->face_img, NULL);
+		cvResetImageROI(psParams->pThis->gray_img);									//копируем лицо в отдельную картинку
 
 		for (int j = 0; j < 8; j++)	
-			facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
+			psParams->pThis->facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
 
-		allKeysFaceDetection(points.p1);
+		psParams->pThis->allKeysFaceDetection(points.p1);
+		psParams->pThis->normalizateHistFace();
+		if (psParams->pThis->drawEvidence(points, true)){
+			if (psParams->pThis->defineRotate() == 0){
+				psParams->pThis->face_img = psParams->pThis->imposeMask(points.p1);
+				psParams->pThis->face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(psParams->pThis->face_img));
 
-		normalizateHistFace();
-
-		if (drawEvidence(points, true)){
-			if (defineRotate() == 0){
-				face_img = imposeMask(points.p1);
-				face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
-
-				IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
-				cvResize(face_img, dest, 1);
+				IplImage *dest = cvCreateImage(cvSize(158, 190), psParams->pThis->face_img->depth, psParams->pThis->face_img->nChannels);
+				cvResize(psParams->pThis->face_img, dest, 1);
 				//equalizeFace(dist);
+
+				//EnterCriticalSection(&faceDetectionCS);
+
 				if (faces->total == 1){
-					if (cvSaveImage(destPath, dest))
-						cout << "\t->\t person found and saved";
+					try
+					{
+						cvSaveImage(psParams->destPath, dest);
+					}
+					catch (...)
+					{
+						FilePrintMessage(NULL, _FAIL("Failed to save image. Runtime error occured"));
+					}
+					
 				}
+				//LeaveCriticalSection(&faceDetectionCS);
 				cvReleaseImage(&dest);
 			}
 
@@ -492,11 +491,12 @@ int ViolaJonesDetection::cutFace(IplImage *inputImage, const char* destPath){
 	}
 	delete eigenDetector_v2;
 
-	cvClearMemStorage(strg);
-	cvReleaseImage(&face_img);			// освобождаем ресурсы
-	cvReleaseImage(&gray_img);
-	cvReleaseImage(&image);
-	cvReleaseImage(&imageResults);
+	cvClearMemStorage(psParams->pThis->strg);
+	cvReleaseImage(&psParams->pThis->face_img);			// освобождаем ресурсы
+	cvReleaseImage(&psParams->pThis->gray_img);
+	cvReleaseImage(&psParams->pThis->image);
+	cvReleaseImage(&psParams->pThis->imageResults);
+	delete psParams;
 
 	return 0;
 }

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "LibInclude.h"
+#include <ctime>
 
 #define	NET_CMD_RECOGNIZE	"recognize"
 #define NET_CMD_LEARN		"learn"
@@ -24,18 +25,22 @@ struct ContextForCutFace{
 
 struct ContextForLearn{
 	SOCKET sock;
-	string id;
+	json::Array arrIds;
 };
 
 #pragma pack(pop)
 
 int saveLearnModel(void *pContext){
-	ContextForLearn *psContect = (ContextForLearn*)pContext;
+	ContextForLearn *psContext = (ContextForLearn*)pContext;
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 
 	//обучение FaceRecognizer
-	eigenDetector_v2->learn((((string)ID_PATH).append(psContect->id)).c_str());
-	delete psContect;
+	for (unsigned i = 0; i < psContext->arrIds.size(); i++)
+	{
+		eigenDetector_v2->learn((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str());
+	}
+
+	delete psContext;
 	delete eigenDetector_v2;
 	return 0;
 }
@@ -66,19 +71,23 @@ int recognizeFromModel(void *pContext)
 	if (models.empty())
 	{
 		FilePrintMessage(NULL, _FAIL("No models loaded."));
+		delete violaJonesDetection;
+		delete psContext;
 		return -1;
 	}
 	
 	img = cvLoadImage(((string)(TARGET_PATH)).append(psContext->targetImg).c_str());
 
-	if (!img) {
+	if (!img)
+	{
 		FilePrintMessage(NULL, _FAIL("Failed to load image %s"), ((string)(TARGET_PATH)).append(psContext->targetImg).c_str());
+		delete violaJonesDetection;
+		delete psContext;
 		return -1;
 	}
-	else{
-		storage = cvCreateMemStorage(0);					// Создание хранилища памяти
-		violaJonesDetection->faceDetect(img, models);
-	}
+	
+	storage = cvCreateMemStorage(0);					// Создание хранилища памяти
+	violaJonesDetection->faceDetect(img, models);
 
 	while (1){
 		if (cvWaitKey(0) == 27)
@@ -93,22 +102,27 @@ int recognizeFromModel(void *pContext)
 	return 0;
 }
 
-int cutFaces(void *pContext){
-	ContextForCutFace *psContext = (ContextForCutFace*) pContext;
-	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
-	_finddata_t result;
+DWORD cutFaces(void *pContext)
+{
+	double startTime = clock();
 
+	ContextForCutFace *psContext = (ContextForCutFace*)pContext;
+	_finddata_t result;
+	HANDLE *phEventTaskCompleted = new HANDLE[psContext->arrIds.size()];
+	std::vector <HANDLE> threads;
+	
 	for (unsigned i = 0; i < psContext->arrIds.size(); i++)
 	{
 		memset(&result, 0, sizeof(result));
-		string photoName = ((string)ID_PATH).append(psContext->arrIds[i].operator std::string()).append("\\photos\\*.jpg");
+		string photoName = ((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\photos\\*.jpg");
 
 		intptr_t firstHandle = _findfirst(photoName.c_str(), &result);
+
 		if (firstHandle != -1)
 		{
 			do
 			{
-				photoName = ((string)ID_PATH).append(psContext->arrIds[i].operator std::string()).append("\\photos\\").append(result.name);
+				photoName = ((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\photos\\").append(result.name);
 				IplImage *img = cvLoadImage(photoName.c_str());
 				if (img == NULL)
 				{
@@ -116,19 +130,35 @@ int cutFaces(void *pContext){
 					continue;
 				}
 
-				cout << "Cutting face from image " << result.name;
+				//cout << "Cutting face from image " << result.name;
 
-				violaJonesDetection->cutFace(img, ((string)ID_PATH).append(psContext->arrIds[i].operator std::string()).append("\\faces\\").append(result.name).c_str());
-
-				cvReleaseImage(&img);
-				cout << endl;
+				cutFaceThreadParams * param = new cutFaceThreadParams(img, (((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(result.name)).c_str());
+				threads.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)param->pThis->cutFaceThread, param, 0, NULL));
 
 			} while (_findnext(firstHandle, &result) == 0);
 		}
+		
+		if (!threads.empty())
+		{
+			DWORD res;
+			if (WAIT_OBJECT_0 != (res = WaitForMultipleObjects(threads.size(), &threads[0], TRUE, INFINITE)))
+			{
+				FilePrintMessage(NULL, _FAIL("Timeout has occured during waiting for cutting images finished"));
+				for (unsigned j = 0; j < threads.size(); j++)
+				{
+					TerminateThread(threads[j], -1);
+				}
+			}
+			for (unsigned j = 0; j < threads.size(); j++)
+			{
+				CloseHandle(threads[j]);
+			}
+			threads.clear();
+		}
 	}
-	
+
 	cvDestroyAllWindows();
-	delete violaJonesDetection;
+	FilePrintMessage(NULL, _SUCC("Cutting succeed. Time elapsed %.4lf\n"), (clock() - startTime));
 	return 0;
 }
 
@@ -194,7 +224,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 
 				ContextForRecognize *psContext = new ContextForRecognize;
 				memset(psContext, 0, sizeof(ContextForRecognize));
-				psContext->arrFrinedsList = objInputJson["friends"].operator json::Array();
+				psContext->arrFrinedsList = objInputJson["friends"].ToArray();
 				psContext->targetImg = objInputJson["photo_id"];
 				psContext->sock = sock;
 
@@ -203,6 +233,20 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 			}
 			else if (objInputJson["cmd"].operator string() == NET_CMD_LEARN)
 			{
+				if (!objInputJson.HasKey("ids"))
+				{
+					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no ids field (%s)"), (char*)param);
+					net.SendData(sock, "{ \"error\":\"no ids field\" }", strlen("{ \"error\":\"no ids field\" }"));
+					return;
+				}
+
+				ContextForLearn *psContext = new ContextForLearn;
+				memset(psContext, 0, sizeof(ContextForLearn));
+				psContext->arrIds = objInputJson["ids"].ToArray();
+				psContext->sock = sock;
+
+				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)saveLearnModel, psContext, 0, NULL);
+				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
 			else if (objInputJson["cmd"].operator string() == NET_CMD_CUT)
 			{
@@ -215,7 +259,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 
 				ContextForCutFace *psContext = new ContextForCutFace;
 				memset(psContext, 0, sizeof(ContextForCutFace));
-				psContext->arrIds = objInputJson["ids"].operator json::Array();
+				psContext->arrIds = objInputJson["ids"].ToArray();
 				psContext->sock = sock;
 
 				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)cutFaces, psContext, 0, NULL);
@@ -239,40 +283,51 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 	return;
 }
 
+void usage()
+{
+	FilePrintMessage(NULL, _SUCC("FaceDetectionApp <Local port number>"));
+	return;
+}
+
 int main(int argc, char *argv[]) 
 {
-	net.StartNetworkServer(callback, PORT);
+	if (argc != 2)
+	{
+		FilePrintMessage(NULL, _FAIL("Invalid input patemeters."));
+		usage();
+		return -1;
+	}
+	InitializeCriticalSection(&faceDetectionCS);
+	InitializeCriticalSection(&fileCS);
 	
-	//json::Value v = json::Deserialize("{\n  \"a\": 1,\n  \"b\": 2\n}");
-	//char param[] = "{\"cmd\":\"cut\", \"ids\":[\"1\", \"2\"]}\0";		// cut faces
-	char param[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"1\"}\0";
+	unsigned uPort = atoi(argv[1]);
+
+	FilePrintMessage(NULL, _SUCC("Starting network server with port = %d"), uPort);
+	if (NET_SUCCESS != net.StartNetworkServer(callback, uPort))
+	{
+		FilePrintMessage(NULL, _FAIL("Failed to start network. For additional info build project with NET_DEBUG_PRINT flag enabled"));
+		DeleteCriticalSection(&faceDetectionCS);
+		DeleteCriticalSection(&fileCS);
+		return -1;
+	}
+	FilePrintMessage(NULL, _SUCC("Network server started!"));
+	
+	char param[] = "{\"cmd\":\"cut\", \"ids\":[\"1\", \"2\"]}\0";		// cut faces
+	//char param[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"1\"}\0";	// recognize name = 1.jpg
+	//char param[] = "{\"cmd\":\"learn\", \"ids\":[\"1\"]}\0";	// Learn base
 	
 	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(param), param);
 	getchar();
 
-	/*if (argc != 3 && argc != 4){
-		cerr << "invalid input arguments" << endl;
-		return -1;
-		}
-		char *key = argv[2];
+	cvReleaseHaarClassifierCascade(&faceCascades.face);
+	cvReleaseHaarClassifierCascade(&faceCascades.eyes);
+	cvReleaseHaarClassifierCascade(&faceCascades.nose);
+	cvReleaseHaarClassifierCascade(&faceCascades.mouth);
+	cvReleaseHaarClassifierCascade(&faceCascades.eye);
+	cvReleaseHaarClassifierCascade(&faceCascades.righteye2);
+	cvReleaseHaarClassifierCascade(&faceCascades.lefteye2);
+	DeleteCriticalSection(&faceDetectionCS);
+	DeleteCriticalSection(&fileCS);
 
-		//<Путь до папки с id> -l
-		//C:\OK\tmp\ -l
-		if (key[1] == 'l'){
-		if (argc != 4) argv[3] = "-1";
-		return saveLearnModel(argv[1], argv[3]);
-		}
-		//<Путь до изображения> -r <путь до *.yml>
-		//C:\OK\test_photos\36.jpg -r C:\OK\tmp\
-
-		else if (key[1] == 'r'){
-		return recognizeFromModel(argv[1], argv[3]);
-		}
-		// <Путь до папки с fotos> -f
-		// C:\OK\tmp\5\ -f
-		else if (key[1] == 'f'){
-		if (argc != 4) argv[3] = "-1";
-		return rejectFaceForLearn(argv[1], argv[3]);
-		}*/
 	return 0;
 }

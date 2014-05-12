@@ -21,3 +21,4 @@ void FilePrintMessage(char* file, char* expr...);
 void ChooseTextColor(char* msg);
 void RestoreTextColor();
 extern HANDLE			hStdHandle;
+extern CRITICAL_SECTION fileCS;

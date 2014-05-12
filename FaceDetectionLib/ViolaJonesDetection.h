@@ -16,13 +16,14 @@ struct FaceCascades{
 	CvHaarClassifierCascade *mouth = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_mouth.xml", 0, 0, 0);
 };
 
+extern FaceCascades faceCascades;
+extern CRITICAL_SECTION faceDetectionCS;
 class ViolaJonesDetection
 {
 protected:
 	IplImage *image, *imageResults, *face_img, *gray_img;
 	CvPoint facePoints[8];
 	CvMemStorage* strg;
-	FaceCascades faceCascades;
 public:
 	ViolaJonesDetection();
 	~ViolaJonesDetection();
@@ -30,7 +31,7 @@ public:
 	void faceDetect(IplImage *inputImage, map <string, Ptr<FaceRecognizer>> models);
 
 	// return -1 for failure, 0 in case of success
-	int cutFace(IplImage *inputImage, const char* destPath);
+	static DWORD WINAPI cutFaceThread(LPVOID params);
 
 private:
 	bool drawEvidence(struct ImageCoordinats pointFase, bool draw);
@@ -51,4 +52,25 @@ private:
 
 	void createJson(DataJson dataJson);		// [TBD] change it to smth like show on photo or send response etc
 	void normalizateHistFace();
+};
+
+struct cutFaceThreadParams
+{
+	cutFaceThreadParams(IplImage *inputImage, const char* destPath)
+	{
+		this->inputImage = new IplImage;
+		this->inputImage = inputImage;
+		this->destPath = new char[strlen(destPath)];
+		strcpy(this->destPath, destPath);
+		pThis = new ViolaJonesDetection;
+	}
+
+	~cutFaceThreadParams()
+	{
+		cvReleaseImage(&inputImage);
+		delete pThis;
+	}
+	IplImage *inputImage;
+	char* destPath;
+	ViolaJonesDetection *pThis;
 };
