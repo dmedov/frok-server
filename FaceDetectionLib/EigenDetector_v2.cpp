@@ -352,7 +352,10 @@ void EigenDetector_v2::recognize(map <string, Ptr<FaceRecognizer>> models, DataJ
 		cout << endl;
 	}
 
-	dataJson.ids->push_back(atoi(result_name.c_str()));
+	char *pcResultName = new char[strlen(result_name.c_str())];
+	strcpy(pcResultName, result_name.c_str());
+
+	dataJson.ids->push_back(pcResultName);
 	dataJson.probs->push_back(oldProb * 100);
 
 }

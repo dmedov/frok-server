@@ -5,8 +5,8 @@
 #define	NET_CMD_RECOGNIZE	"recognize"
 #define NET_CMD_TRAIN		"train"
 
-#define ID_PATH				"D:\\HerFace\\Faces\\"
-#define TARGET_PATH			"D:\\HerFace\\Faces\\1\\"
+#define ID_PATH				"Z:\\frok\\"
+#define TARGET_PATH			"Z:\\frok\\1\\"
 
 Network net;
 
@@ -37,11 +37,11 @@ int recognizeFromModel(void *pContext)
 		Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
 		try
 		{
-			model->load(((string)(ID_PATH)).append(psContext->arrFrinedsList[i].operator std::string().append("//eigenface.yml")));
+			model->load(((string)(ID_PATH)).append(psContext->arrFrinedsList[i].operator std::string()).append("//eigenface.yml"));
 		}
 		catch (...)
 		{
-			FilePrintMessage(NULL, _WARN("Failed to load model base for user %d. Continue..."), psContext->arrFrinedsList[i].operator std::string());
+			FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), psContext->arrFrinedsList[i].ToString().c_str());
 			continue;
 		}
 		models[psContext->arrFrinedsList[i].operator std::string()] = model;
@@ -50,6 +50,7 @@ int recognizeFromModel(void *pContext)
 	if (models.empty())
 	{
 		FilePrintMessage(NULL, _FAIL("No models loaded."));
+		net.SendData(psContext->sock, "{ \"error\":\"training was not called\" }\n\0", strlen("{ \"error\":\"training was not called\" }\n\0"));
 		delete violaJonesDetection;
 		delete psContext;
 		return -1;
@@ -60,6 +61,7 @@ int recognizeFromModel(void *pContext)
 	if (!img)
 	{
 		FilePrintMessage(NULL, _FAIL("Failed to load image %s"), ((string)(TARGET_PATH)).append(psContext->targetImg).c_str());
+		net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
 		delete violaJonesDetection;
 		delete psContext;
 		return -1;
@@ -68,12 +70,13 @@ int recognizeFromModel(void *pContext)
 	storage = cvCreateMemStorage(0);					// Создание хранилища памяти
 	violaJonesDetection->faceDetect(img, models, psContext->sock);
 
+	/*
 	while (1){
 		if (cvWaitKey(0) == 27)
 			break;
-	}
+	}*/
 
-	net.SendData(psContext->sock, "{ \"success\":\"recognize faces succeed\" }", strlen("{ \"success\":\"recognize faces succeed\" }"));
+	net.SendData(psContext->sock, "{ \"success\":\"recognize faces succeed\" }\n\0", strlen("{ \"success\":\"recognize faces succeed\" }\n\0"));
 
 	cvReleaseImage(&img);
 	cvClearMemStorage(storage);
@@ -146,13 +149,17 @@ DWORD generateAndTrainBase(void *pContext)
 			catch (...)
 			{
 				FilePrintMessage(NULL, _FAIL("Some error has occured during Learn call."));
+				net.SendData(psContext->sock, "{ \"fail\":\"learning failed\" }\n\0", strlen("{ \"fail\":\"learning failed\" }\n\0"));
+				delete eigenDetector_v2;
+				cvDestroyAllWindows();
+				return -1;
 			}
 			delete eigenDetector_v2;
 		}
 	}
 
 	cvDestroyAllWindows();
-	net.SendData(psContext->sock, "{ \"success\":\"train succeed\" }", strlen("{ \"success\":\"train succeed\" }"));
+	net.SendData(psContext->sock, "{ \"success\":\"train succeed\" }\n\0", strlen("{ \"success\":\"train succeed\" }\n\0"));
 	FilePrintMessage(NULL, _SUCC("Train succeed. Time elapsed %.4lf\n"), (clock() - startTime));
 	return 0;
 }
@@ -189,14 +196,14 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 			catch (...)
 			{
 				FilePrintMessage(NULL, _FAIL("Failed to parse incoming JSON: %s"), (char*)param);
-				net.SendData(sock, "{ \"error\":\"bad command\" }", strlen("{ \"error\":\"bad command\" }"));
+				net.SendData(sock, "{ \"error\":\"bad command\" }\n\0", strlen("{ \"error\":\"bad command\" }\n\0"));
 				return;
 			}
 			
 			if (!objInputJson.HasKey("cmd"))
 			{
 				FilePrintMessage(NULL, _FAIL("Invalid input JSON: no cmd field (%s)"), (char*)param);
-				net.SendData(sock, "{ \"error\":\"no cmd field\" }", strlen("{ \"error\":\"no cmd field\" }"));
+				net.SendData(sock, "{ \"error\":\"no cmd field\" }\n\0", strlen("{ \"error\":\"no cmd field\" }\n\0"));
 				return;
 			}
 
@@ -206,14 +213,14 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				if (!objInputJson.HasKey("friends"))
 				{
 					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no friends field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no friends field\" }", strlen("{ \"error\":\"no friends field\" }"));
+					net.SendData(sock, "{ \"error\":\"no friends field\" }\n\0", strlen("{ \"error\":\"no friends field\" }\n\0"));
 					return;
 				}
 				
 				if (!objInputJson.HasKey("photo_id"))
 				{
 					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no photo_id field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no photo_id field\" }", strlen("{ \"error\":\"no photo_id field\" }"));
+					net.SendData(sock, "{ \"error\":\"no photo_id field\" }\n\0", strlen("{ \"error\":\"no photo_id field\" }\n\0"));
 					return;
 				}
 
@@ -232,7 +239,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				if (!objInputJson.HasKey("ids"))
 				{
 					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no ids field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no ids field\" }", strlen("{ \"error\":\"no ids field\" }"));
+					net.SendData(sock, "{ \"error\":\"no ids field\" }\n\0", strlen("{ \"error\":\"no ids field\" }\n\0"));
 					return;
 				}
 
@@ -248,7 +255,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 			else
 			{
 				FilePrintMessage(NULL, _FAIL("Invalid input JSON: invalid cmd received (%s)"), (char*)param);
-				net.SendData(sock, "{ \"error\":\"invalid cmd\" }", strlen("{ \"error\":\"invalid cmd\" }"));
+				net.SendData(sock, "{ \"error\":\"invalid cmd\" }\n\0", strlen("{ \"error\":\"invalid cmd\" }\n\0"));
 				return;
 			}
 			break;

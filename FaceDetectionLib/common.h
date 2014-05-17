@@ -1,7 +1,7 @@
 #pragma once
 
 struct DataJson {
-	vector<int> *ids = new vector<int>;
+	vector<char*> *ids = new vector<char*>;
 	vector<CvPoint> *p1s = new vector<CvPoint>, *p2s = new vector<CvPoint>;
 	vector<double>*probs = new vector<double>;
 };

@@ -194,13 +194,13 @@ void ViolaJonesDetection::createJson(DataJson dataJson, SOCKET sock){
 
 	for (int i = 0; i < vector_size; i++){
 		double probability = dataJson.probs->at(i);
-		int id = dataJson.ids->at(i);
+		char* id = dataJson.ids->at(i);
 		CvPoint p1 = dataJson.p1s->at(i);
 		CvPoint p2 = dataJson.p2s->at(i);
 
 		for (int j = 0; j < vector_size; j++){
 			if (dataJson.ids->at(j) == id && probability < dataJson.probs->at(j)){
-				dataJson.ids->at(i) = -1;
+				dataJson.ids->at(i) = "-1";
 				dataJson.probs->at(i) = 0;
 			}
 		}
@@ -208,11 +208,11 @@ void ViolaJonesDetection::createJson(DataJson dataJson, SOCKET sock){
 
 	for (int i = 0; i < vector_size; i++){
 		double probability = dataJson.probs->at(i);
-		int id = dataJson.ids->at(i);
+		char* id = dataJson.ids->at(i);
 		CvPoint p1 = dataJson.p1s->at(i);
 		CvPoint p2 = dataJson.p2s->at(i);
 		char appParams[1024];
-		sprintf(appParams, "{ \"id\": \"%d\", \"x1\": \"%d\", \"y1\": \"%d\", \"x2\": \"%d\", \"y2\": \"%d\", \"P\": \"%.1f\" }", id, p1.x, p1.y, p2.x, p2.y, probability);
+		sprintf(appParams, "{ \"id\": \"%s\", \"x1\": \"%d\", \"y1\": \"%d\", \"x2\": \"%d\", \"y2\": \"%d\", \"P\": \"%.1f\" }", id, p1.x, p1.y, p2.x, p2.y, probability);
 		outJson.append(appParams);
 
 
@@ -221,7 +221,7 @@ void ViolaJonesDetection::createJson(DataJson dataJson, SOCKET sock){
 		cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
 		char text[256];
 		if (probability >= 20)
-			sprintf(text, "id: %d (%.1f%%)", id, probability);
+			sprintf(text, "id: %s (%.1f%%)", id, probability);
 		else
 			sprintf(text, "id: ?");
 		cvPutText(imageResults, text, cvPoint(p1.x, p1.y - 12), &font, textColor);
