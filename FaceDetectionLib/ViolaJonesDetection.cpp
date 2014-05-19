@@ -82,7 +82,7 @@ bool ViolaJonesDetection::drawEvidence(const ImageCoordinats &pointFase, bool dr
 			//cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));							//рисуем желтый квадрат, если нашли более 1 части лица
 			int w = (p2.x - p1.x);
 			int h = (p2.y - p1.y);
-#ifdef SHOW_IMG
+#ifdef SHOW_IMAGE
 			cvLine(imageResults, p1, cvPoint(p1.x + w / 4, p1.y), CV_RGB(128, 128, 255));
 			cvLine(imageResults, p1, cvPoint(p1.x, p1.y + h / 4), CV_RGB(128, 128, 255));
 			cvLine(imageResults, p2, cvPoint(p2.x - w / 4, p2.y), CV_RGB(128, 128, 255));
@@ -97,7 +97,7 @@ bool ViolaJonesDetection::drawEvidence(const ImageCoordinats &pointFase, bool dr
 			cvRectangle(imageResults, facePoints[1], facePoints[5], CV_RGB(0, 0, 255));
 			cvRectangle(imageResults, facePoints[2], facePoints[6], CV_RGB(255, 100, 255));
 			cvRectangle(imageResults, facePoints[3], facePoints[7], CV_RGB(128, 0, 128));
-#endif //SHOW_IMG
+#endif //SHOW_IMAGE
 		}
 		return true;
 	}
@@ -212,17 +212,17 @@ void ViolaJonesDetection::createJson(const DataJson &dataJson, SOCKET sock){
 
 		outJson.append(stringStream.str());
 
-#ifdef SHOW_IMG
+#ifdef SHOW_IMAGE
 		CvScalar textColor = CV_RGB(0, 230, 255);	// light blue text
 		CvFont font;
 		cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
 		char text[256];
 		if (probability >= 20)
-			sprintf(text, "id: %s (%.1f%%)", id, probability);
+			sprintf(text, "id: %s (%.1f%%)", id.c_str(), probability);
 		else
 			sprintf(text, "id: ?");
 		cvPutText(imageResults, text, cvPoint(dataJson.p1s.at(i).x, dataJson.p1s.at(i).y - 12), &font, textColor);
-#endif //SHOW_IMG
+#endif //SHOW_IMAGE
 	}
 
 	outJson.append(" ] }");
@@ -335,9 +335,9 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 	DataJson dataJson;
 
 	image = cvCloneImage(inputImage);
-#ifdef SHOW_IMG
+#ifdef SHOW_IMAGE
 	imageResults = cvCloneImage(inputImage);
-#endif //SHOW_IMG
+#endif //SHOW_IMAGE
 
 	DescriptorDetection *descriptorDetection = new DescriptorDetection();
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
@@ -384,9 +384,9 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 	}
 	
 	createJson(dataJson, outSock);
-#ifdef SHOW_IMG
+#ifdef SHOW_IMAGE
 	cvShowImage("image", imageResults);
-#endif //SHOW_IMG
+#endif //SHOW_IMAGE
 	// освобождаем ресурсы
 	delete descriptorDetection;
 	delete eigenDetector_v2;
@@ -395,9 +395,9 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 	cvReleaseImage(&face_img);
 	cvReleaseImage(&gray_img);
 	cvReleaseImage(&image);
-#ifdef SHOW_IMG
+#ifdef SHOW_IMAGE
 	cvReleaseImage(&imageResults);
-#endif //SHOW_IMG
+#endif //SHOW_IMAGE
 }
 
 //Sharing on 3 gistagrams
@@ -427,7 +427,7 @@ void equalizeFace(IplImage *faceImg) {
 }
 
 //¬џрезание изображени€ с лицом
-DWORD WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
+UINT_PTR WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 	cutFaceThreadParams *psParams = (cutFaceThreadParams*)params;
 
 	psParams->pThis->image = cvCloneImage(psParams->inputImage);
@@ -475,7 +475,8 @@ DWORD WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 
 				//EnterCriticalSection(&faceDetectionCS);
 
-				if (faces->total == 1){
+				if (faces->total == 1)
+				{
 					try
 					{
 						cvSaveImage(psParams->destPath, dest);
@@ -484,7 +485,11 @@ DWORD WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 					{
 						FilePrintMessage(NULL, _FAIL("Failed to save image. Runtime error occured"));
 					}
-					
+					FilePrintMessage(NULL, "+");
+				}
+				else
+				{
+					FilePrintMessage(NULL, "-");
 				}
 				//LeaveCriticalSection(&faceDetectionCS);
 				cvReleaseImage(&dest);

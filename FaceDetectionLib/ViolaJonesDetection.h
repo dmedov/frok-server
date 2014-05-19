@@ -31,7 +31,7 @@ public:
 	void faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock = INVALID_SOCKET);
 
 	// return -1 for failure, 0 in case of success
-	static DWORD WINAPI cutFaceThread(LPVOID params);
+	static UINT_PTR WINAPI cutFaceThread(LPVOID params);
 
 private:
 	bool drawEvidence(const ImageCoordinats &pointFase, bool draw);

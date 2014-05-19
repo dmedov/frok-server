@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "LibInclude.h"
 #include <ctime>
-// Add SHOW_IMG define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
+// Add SHOW_IMAGE define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
 #define CUT_TIMEOUT			(600000)
-
+#define MAX_THREADS_NUM		(10)
 #define	NET_CMD_RECOGNIZE	"recognize"
 #define NET_CMD_TRAIN		"train"
 
@@ -84,7 +84,7 @@ int recognizeFromModel(void *pContext)
 		return -1;
 	}
 	
-#ifdef SHOW_IMG
+#ifdef SHOW_IMAGE
 	while (1){
 		if (cvWaitKey(0) == 27)
 			break;
@@ -110,7 +110,7 @@ DWORD generateAndTrainBase(void *pContext)
 	_finddata_t result;
 	HANDLE *phEventTaskCompleted = new HANDLE[psContext->arrIds.size()];
 	std::vector <HANDLE> threads;
-	UINT_PTR uSuccCounter;
+	UINT_PTR uSuccCounter = 0;
 
 	for (UINT_PTR i = 0; i < psContext->arrIds.size(); i++)
 	{
@@ -118,6 +118,8 @@ DWORD generateAndTrainBase(void *pContext)
 		string photoName = ((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\photos\\*.jpg");
 
 		intptr_t firstHandle = _findfirst(photoName.c_str(), &result);
+
+		UINT_PTR uNumOfThreads = 0;
 
 		if (firstHandle != -1)
 		{
@@ -136,46 +138,70 @@ DWORD generateAndTrainBase(void *pContext)
 				cutFaceThreadParams * param = new cutFaceThreadParams(img, (((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(result.name)).c_str());
 				threads.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)param->pThis->cutFaceThread, (LPVOID)param, 0, NULL));
 
+				if (++uNumOfThreads > MAX_THREADS_NUM)
+				{
+					DWORD res;
+					if (WAIT_OBJECT_0 != (res = WaitForMultipleObjects((unsigned)threads.size(), &threads[0], TRUE, CUT_TIMEOUT)))
+					{
+						FilePrintMessage(NULL, _FAIL("Timeout has occured during waiting for cutting images finished"));
+						for (UINT_PTR j = 0; j < threads.size(); j++)
+						{
+							TerminateThread(threads.at(j), -1);
+						}
+					}
+
+					for (UINT_PTR j = 0; j < threads.size(); j++)
+					{
+						CloseHandle(threads.at(j));
+					}
+					threads.clear();
+
+					uNumOfThreads = 0;
+				}
+
 			} while (_findnext(firstHandle, &result) == 0);
-		}
-		
-		if (!threads.empty())
-		{
-			DWORD res;
-			if (WAIT_OBJECT_0 != (res = WaitForMultipleObjects((unsigned)threads.size(), &threads[0], TRUE, CUT_TIMEOUT)))
+
+			if (uNumOfThreads != 0)
 			{
-				FilePrintMessage(NULL, _FAIL("Timeout has occured during waiting for cutting images finished"));
+				DWORD res;
+				if (WAIT_OBJECT_0 != (res = WaitForMultipleObjects((unsigned)threads.size(), &threads[0], TRUE, CUT_TIMEOUT)))
+				{
+					FilePrintMessage(NULL, _FAIL("Timeout has occured during waiting for cutting images finished"));
+					for (UINT_PTR j = 0; j < threads.size(); j++)
+					{
+						TerminateThread(threads.at(j), -1);
+					}
+				}
+
 				for (UINT_PTR j = 0; j < threads.size(); j++)
 				{
-					TerminateThread(threads.at(j), -1);
+					CloseHandle(threads.at(j));
 				}
-			}
-			for (UINT_PTR j = 0; j < threads.size(); j++)
-			{
-				CloseHandle(threads.at(j));
-			}
-			threads.clear();
+				threads.clear();
 
-			EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
-
-			//train FaceRecognizer
-			try
-			{
-				if (!eigenDetector_v2->train((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str()))
-				{
-					delete eigenDetector_v2;
-					continue;
-				}
+				uNumOfThreads = 0;
 			}
-			catch (...)
+		}
+
+		EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
+
+		//train FaceRecognizer
+		try
+		{
+			if (!eigenDetector_v2->train((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str()))
 			{
-				FilePrintMessage(NULL, _FAIL("Some error has occured during Learn call."));
 				delete eigenDetector_v2;
 				continue;
 			}
-			delete eigenDetector_v2;
-			uSuccCounter++;
 		}
+		catch (...)
+		{
+			FilePrintMessage(NULL, _FAIL("Some error has occured during Learn call."));
+			delete eigenDetector_v2;
+			continue;
+		}
+		delete eigenDetector_v2;
+		uSuccCounter++;
 	}
 
 	cvDestroyAllWindows();
@@ -328,9 +354,9 @@ int main(int argc, char *argv[])
 	}
 	FilePrintMessage(NULL, _SUCC("Network server started!"));
 	
-	//char train[] = "{\"cmd\":\"train\", \"ids\":[\"5\"]}\0";	// cut faces and train base
-	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
-	char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"5\"], \"photo_id\": \"2\"}\0";	// recognize name = 1.jpg
+	/*char train[] = "{\"cmd\":\"train\", \"ids\":[\"6\"]}\0";	// cut faces and train base
+	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);*/
+	char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"6\"], \"photo_id\": \"11\"}\0";	// recognize name = 1.jpg
 	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
 	getchar();
 
