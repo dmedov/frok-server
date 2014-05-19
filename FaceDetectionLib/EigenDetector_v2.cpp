@@ -47,7 +47,7 @@ void EigenDetector_v2::loadBaseFace(const char* facesPath, vector<Mat> * images,
 	model - модель FaceRecognizer, сохраняется после обучение в yml
 	path - путь до базы людей(папка для каждого человека названная его id, содержит в себе ./faces и ./photos)
 	*/
-void EigenDetector_v2::train(const char* idPath){
+bool EigenDetector_v2::train(const char* idPath){
 
 	string facesPath = ((string)idPath).append("\\faces\\");
 	
@@ -61,7 +61,7 @@ void EigenDetector_v2::train(const char* idPath){
 	catch (...)
 	{
 		FilePrintMessage(NULL, _FAIL("Failed to load images for learning (path = %s)."), facesPath.c_str());
-		return;
+		return false;
 	}
 	
 	try
@@ -71,7 +71,7 @@ void EigenDetector_v2::train(const char* idPath){
 	catch(...)
 	{
 		FilePrintMessage(NULL, _FAIL("Failed to train model."));
-		return;
+		return false;
 	}
 	
 	try
@@ -81,11 +81,11 @@ void EigenDetector_v2::train(const char* idPath){
 	catch (...)
 	{
 		FilePrintMessage(NULL, _FAIL("Failed to save %s"), ((string)idPath).append("\\eigenface.yml").c_str());
-		return;
+		return false;
 	}
 
 	FilePrintMessage(NULL, _SUCC("Learning completed. See resulting file eigenface.yml in %s folder"), idPath);
-	return;
+	return true;
 }
 
 Mat EigenDetector_v2::MaskFace(IplImage *img) {
@@ -106,7 +106,7 @@ Mat EigenDetector_v2::MaskFace(IplImage *img) {
 	return _img;
 }
 
-double getSimilarity(const Mat image_mat, const Mat reconstructedFace) {
+double EigenDetector_v2::getSimilarity(const Mat &image_mat, const Mat &reconstructedFace) {
 
 	IplImage *blr_img = cvCloneImage(&(IplImage)image_mat);
 	IplImage *blr_rec = cvCloneImage(&(IplImage)reconstructedFace);
@@ -138,7 +138,7 @@ double getSimilarity(const Mat image_mat, const Mat reconstructedFace) {
 
 }
 
-double getSimilarity2(const Mat projected_mat, const Mat face_mat) {
+double EigenDetector_v2::getSimilarity2(const Mat &projected_mat, const Mat &face_mat) {
 
 	CvSize imagesSize = cvSize(projected_mat.cols, projected_mat.rows);
 	IplImage *projectedStorage = cvCreateImage(imagesSize, IPL_DEPTH_32F, 1);
@@ -304,12 +304,17 @@ __int64 calcHammingDistance(__int64 x, __int64 y)
 	return dist;
 }
 
-void EigenDetector_v2::recognize(map <string, Ptr<FaceRecognizer>> models, DataJson dataJson, IplImage* image)
+void EigenDetector_v2::recognize(const map <string, Ptr<FaceRecognizer>> &models, DataJson *psDataJson, IplImage* image)
 {
+	if (psDataJson == NULL)
+	{
+		FilePrintMessage(NULL, _FAIL("NULL psDataJson received"));
+		return;
+	}
 	double oldProb = 0;		// probability
 	string result_name = "-1";
 
-	for (map <string, Ptr<FaceRecognizer>>::iterator it = models.begin(); it != models.end(); it++)
+	for (map <string, Ptr<FaceRecognizer>>::const_iterator it = models.begin(); it != models.end(); ++it)
 	{
 		Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
 		model = (*it).second;
@@ -352,10 +357,10 @@ void EigenDetector_v2::recognize(map <string, Ptr<FaceRecognizer>> models, DataJ
 		cout << endl;
 	}
 
-	char *pcResultName = new char[strlen(result_name.c_str())];
+	char *pcResultName = new char[result_name.length()];
 	strcpy(pcResultName, result_name.c_str());
 
-	dataJson.ids->push_back(pcResultName);
-	dataJson.probs->push_back(oldProb * 100);
+	psDataJson->ids.push_back(pcResultName);
+	psDataJson->probs.push_back(oldProb * 100);
 
 }

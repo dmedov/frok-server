@@ -1,12 +1,14 @@
 #include "stdafx.h"
 #include "LibInclude.h"
 #include <ctime>
+// Add SHOW_IMG define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
+#define CUT_TIMEOUT			(600000)
 
 #define	NET_CMD_RECOGNIZE	"recognize"
 #define NET_CMD_TRAIN		"train"
 
-#define ID_PATH				"Z:\\frok\\"
-#define TARGET_PATH			"Z:\\frok\\1\\"
+#define ID_PATH				"D:\\HerFace\\Faces\\"
+#define TARGET_PATH			"D:\\HerFace\\Faces\\"
 
 Network net;
 
@@ -26,13 +28,14 @@ struct ContextForTrain{
 
 int recognizeFromModel(void *pContext)
 {
+	double startTime = clock();
 	ContextForRecognize *psContext = (ContextForRecognize*)pContext;
 	CvMemStorage* storage = NULL;
 	IplImage *img = NULL;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
 	map <string, Ptr<FaceRecognizer>> models;
 	
-	for (unsigned i = 0; i < psContext->arrFrinedsList.size(); i++)
+	for (UINT_PTR i = 0; i < psContext->arrFrinedsList.size(); i++)
 	{
 		Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
 		try
@@ -67,17 +70,30 @@ int recognizeFromModel(void *pContext)
 		return -1;
 	}
 	
-	storage = cvCreateMemStorage(0);					// Создание хранилища памяти
-	violaJonesDetection->faceDetect(img, models, psContext->sock);
-
-	/*
+	storage = cvCreateMemStorage();					// Создание хранилища памяти
+	try
+	{
+		violaJonesDetection->faceDetect(img, models, psContext->sock);
+	}
+	catch (...)
+	{
+		FilePrintMessage(NULL, _FAIL("Some error occured during recognze call"));
+		net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
+		delete violaJonesDetection;
+		delete psContext;
+		return -1;
+	}
+	
+#ifdef SHOW_IMG
 	while (1){
 		if (cvWaitKey(0) == 27)
 			break;
-	}*/
+	}
+#endif
 
 	net.SendData(psContext->sock, "{ \"success\":\"recognize faces succeed\" }\n\0", strlen("{ \"success\":\"recognize faces succeed\" }\n\0"));
 
+	FilePrintMessage(NULL, _SUCC("Recognize finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
 	cvReleaseImage(&img);
 	cvClearMemStorage(storage);
 	cvDestroyAllWindows();
@@ -94,8 +110,9 @@ DWORD generateAndTrainBase(void *pContext)
 	_finddata_t result;
 	HANDLE *phEventTaskCompleted = new HANDLE[psContext->arrIds.size()];
 	std::vector <HANDLE> threads;
-	
-	for (unsigned i = 0; i < psContext->arrIds.size(); i++)
+	unsigned uSuccCounter;
+
+	for (UINT_PTR i = 0; i < psContext->arrIds.size(); i++)
 	{
 		memset(&result, 0, sizeof(result));
 		string photoName = ((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\photos\\*.jpg");
@@ -125,17 +142,17 @@ DWORD generateAndTrainBase(void *pContext)
 		if (!threads.empty())
 		{
 			DWORD res;
-			if (WAIT_OBJECT_0 != (res = WaitForMultipleObjects(threads.size(), &threads[0], TRUE, INFINITE)))
+			if (WAIT_OBJECT_0 != (res = WaitForMultipleObjects((unsigned)threads.size(), &threads[0], TRUE, CUT_TIMEOUT)))
 			{
 				FilePrintMessage(NULL, _FAIL("Timeout has occured during waiting for cutting images finished"));
-				for (unsigned j = 0; j < threads.size(); j++)
+				for (UINT_PTR j = 0; j < threads.size(); j++)
 				{
-					TerminateThread(threads[j], -1);
+					TerminateThread(threads.at(j), -1);
 				}
 			}
-			for (unsigned j = 0; j < threads.size(); j++)
+			for (UINT_PTR j = 0; j < threads.size(); j++)
 			{
-				CloseHandle(threads[j]);
+				CloseHandle(threads.at(j));
 			}
 			threads.clear();
 
@@ -144,23 +161,32 @@ DWORD generateAndTrainBase(void *pContext)
 			//train FaceRecognizer
 			try
 			{
-				eigenDetector_v2->train((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str());
+				if (!eigenDetector_v2->train((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str()))
+				{
+					delete eigenDetector_v2;
+					continue;
+				}
 			}
 			catch (...)
 			{
 				FilePrintMessage(NULL, _FAIL("Some error has occured during Learn call."));
-				net.SendData(psContext->sock, "{ \"fail\":\"learning failed\" }\n\0", strlen("{ \"fail\":\"learning failed\" }\n\0"));
 				delete eigenDetector_v2;
-				cvDestroyAllWindows();
-				return -1;
+				continue;
 			}
 			delete eigenDetector_v2;
+			uSuccCounter++;
 		}
 	}
 
 	cvDestroyAllWindows();
+	FilePrintMessage(NULL, _SUCC("Train finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
+	if (uSuccCounter == 0)
+	{
+		net.SendData(psContext->sock, "{ \"fail\":\"learning failed\" }\n\0", strlen("{ \"fail\":\"learning failed\" }\n\0"));
+		return -1;
+	}
+
 	net.SendData(psContext->sock, "{ \"success\":\"train succeed\" }\n\0", strlen("{ \"success\":\"train succeed\" }\n\0"));
-	FilePrintMessage(NULL, _SUCC("Train succeed. Time elapsed %.4lf\n"), (clock() - startTime));
 	return 0;
 }
 
@@ -302,11 +328,10 @@ int main(int argc, char *argv[])
 	}
 	FilePrintMessage(NULL, _SUCC("Network server started!"));
 	
-	char train[] = "{\"cmd\":\"train\", \"ids\":[\"1\"]}\0";	// cut faces and train base
-	char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"1\"}\0";	// recognize name = 1.jpg
-
-	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), learn);
-	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
+	//char train[] = "{\"cmd\":\"train\", \"ids\":[\"5\"]}\0";	// cut faces and train base
+	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
+	char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"5\"], \"photo_id\": \"2\"}\0";	// recognize name = 1.jpg
+	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
 	getchar();
 
 	cvReleaseHaarClassifierCascade(&faceCascades.face);

@@ -2,7 +2,7 @@
 #include "DescriptorDetection.h"
 
 //Сравнение дескрипторов (доделать)
-int DescriptorDetection::matchDescriptors(Mat ffd, Mat bfd){
+int DescriptorDetection::matchDescriptors(Mat &ffd, Mat &bfd){
 	FlannBasedMatcher matcher;
 	vector<DMatch> matches;
 	matcher.match(ffd, bfd, matches);
@@ -29,7 +29,7 @@ int DescriptorDetection::matchDescriptors(Mat ffd, Mat bfd){
 }
 
 //Поиск дескрипторов и вывод изображений с найденными дескрипторами
-Mat DescriptorDetection::findDescriptors(Mat face, char* name, bool b){
+Mat DescriptorDetection::findDescriptors(Mat &face, char* name, bool b){
 	//-- Этап 1. Нахождение ключевых точек.
 
 	//FeatureDetector * detector = new GFTTDetector();

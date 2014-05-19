@@ -23,7 +23,7 @@ ViolaJonesDetection::~ViolaJonesDetection(){
 }
 
 //«апись ключевых точек в массив
-void ViolaJonesDetection::writeFacePoints(ImageCoordinats pointKeyFase, ImageCoordinats pointFase, int type){
+void ViolaJonesDetection::writeFacePoints(const ImageCoordinats &pointKeyFase, const ImageCoordinats &pointFase, int type){
 	CvPoint p1 = pointKeyFase.p1;
 	CvPoint p2 = pointKeyFase.p2;
 	CvPoint p = pointFase.p1;
@@ -68,21 +68,21 @@ void ViolaJonesDetection::writeFacePoints(ImageCoordinats pointKeyFase, ImageCoo
 }
 
 //ѕрорисовка линий на резулютирующем изображении
-bool ViolaJonesDetection::drawEvidence(ImageCoordinats pointFase, bool draw){
-	CvPoint p1 = pointFase.p1;
-	CvPoint p2 = pointFase.p2;
+bool ViolaJonesDetection::drawEvidence(const ImageCoordinats &pointFase, bool draw){
+	const CvPoint p1 = pointFase.p1;
+	const CvPoint p2 = pointFase.p2;
 	int count = 0;
 	for (int i = 0; i < 8; i++)															//провер€ем координаты всех точек на -1;-1
 	if (facePoints[i].x >= 0 && facePoints[i].y >= 0){
 		count++;
 	}
 
-	if (count >= 4){
+	if (count >= 4){		//[TBD] Why 4?
 		if (draw){
 			//cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));							//рисуем желтый квадрат, если нашли более 1 части лица
 			int w = (p2.x - p1.x);
 			int h = (p2.y - p1.y);
-
+#ifdef SHOW_IMG
 			cvLine(imageResults, p1, cvPoint(p1.x + w / 4, p1.y), CV_RGB(128, 128, 255));
 			cvLine(imageResults, p1, cvPoint(p1.x, p1.y + h / 4), CV_RGB(128, 128, 255));
 			cvLine(imageResults, p2, cvPoint(p2.x - w / 4, p2.y), CV_RGB(128, 128, 255));
@@ -97,6 +97,7 @@ bool ViolaJonesDetection::drawEvidence(ImageCoordinats pointFase, bool draw){
 			cvRectangle(imageResults, facePoints[1], facePoints[5], CV_RGB(0, 0, 255));
 			cvRectangle(imageResults, facePoints[2], facePoints[6], CV_RGB(255, 100, 255));
 			cvRectangle(imageResults, facePoints[3], facePoints[7], CV_RGB(128, 0, 128));
+#endif //SHOW_IMG
 		}
 		return true;
 	}
@@ -184,38 +185,34 @@ IplImage* ViolaJonesDetection::imposeMask(CvPoint p){
 	return img;
 }
 
-void ViolaJonesDetection::createJson(DataJson dataJson, SOCKET sock){
+void ViolaJonesDetection::createJson(const DataJson &dataJson, SOCKET sock){
 	//{ results:[{ "id": "1", "x1" : "503", "y1" : "182", "x2" : "812", "y2" : "491", "P" : "30.4" }] }
+
 	json::Object obj;
 	string outJson;
 	outJson.append("{ results: [");
 
-	int vector_size = static_cast<int>(dataJson.ids->size());
+	UINT_PTR vector_size = dataJson.ids.size();
 
-	for (int i = 0; i < vector_size; i++){
-		double probability = dataJson.probs->at(i);
-		char* id = dataJson.ids->at(i);
-		CvPoint p1 = dataJson.p1s->at(i);
-		CvPoint p2 = dataJson.p2s->at(i);
+	for (UINT_PTR i = 0; i < vector_size; i++){
+		double probability = dataJson.probs.at(i);
+		string id = dataJson.ids.at(i);
 
-		for (int j = 0; j < vector_size; j++){
-			if (dataJson.ids->at(j) == id && probability < dataJson.probs->at(j)){
-				dataJson.ids->at(i) = "-1";
-				dataJson.probs->at(i) = 0;
+		for (UINT_PTR j = 0; j < vector_size; j++){
+			if (dataJson.ids.at(j) == id && probability < dataJson.probs.at(j)){
+				id = "-1";
+				probability = 0;
 			}
 		}
-	}
 
-	for (int i = 0; i < vector_size; i++){
-		double probability = dataJson.probs->at(i);
-		char* id = dataJson.ids->at(i);
-		CvPoint p1 = dataJson.p1s->at(i);
-		CvPoint p2 = dataJson.p2s->at(i);
-		char appParams[1024];
-		sprintf(appParams, "{ \"id\": \"%s\", \"x1\": \"%d\", \"y1\": \"%d\", \"x2\": \"%d\", \"y2\": \"%d\", \"P\": \"%.1f\" }", id, p1.x, p1.y, p2.x, p2.y, probability);
-		outJson.append(appParams);
+		ostringstream stringStream;
+		stringStream << "{ \"id\": \"" << id.c_str() << "\", \"x1\": \"" << dataJson.p1s.at(i).x
+			<< "\", \"y1\": \"" << dataJson.p1s.at(i).y << "\", \"x2\": \"" << dataJson.p2s.at(i).x << "\", \"y2\": \""
+			<< dataJson.p2s.at(i).y << "\", \"P\": \"" << std::fixed << setprecision(1) << probability << "\" }";
 
+		outJson.append(stringStream.str());
 
+#ifdef SHOW_IMG
 		CvScalar textColor = CV_RGB(0, 230, 255);	// light blue text
 		CvFont font;
 		cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
@@ -224,20 +221,13 @@ void ViolaJonesDetection::createJson(DataJson dataJson, SOCKET sock){
 			sprintf(text, "id: %s (%.1f%%)", id, probability);
 		else
 			sprintf(text, "id: ?");
-		cvPutText(imageResults, text, cvPoint(p1.x, p1.y - 12), &font, textColor);
+		cvPutText(imageResults, text, cvPoint(dataJson.p1s.at(i).x, dataJson.p1s.at(i).y - 12), &font, textColor);
+#endif //SHOW_IMG
 	}
+
 	outJson.append(" ] }");
 
-	//ofstream out("results.json");
-
-	// outJson;
-	net.SendData(sock, outJson.c_str(), strlen(outJson.c_str()));
-	
-//	out.close();
-	delete dataJson.ids;
-	delete dataJson.p1s;
-	delete dataJson.p2s;
-	delete dataJson.probs;
+	net.SendData(sock, outJson.c_str(), (unsigned)outJson.length());		// Send response with recognize results
 }
 
 //ƒетектирование ключевых точек лица 
@@ -274,9 +264,9 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
 	double scale_factor = 1.2;
 
 	if (type == 0 || type == 3 || type == 4){
-		minSize = cvSize(width / 6, height / 7);
+		minSize = cvSize(width / 6, height / 7);			// [TBD] Why 6,7,3,4 - magic numbers
 		maxSize = cvSize(width / 3, height / 4);
-		double scale_factor = 1.01;
+		scale_factor = 1.01;
 	}
 	else if (type == 1){
 		minSize = cvSize(width / 5, height / 6);
@@ -312,9 +302,10 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
 	cvRelease((void**)&objects);
 }
 
+// [TBD] magic number 4 (int type) should be EnumType
 void ViolaJonesDetection::allKeysFaceDetection(CvPoint point){
 	EnterCriticalSection(&faceDetectionCS);
-	keysFaceDetect(faceCascades.eye, point, 4);					//правый общий
+	keysFaceDetect(faceCascades.eye, point, 4);					//правый общий		
 	keysFaceDetect(faceCascades.righteye2, point, 4);			//правый 
 	keysFaceDetect(faceCascades.righteye, point, 4);			//правый альтернатива
 	keysFaceDetect(faceCascades.eye, point, 3);					//левый общий
@@ -333,7 +324,7 @@ void ViolaJonesDetection::normalizateHistFace(){
 }
 
 //ƒетектирование лица (вызываетс€ из main)
-void ViolaJonesDetection::faceDetect(IplImage *inputImage, map <string, Ptr<FaceRecognizer>> models, SOCKET outSock)
+void ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock)
 {
 	if (!faceCascades.face){
 		cout << "cascade error" << endl;
@@ -341,10 +332,12 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, map <string, Ptr<Face
 		return;
 	}
 
-	DataJson dataJson = DataJson();
+	DataJson dataJson;
 
 	image = cvCloneImage(inputImage);
+#ifdef SHOW_IMG
 	imageResults = cvCloneImage(inputImage);
+#endif //SHOW_IMG
 
 	DescriptorDetection *descriptorDetection = new DescriptorDetection();
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
@@ -383,16 +376,17 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, map <string, Ptr<Face
 			face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
 			IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
 			cvResize(face_img, dest, 1);
-			eigenDetector_v2->recognize(models, dataJson, dest);//–аспознавание
-			dataJson.p1s->push_back(points.p1);
-			dataJson.p2s->push_back(points.p2);
+			eigenDetector_v2->recognize(models, &dataJson, dest);//–аспознавание
+			dataJson.p1s.push_back(points.p1);
+			dataJson.p2s.push_back(points.p2);
 			cvReleaseImage(&dest);//-> to introduce to function
 		}
 	}
 	
 	createJson(dataJson, outSock);
+#ifdef SHOW_IMG
 	cvShowImage("image", imageResults);
-
+#endif //SHOW_IMG
 	// освобождаем ресурсы
 	delete descriptorDetection;
 	delete eigenDetector_v2;
@@ -401,7 +395,9 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, map <string, Ptr<Face
 	cvReleaseImage(&face_img);
 	cvReleaseImage(&gray_img);
 	cvReleaseImage(&image);
+#ifdef SHOW_IMG
 	cvReleaseImage(&imageResults);
+#endif //SHOW_IMG
 }
 
 //Sharing on 3 gistagrams
@@ -502,7 +498,6 @@ DWORD WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 	cvReleaseImage(&psParams->pThis->face_img);			// освобождаем ресурсы
 	cvReleaseImage(&psParams->pThis->gray_img);
 	cvReleaseImage(&psParams->pThis->image);
-	cvReleaseImage(&psParams->pThis->imageResults);
 	delete psParams;
 
 	return 0;

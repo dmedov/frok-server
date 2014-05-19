@@ -1,15 +1,23 @@
 #pragma once
 
-struct DataJson {
-	vector<char*> *ids = new vector<char*>;
-	vector<CvPoint> *p1s = new vector<CvPoint>, *p2s = new vector<CvPoint>;
-	vector<double>*probs = new vector<double>;
-};
+typedef struct
+{
+	vector<char*> ids;
+	vector<CvPoint> p1s, p2s;
+	vector<double> probs;
+} DataJson;
 
-struct ImageCoordinats {
-	CvPoint p1 = cvPoint(-1, -1);
-	CvPoint p2 = cvPoint(0, 0);
-};
+typedef struct StructImageCoordinats
+{
+	CvPoint p1;
+	CvPoint p2;
+	public:
+	StructImageCoordinats()
+	{
+		p1 = cvPoint(-1, -1);
+		p2 = cvPoint(0, 0);
+	}
+} ImageCoordinats;
 
 #define LOG_MESSAGE_MAX_LENGTH	1024
 
