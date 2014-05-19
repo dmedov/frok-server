@@ -79,7 +79,7 @@ bool EigenDetector_v2::train(const char* idPath){
 	}
 	catch (...)
 	{
-		FilePrintMessage(NULL, _FAIL("Failed to save %s"), ((string)idPath).append("\\eigenface.yml").c_str());
+		FilePrintMessage(NULL, _FAIL("Failed to save %s"), (((string)idPath).append("\\eigenface.yml")).c_str());
 		return false;
 	}
 
@@ -123,9 +123,8 @@ double EigenDetector_v2::getSimilarity(const Mat &image_mat, const Mat &reconstr
 				koef += d;
 		}
 	}
-	err = (double)koef / (dif.cols*dif.rows * 40);
 
-
+	err = (double)koef / ((double)dif.cols * (double)dif.rows * 40);
 
 	double prob = (1 - err);
 
@@ -160,7 +159,7 @@ double EigenDetector_v2::getSimilarity2(const Mat &projected_mat, const Mat &fac
 	}
 
 
-	err /= (dif_mat.rows*dif_mat.cols);
+	err /= ((double)dif_mat.rows * (double)dif_mat.cols);
 	//imshow("dif", dif_mat);
 	//imshow("rep", projected_mat);
 	//imshow("img", face_mat);
@@ -315,8 +314,7 @@ void EigenDetector_v2::recognize(const map <string, Ptr<FaceRecognizer>> &models
 
 	for (map <string, Ptr<FaceRecognizer>>::const_iterator it = models.begin(); it != models.end(); ++it)
 	{
-		Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
-		model = (*it).second;
+		Ptr<FaceRecognizer> model = (*it).second;
 
 		double prob = 0;
 
