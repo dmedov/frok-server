@@ -16,7 +16,7 @@ void EigenDetector_v2::loadBaseFace(const char* facesPath, vector<Mat> * images,
 
 	_finddata_t result;
 	string name = ((string)facesPath).append("\\*.jpg");
-	long done;
+	intptr_t done;
 	IplImage *base_face = 0;
 
 	memset(&result, 0, sizeof(result));
@@ -24,8 +24,8 @@ void EigenDetector_v2::loadBaseFace(const char* facesPath, vector<Mat> * images,
 
 	if (done != -1)
 	{
-		int res = 0;
-		while (res == 0){
+		do
+		{
 			name = ((string)facesPath).append("\\").append(result.name);
 			IplImage *dist = cvLoadImage(name.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
 			IplImage *resize = cvCreateImage(cvSize(158, 190), dist->depth, dist->nChannels);
@@ -35,8 +35,7 @@ void EigenDetector_v2::loadBaseFace(const char* facesPath, vector<Mat> * images,
 			labels->push_back(id);
 
 			cout << name << endl;
-			res = _findnext(done, &result);
-		}
+		} while (_findnext(done, &result) == 0);
 	}
 	_findclose(done);
 	cvReleaseImage(&base_face);

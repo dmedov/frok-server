@@ -63,7 +63,7 @@ int recognizeFromModel(void *pContext)
 
 	if (!img)
 	{
-		FilePrintMessage(NULL, _FAIL("Failed to load image %s"), ((string)(TARGET_PATH)).append(psContext->targetImg).c_str());
+		FilePrintMessage(NULL, _FAIL("Failed to load image %s"), (((string)(TARGET_PATH)).append(psContext->targetImg)).c_str());
 		net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
 		delete violaJonesDetection;
 		delete psContext;
@@ -110,7 +110,7 @@ DWORD generateAndTrainBase(void *pContext)
 	_finddata_t result;
 	HANDLE *phEventTaskCompleted = new HANDLE[psContext->arrIds.size()];
 	std::vector <HANDLE> threads;
-	unsigned uSuccCounter;
+	UINT_PTR uSuccCounter;
 
 	for (UINT_PTR i = 0; i < psContext->arrIds.size(); i++)
 	{
@@ -134,7 +134,7 @@ DWORD generateAndTrainBase(void *pContext)
 				//cout << "Cutting face from image " << result.name;
 
 				cutFaceThreadParams * param = new cutFaceThreadParams(img, (((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(result.name)).c_str());
-				threads.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)param->pThis->cutFaceThread, param, 0, NULL));
+				threads.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)param->pThis->cutFaceThread, (LPVOID)param, 0, NULL));
 
 			} while (_findnext(firstHandle, &result) == 0);
 		}
