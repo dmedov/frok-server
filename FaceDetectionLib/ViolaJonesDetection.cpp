@@ -510,9 +510,9 @@ UINT_PTR WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 
 //Сканирование по SIFT 
 
-void ViolaJonesDetection::scanSIFT(Mat ffDescriptors, int faceNumber){
+//void ViolaJonesDetection::scanSIFT(Mat ffDescriptors, int faceNumber){
 
-	cerr << "Function not supported!" << endl;
+	//cerr << "Function not supported!" << endl;
 	/*
 	DescriptorDetection *descriptorDetection = new DescriptorDetection();
 	_finddata_t result;
@@ -560,4 +560,4 @@ void ViolaJonesDetection::scanSIFT(Mat ffDescriptors, int faceNumber){
 	cvReleaseImage(&base_face);
 	cvReleaseImage(&gray_face);
 	delete descriptorDetection;*/
-}
+//}
