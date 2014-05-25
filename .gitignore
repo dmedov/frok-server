@@ -15,6 +15,7 @@
 *.suo
 *.user
 *.vspx
+*.vcproj.filters
 Debug
 Release
 
