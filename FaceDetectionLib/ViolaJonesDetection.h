@@ -81,6 +81,8 @@ public:
 	ViolaJonesDetection();
 	~ViolaJonesDetection();
 
+	void allFacesDetection(IplImage *inputImage, SOCKET outSock);
+
 	/**
 	* \brief Funtion to detect a face by Haar-Cascade
 	*
@@ -322,5 +324,6 @@ struct cutFaceThreadParams
 	char* destPath;
 	ViolaJonesDetection *pThis;
 };
+
 
 /** \} */
