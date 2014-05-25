@@ -4,8 +4,8 @@
 *
 */
 
-/** \addtogroup Activities.
-*  \brief List of possible actions of our applications:
+/** \addtogroup Activities
+*  \brief List of possible actions of our applications
 *  \{
 */
 
