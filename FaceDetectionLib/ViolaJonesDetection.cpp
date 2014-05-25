@@ -469,17 +469,20 @@ void equalizeFace(IplImage *faceImg) {
 	faceImg = &IplImage(leftSide);
 }
 
-void ViolaJonesDetection::cutFaceToBase(IplImage *face_img, string destPath, int x, int y, int w, int h){
+void ViolaJonesDetection::cutFaceToBase(IplImage *target_img, string destPath, int x, int y, int w, int h){
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 	ImageCoordinats points;
+
+	strg = cvCreateMemStorage(0);
 
 	points.p1 = cvPoint(x, y);
 	points.p2 = cvPoint(x + w, y + h);
 
-	face_img = cvCreateImage(cvSize(w, h), gray_img->depth, gray_img->nChannels);
-	cvSetImageROI(gray_img, cvRect(x, y, w, h));
-	cvCopy(gray_img, face_img, NULL);
-	cvResetImageROI(gray_img);									//копируем лицо в отдельную картинку
+	face_img = cvCreateImage(cvSize(w, h), target_img->depth, target_img->nChannels);
+	cvSetImageROI(face_img, cvRect(x, y, w, h));
+	//cvCopy(gray_img, face_img, NULL);
+	face_img = cvCloneImage(target_img);
+	cvResetImageROI(face_img);									//копируем лицо в отдельную картинку
 
 	for (int j = 0; j < 8; j++)
 		facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
@@ -501,7 +504,6 @@ void ViolaJonesDetection::cutFaceToBase(IplImage *face_img, string destPath, int
 			{
 				FilePrintMessage(NULL, _FAIL("Failed to save image. Runtime error occured"));
 			}
-			FilePrintMessage(NULL, "+");
 			cvReleaseImage(&dest);
 		}
 	}
