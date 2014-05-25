@@ -213,6 +213,10 @@ void ViolaJonesDetection::createJson(const DataJson &dataJson, SOCKET sock){
 
 		outJson.append(stringStream.str());
 
+		if (i != (vector_size - 1)) {
+			outJson.append(",");
+		}
+
 #ifdef SHOW_IMAGE
 		CvScalar textColor = CV_RGB(0, 230, 255);	// light blue text
 		CvFont font;
