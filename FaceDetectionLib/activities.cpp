@@ -27,7 +27,10 @@ DWORD getFacesFromPhoto(void *pContext)
 	}
 	catch (...)
 	{
-
+		FilePrintMessage(NULL, _WARN("All Faces Detection FAILED"), photoName.c_str());
+		net.SendData(psContext->sock, "{ \"error\":\"All Faces Detection FAILED\" }\n\0", strlen("{ \"error\":\"All Faces Detection FAILED\" }\n\0"));
+		delete psContext;
+		return -1;
 	}
 
 	net.SendData(psContext->sock, "{ \"success\":\"get faces succeed\" }\n\0", strlen("{ \"success\":\"get faces succeed\" }\n\0"));
