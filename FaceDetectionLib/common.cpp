@@ -13,13 +13,17 @@ void InitFaceDetectionLib()
 
 void DeinitFaceDetectionLib()
 {
-	cvReleaseHaarClassifierCascade(&faceCascades.face);
-	cvReleaseHaarClassifierCascade(&faceCascades.eyes);
-	cvReleaseHaarClassifierCascade(&faceCascades.nose);
-	cvReleaseHaarClassifierCascade(&faceCascades.mouth);
-	cvReleaseHaarClassifierCascade(&faceCascades.eye);
-	cvReleaseHaarClassifierCascade(&faceCascades.righteye2);
-	cvReleaseHaarClassifierCascade(&faceCascades.lefteye2);
+	for (int i = 0; i < MAX_THREADS_AND_CASCADES_NUM; i++)
+	{
+		cvReleaseHaarClassifierCascade(&cascades[i].face);
+		cvReleaseHaarClassifierCascade(&cascades[i].eyes);
+		cvReleaseHaarClassifierCascade(&cascades[i].nose);
+		cvReleaseHaarClassifierCascade(&cascades[i].mouth);
+		cvReleaseHaarClassifierCascade(&cascades[i].eye);
+		cvReleaseHaarClassifierCascade(&cascades[i].righteye2);
+		cvReleaseHaarClassifierCascade(&cascades[i].lefteye2);
+	}
+	
 	DeleteCriticalSection(&faceDetectionCS);
 	DeleteCriticalSection(&fileCS);
 }

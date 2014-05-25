@@ -21,20 +21,21 @@
 * \brief Max amount of cut threads.
 */
 
-#define MAX_THREADS_NUM		(10)
+#define MAX_THREADS_AND_CASCADES_NUM		(15)
 
+extern FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
 
 /**
 * \brief Folder of id's.
 */
 
-#define ID_PATH				"C:\\OK\\tmp\\"
+#define ID_PATH				"D:\\HerFace\\Faces\\"
 
 /**
 * \brief Folder with downloading photos.
 */
 
-#define TARGET_PATH			"C:\\OK\\target"
+#define TARGET_PATH			"D:\\HerFace\\Faces\\"
 
 #pragma pack(push, 1)
 
