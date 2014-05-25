@@ -12,23 +12,13 @@
 *.dylib
 
 # Compiled Static libraries
-*.lai
-*.la
-*.a
 *.suo
-*.filters
-*.obj
-*.log
-*.tlog
-*.lastbuildstate
-*.idb
-*.exe
-*.ilk
-*.pdb
-*.lib
 *.user
-*.json
-*.psess
 *.vspx
+Debug
+Release
+
+# Others
+
 FaceDetectionLib/doc/
 FaceDetection_manual.chm

@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="DescriptorDetection.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="EigenDetector_v2.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="json.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="network.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="ViolaJonesDetection.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="common.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DescriptorDetection.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="EigenDetector_v2.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="json.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="LibInclude.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="network.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ViolaJonesDetection.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="common.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="sources">
+      <UniqueIdentifier>{03e69626-9f6a-441b-bbab-01c2caf4d97f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers">
+      <UniqueIdentifier>{ae7bc0b9-8164-4f74-8fa3-a085c653afcd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
