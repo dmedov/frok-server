@@ -531,7 +531,7 @@ UINT_PTR WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 
 		if (faces->total == 1)
 		{
-			psParams->pThis->cutFaceToBase(psParams->destPath,x, y, w, h);
+			psParams->pThis->cutFaceToBase(psParams->destPath, x, y, w, h);
 		}
 		else
 		{

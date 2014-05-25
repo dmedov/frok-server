@@ -134,7 +134,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				psContext->faceCoords = objInputJson["face_points"].ToObject();
 				psContext->sock = sock;
 
-				FilePrintMessage(NULL, _SUCC("Training started..."));
+				FilePrintMessage(NULL, _SUCC("Cut face started..."));
 				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)saveFaceFromPhoto, psContext, 0, NULL);
 				// Notice that psContext should be deleted in recognizeFromModel function!
 			}

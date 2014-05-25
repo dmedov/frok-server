@@ -14,7 +14,7 @@ DWORD getFacesFromPhoto(void *pContext)
 	
 	if (img == NULL)
 	{
-		FilePrintMessage(NULL, _WARN("Failed to load image %s. Continue..."), photoName.c_str());
+		FilePrintMessage(NULL, _FAIL("Failed to load image %s. Continue..."), photoName.c_str());
 		net.SendData(psContext->sock, "{ \"error\":\"failed to load photo\" }\n\0", strlen("{ \"error\":\"failed to load photo\" }\n\0"));
 		delete psContext;
 		return -1;
@@ -27,7 +27,7 @@ DWORD getFacesFromPhoto(void *pContext)
 	}
 	catch (...)
 	{
-		FilePrintMessage(NULL, _WARN("All Faces Detection FAILED"), photoName.c_str());
+		FilePrintMessage(NULL, _FAIL("All Faces Detection FAILED"), photoName.c_str());
 		net.SendData(psContext->sock, "{ \"error\":\"All Faces Detection FAILED\" }\n\0", strlen("{ \"error\":\"All Faces Detection FAILED\" }\n\0"));
 		delete psContext;
 		return -1;
@@ -51,7 +51,7 @@ DWORD saveFaceFromPhoto(void *pContext)
 
 	if (img == NULL)
 	{
-		FilePrintMessage(NULL, _WARN("Failed to load image %s. Continue..."), photoName.c_str());
+		FilePrintMessage(NULL, _FAIL("Failed to load image %s. Continue..."), photoName.c_str());
 		net.SendData(psContext->sock, "{ \"error\":\"failed to load photo\" }\n\0", strlen("{ \"error\":\"failed to load photo\" }\n\0"));
 		delete psContext;
 		return -1;
@@ -59,9 +59,23 @@ DWORD saveFaceFromPhoto(void *pContext)
 
 	ViolaJonesDetection detector;
 
-	net.SendData(psContext->sock, "{ \"success\":\"get faces succeed\" }\n\0", strlen("{ \"success\":\"get faces succeed\" }\n\0"));
+	try
+	{
+		detector.cutFaceToBase(((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg"),
+			atoi(psContext->faceCoords["x1"].ToString().c_str()), atoi(psContext->faceCoords["y1"].ToString().c_str()),
+			atoi(psContext->faceCoords["x2"].ToString().c_str()), atoi(psContext->faceCoords["y2"].ToString().c_str()));
+	}
+	catch (...)
+	{
+		FilePrintMessage(NULL, _FAIL("cut face FAILED"), photoName.c_str());
+		net.SendData(psContext->sock, "{ \"error\":\"cut face FAILED\" }\n\0", strlen("{ \"error\":\"cut face FAILED\" }\n\0"));
+		delete psContext;
+		return -1;
+	}
 
-	FilePrintMessage(NULL, _SUCC("Get faces finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
+	net.SendData(psContext->sock, "{ \"success\":\"cut face succeed\" }\n\0", strlen("{ \"success\":\"cut face succeed\" }\n\0"));
+
+	FilePrintMessage(NULL, _SUCC("Cut face finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
 	delete psContext;
 	return 0;
 }
