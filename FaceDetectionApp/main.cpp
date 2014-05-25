@@ -208,11 +208,11 @@ int main(int argc, char *argv[])
 	//char train[] = "{\"cmd\":\"train\", \"ids\":[\"6\"]}\0";	// cut faces and train base
 	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
 
-	char get_photos[] = "{\"cmd\":\"get_faces\", \"user_id\":\"5\", \"photo_id\":\"GOPR0491\"}\0";	// cut faces and train base
-	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(get_photos), get_photos);
+	//char get_photos[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_points\":{\"100\", \"100\", \"200\", \"200\"}}\0";	// cut faces and train base
+	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(get_photos), get_photos);
 
-	/*char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"6\"], \"photo_id\": \"11\"}\0";	// recognize name = 1.jpg
-	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);*/
+	//char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"12\",\"13\",\"14\",\"15\",\"16\"], \"photo_id\": \"1\"}\0";	// recognize name = 1.jpg
+	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
 	getchar();
 
 	DeinitFaceDetectionLib();

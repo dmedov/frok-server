@@ -154,6 +154,7 @@ public:
 	~ViolaJonesDetection();
 
 	void allFacesDetection(IplImage *inputImage, SOCKET outSock);
+	void cutFaceToBase(IplImage *face_img, string destPath, int x, int y, int w, int h);
 
 	/**
 	* \brief Funtion to detect a face by Haar-Cascade
@@ -365,6 +366,13 @@ private:
 	void normalizateHistFace();
 };
 
+
+/**
+* \brief External for face Cascades database
+*/
+extern FaceCascades faceCascades;
+
+
 /**
 * \brief Structure cutFaceThreadParams includes input arguments for function cutFaceThread.
 */
@@ -375,11 +383,11 @@ struct cutFaceThreadParams
 	* \brief Constructor of structure cutFaceThreadParams.
 	*
 	* Creating the object of the cutFaceThreadParams structure and initializing fields of structure.
-*
+	*
 	* \param[in]	inputImage			The picture from which we select faces.
 	* \param[in]	destPath			Directory with selected faces.
-*
-*/
+	*
+	*/
 
 	cutFaceThreadParams(IplImage *inputImage, const char* destPath)
 	{
@@ -422,10 +430,5 @@ struct cutFaceThreadParams
 
 	ViolaJonesDetection *pThis;
 };
-
-/**
-* \brief External for face Cascades database
-*/
-extern FaceCascades faceCascades;
 
 /** \} */

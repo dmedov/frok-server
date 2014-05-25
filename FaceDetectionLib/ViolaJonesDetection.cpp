@@ -328,6 +328,7 @@ void ViolaJonesDetection::normalizateHistFace(){
 	cvNormalize(face_img, face_img, 10, 250, CV_MINMAX);
 }
 
+
 //ƒетектирование лица (вызываетс€ из main)
 void ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock)
 {
@@ -351,7 +352,7 @@ void ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
 
 		int x = cvRound(rect->x);			int y = cvRound(rect->y);
-		int w = cvRound(rect->width);		int h = cvRound(rect->height);		
+		int w = cvRound(rect->width);		int h = cvRound(rect->height);
 
 		ostringstream coutData;
 		coutData << "{ " << x << "\", \"" << y << "\", \"" << x + w << "\", \"" << y + h << " }";
@@ -468,12 +469,48 @@ void equalizeFace(IplImage *faceImg) {
 	faceImg = &IplImage(leftSide);
 }
 
+void ViolaJonesDetection::cutFaceToBase(IplImage *face_img, string destPath, int x, int y, int w, int h){
+	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
+	ImageCoordinats points;
+
+	points.p1 = cvPoint(x, y);
+	points.p2 = cvPoint(x + w, y + h);
+
+	face_img = cvCreateImage(cvSize(w, h), gray_img->depth, gray_img->nChannels);
+	cvSetImageROI(gray_img, cvRect(x, y, w, h));
+	cvCopy(gray_img, face_img, NULL);
+	cvResetImageROI(gray_img);									//копируем лицо в отдельную картинку
+
+	for (int j = 0; j < 8; j++)
+		facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
+
+	allKeysFaceDetection(points.p1);
+	normalizateHistFace();
+	if (drawEvidence(points, true)){
+		if (defineRotate() == 0){
+			face_img = imposeMask(points.p1);
+			face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
+
+			IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
+			cvResize(face_img, dest, 1);
+			try
+			{
+				cvSaveImage(destPath.c_str(), dest);
+			}
+			catch (...)
+			{
+				FilePrintMessage(NULL, _FAIL("Failed to save image. Runtime error occured"));
+			}
+			FilePrintMessage(NULL, "+");
+			cvReleaseImage(&dest);
+		}
+	}
+}
+
 //¬џрезание изображени€ с лицом
 UINT_PTR WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 	cutFaceThreadParams *psParams = (cutFaceThreadParams*)params;
 	psParams->pThis->image = cvCloneImage(psParams->inputImage);
-
-	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 
 	psParams->pThis->gray_img = cvCreateImage(cvGetSize(psParams->pThis->image), 8, 1);
 	cvCvtColor(psParams->pThis->image, psParams->pThis->gray_img, CV_BGR2GRAY);
@@ -487,58 +524,21 @@ UINT_PTR WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 	LeaveCriticalSection(&faceDetectionCS);
 	for (int i = 0; i < (faces ? faces->total : 0); i++){
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
-		ImageCoordinats points;
+
 
 		int x = cvRound(rect->x);			int y = cvRound(rect->y);
 		int w = cvRound(rect->width);		int h = cvRound(rect->height);
 
-		points.p1 = cvPoint(x, y);
-		points.p2 = cvPoint(x + w, y + h);
-
-		psParams->pThis->face_img = cvCreateImage(cvSize(w, h), psParams->pThis->gray_img->depth, psParams->pThis->gray_img->nChannels);
-		cvSetImageROI(psParams->pThis->gray_img, cvRect(x, y, w, h));
-		cvCopy(psParams->pThis->gray_img, psParams->pThis->face_img, NULL);
-		cvResetImageROI(psParams->pThis->gray_img);									//копируем лицо в отдельную картинку
-
-		for (int j = 0; j < 8; j++)
-			psParams->pThis->facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
-
-		psParams->pThis->allKeysFaceDetection(points.p1);
-		psParams->pThis->normalizateHistFace();
-		if (psParams->pThis->drawEvidence(points, true)){
-			if (psParams->pThis->defineRotate() == 0){
-				psParams->pThis->face_img = psParams->pThis->imposeMask(points.p1);
-				psParams->pThis->face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(psParams->pThis->face_img));
-
-				IplImage *dest = cvCreateImage(cvSize(158, 190), psParams->pThis->face_img->depth, psParams->pThis->face_img->nChannels);
-				cvResize(psParams->pThis->face_img, dest, 1);
-				//equalizeFace(dist);
-
-				//EnterCriticalSection(&faceDetectionCS);
-
-				if (faces->total == 1)
-				{
-					try
-					{
-						cvSaveImage(psParams->destPath, dest);
-					}
-					catch (...)
-					{
-						FilePrintMessage(NULL, _FAIL("Failed to save image. Runtime error occured"));
-					}
-					FilePrintMessage(NULL, "+");
-				}
-				else
-				{
-					FilePrintMessage(NULL, "-");
-				}
-				//LeaveCriticalSection(&faceDetectionCS);
-				cvReleaseImage(&dest);
-			}
-
+		if (faces->total == 1)
+		{
+			psParams->pThis->cutFaceToBase(psParams->pThis->face_img, psParams->destPath,x, y, w, h);
 		}
+		else
+		{
+			FilePrintMessage(NULL, "-");
+		}
+
 	}
-	delete eigenDetector_v2;
 
 	cvClearMemStorage(psParams->pThis->strg);
 	cvReleaseImage(&psParams->pThis->face_img);			// освобождаем ресурсы
