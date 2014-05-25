@@ -313,13 +313,29 @@ void ViolaJonesDetection::allKeysFaceDetection(CvPoint point){
 		strg = cvCreateMemStorage(0);
 	EnterCriticalSection(&faceDetectionCS);
 	keysFaceDetect(faceCascades.eye, point, 4);					//правый общий		
+	LeaveCriticalSection(&faceDetectionCS);
+	EnterCriticalSection(&faceDetectionCS);
 	keysFaceDetect(faceCascades.righteye2, point, 4);			//правый 
+	LeaveCriticalSection(&faceDetectionCS);
+	EnterCriticalSection(&faceDetectionCS);
 	keysFaceDetect(faceCascades.righteye, point, 4);			//правый альтернатива
+	LeaveCriticalSection(&faceDetectionCS);
+	EnterCriticalSection(&faceDetectionCS);
 	keysFaceDetect(faceCascades.eye, point, 3);					//левый общий
+	LeaveCriticalSection(&faceDetectionCS);
+	EnterCriticalSection(&faceDetectionCS);
 	keysFaceDetect(faceCascades.lefteye2, point, 3);			//левый 
+	LeaveCriticalSection(&faceDetectionCS);
+	EnterCriticalSection(&faceDetectionCS);
 	keysFaceDetect(faceCascades.lefteye, point, 3);				//левый альтернатива
+	LeaveCriticalSection(&faceDetectionCS);
+	EnterCriticalSection(&faceDetectionCS);
 	keysFaceDetect(faceCascades.eyes, point, 0);				//глаза в очках
+	LeaveCriticalSection(&faceDetectionCS);
+	EnterCriticalSection(&faceDetectionCS);
 	keysFaceDetect(faceCascades.nose, point, 1);				//нос
+	LeaveCriticalSection(&faceDetectionCS);
+	EnterCriticalSection(&faceDetectionCS);
 	keysFaceDetect(faceCascades.mouth, point, 2);				//рот
 	LeaveCriticalSection(&faceDetectionCS);
 }
