@@ -29,7 +29,7 @@ int DescriptorDetection::matchDescriptors(Mat &ffd, Mat &bfd){
 }
 
 //Поиск дескрипторов и вывод изображений с найденными дескрипторами
-Mat DescriptorDetection::findDescriptors(Mat &face, char* name, bool b){
+Mat DescriptorDetection::findDescriptors(Mat &face, char* name, bool oShowImage){
 	//-- Этап 1. Нахождение ключевых точек.
 
 	//FeatureDetector * detector = new GFTTDetector();
@@ -50,7 +50,7 @@ Mat DescriptorDetection::findDescriptors(Mat &face, char* name, bool b){
 	//-- Этап 2. Вычисление дескрипторов.
 	SiftDescriptorExtractor extractor;
 	extractor.compute(face, keypoints, descriptors_object);
-	if (b)	imshow(name, img_keypoints);
+	if (oShowImage)	imshow(name, img_keypoints);
 	return descriptors_object;
 }
 

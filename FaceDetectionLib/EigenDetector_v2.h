@@ -101,10 +101,10 @@ private:
 	*
 	* Fills \a images with matrixes of faces in \a dir folder and \a labels vector with \a id
 	*
-	* \param[in]	dir		folder that contains face's that will be used for training
-	* \param[out]	*images	vector of matrixes of images in \a dir directory
-	* \param[out]	*labels vector of ids.
-	* \param[in]	id		id that would be stored in \a *labels vector
+	* \param[in]	facesPath	folder that contains face's that will be used for training
+	* \param[out]	*images		vector of matrixes of images in \a dir directory
+	* \param[out]	*labels		vector of ids.
+	* \param[in]	id			id that would be stored in \a *labels vector
 	*
 	* \code
 	*

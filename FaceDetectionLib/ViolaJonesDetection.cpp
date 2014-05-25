@@ -23,12 +23,12 @@ ViolaJonesDetection::~ViolaJonesDetection(){
 }
 
 //Запись ключевых точек в массив
-void ViolaJonesDetection::writeFacePoints(const ImageCoordinats &pointKeyFase, const ImageCoordinats &pointFase, int type){
-	CvPoint p1 = pointKeyFase.p1;
-	CvPoint p2 = pointKeyFase.p2;
-	CvPoint p = pointFase.p1;
-	int w = pointFase.p2.x - pointFase.p1.x;
-	int h = pointFase.p2.y - pointFase.p1.y;
+void ViolaJonesDetection::writeFacePoints(const ImageCoordinats &pointKeyFaсe, const ImageCoordinats &pointFace, int type){
+	CvPoint p1 = pointKeyFaсe.p1;
+	CvPoint p2 = pointKeyFaсe.p2;
+	CvPoint p = pointFace.p1;
+	int w = pointFace.p2.x - pointFace.p1.x;
+	int h = pointFace.p2.y - pointFace.p1.y;
 
 	CvPoint center = cvPoint((p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
 
@@ -68,9 +68,9 @@ void ViolaJonesDetection::writeFacePoints(const ImageCoordinats &pointKeyFase, c
 }
 
 //Прорисовка линий на резулютирующем изображении
-bool ViolaJonesDetection::drawEvidence(const ImageCoordinats &pointFase, bool draw){
-	const CvPoint p1 = pointFase.p1;
-	const CvPoint p2 = pointFase.p2;
+bool ViolaJonesDetection::drawEvidence(const ImageCoordinats &pointFace, bool draw){
+	const CvPoint p1 = pointFace.p1;
+	const CvPoint p2 = pointFace.p2;
 	int count = 0;
 	for (int i = 0; i < 8; i++)															//проверяем координаты всех точек на -1;-1
 	if (facePoints[i].x >= 0 && facePoints[i].y >= 0){
@@ -287,15 +287,15 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
 		int h = cvRound(r->height) / k;
 
 		CvPoint p1 = cvPoint(x + pointFace.x, y + pointFace.y), p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
-		ImageCoordinats pointKeyFase, pointFase;
+		ImageCoordinats pointKeyFaсe, facePointCoordinates;
 
-		pointKeyFase.p1 = cvPoint(x + pointFace.x, y + pointFace.y);
-		pointKeyFase.p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
-		pointFase.p1 = pointFace;
-		pointFase.p2 = cvPoint(pointFace.x + width / k, pointFace.y + height / k);
+		pointKeyFaсe.p1 = cvPoint(x + pointFace.x, y + pointFace.y);
+		pointKeyFaсe.p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
+		facePointCoordinates.p1 = pointFace;
+		facePointCoordinates.p2 = cvPoint(pointFace.x + width / k, pointFace.y + height / k);
 
 
-		writeFacePoints(pointKeyFase, pointFase, type);
+		writeFacePoints(pointKeyFaсe, facePointCoordinates, type);
 	}
 
 	cvReleaseImage(&dst);

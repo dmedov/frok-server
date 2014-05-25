@@ -6,6 +6,12 @@
 
 #pragma once
 
+
+/** \addtogroup DescriptorDetection
+*  \brief Descriptor detection subsystem:
+*  \{
+*/
+
 /** \class DescriptorDetection
 * \brief This class includes two functions which work on with descriptors.
 *
@@ -23,20 +29,13 @@ public:
 	*
 	*\return number of matches. (Warinng! Valid number of matches depends on size of target picture!)
 	*
-	* \param[out]	face		target face
+	* \param[in]	face		target face
 	* \param[in]	name		description of name.
-	* \param[in]	showImage	found descriptors will be shown if bariable is set true
+	* \param[in]	oShowImage	found descriptors will be shown if bariable is set true
 	*
-	* <b>Usage example:</b>
-	*
-	* \code
-	*
-	* code example
-	*
-	* \endcode
 	*/
 
-	Mat findDescriptors(Mat &face, char* name, bool b);
+	Mat findDescriptors(Mat &face, char* name, bool oShowImage);
 
 	/**
 	* \brief getting match for 2 descriptors.

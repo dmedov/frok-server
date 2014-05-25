@@ -8,8 +8,14 @@
 
 #pragma once
 
-/** \addtogroup DescriptorDetection
+/** \addtogroup ViolaJonesDetection
+*  \brief Face detection subsystem:
+*  \{
+*/
+
+/**
 * \brief Structure that includes additional cascades to recognize face parts.
+*
 */
 
 struct FaceCascades{
@@ -89,19 +95,32 @@ extern CRITICAL_SECTION faceDetectionCS;
 
 class ViolaJonesDetection
 {
-protected:
+private:
 
 	/**
-	* \brief Common objects of image.
-	*
-	* *image		Downloading picture.
-	* *imageResults Picture with detected faces.
-	* *face_img		Pictures with selected faces.
-	* *gray_img		Picture with processed face.
+	* \brief Some picture.
 	*
 	*/
 
-	IplImage *image, *imageResults, *face_img, *gray_img;
+	IplImage *image;
+
+	/**
+	* \brief Picture with detected faces
+	*
+	*/
+	IplImage *imageResults;
+
+	/**
+	* \brief Pictures with selected faces
+	*
+	*/
+	IplImage *face_img;
+
+	/**
+	* \brief Picture with processed face.
+	*
+	*/
+	IplImage *gray_img;
 
 	/**
 	* \brief Key points of face parts: eyes, nose, mouth.
@@ -111,6 +130,7 @@ protected:
 
 	/**
 	* \brief Memory for using Cascades.
+	*
 	*/
 
 	CvMemStorage* strg;
@@ -184,12 +204,12 @@ private:
 	* Selecting faces as a rectangle on the picture.
 	*
 	*
-	* \param[in]		&pointFase		Structure with coordinates of faces points;
+	* \param[in]		&pointFace		Structure with coordinates of faces points;
 	* \param[in]		draw			Flag to draw on picture defined faces or not.
 	*
 	*/
 
-	bool drawEvidence(const ImageCoordinats &pointFase, bool draw);
+	bool drawEvidence(const ImageCoordinats &pointFace, bool draw);
 
 	/**
 	* \brief Writing key points to the array.
@@ -205,17 +225,17 @@ private:
 	*
 	* \code
 	*
-	*   pointKeyFase.p1 = cvPoint(x + pointFace.x, y + pointFace.y);
-	*	pointKeyFase.p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
-	*	pointFase.p1 = pointFace;
-	*	pointFase.p2 = cvPoint(pointFace.x + width / k, pointFace.y + height / k);
+	*   pointKeyFañe.p1 = cvPoint(x + pointFace.x, y + pointFace.y);
+	*	pointKeyFañe.p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
+	*	pointFace.p1 = pointFace;
+	*	pointFace.p2 = cvPoint(pointFace.x + width / k, pointFace.y + height / k);
 	*
-	*	writeFacePoints(pointKeyFase, pointFase, type);
+	*	writeFacePoints(pointKeyFañe, pointFace, type);
 	*
 	* \endcode
 	*/
 
-	void writeFacePoints(const ImageCoordinats &pointKeyFase, const ImageCoordinats &pointFase, int type);
+	void writeFacePoints(const ImageCoordinats &pointKeyFace, const ImageCoordinats &pointFace, int type);
 
 	/**
 	* \brief Detecting keys parts of faces.
@@ -380,8 +400,24 @@ struct cutFaceThreadParams
 		cvReleaseImage(&inputImage);
 		delete pThis;
 	}
+
+
+	/**
+	* \brief The picture from which we select faces.
+	*/
+
 	IplImage *inputImage;
+
+	/**
+	* \brief Directory with selected faces.
+	*/
+
 	char* destPath;
+
+	/**
+	* \brief Object of ViolaJonesDetection class to call functions.
+	*/
+
 	ViolaJonesDetection *pThis;
 };
 
