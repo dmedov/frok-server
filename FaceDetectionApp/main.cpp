@@ -208,8 +208,8 @@ int main(int argc, char *argv[])
 	//char train[] = "{\"cmd\":\"train\", \"ids\":[\"6\"]}\0";	// cut faces and train base
 	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
 
-	char get_photos[] = "{\"cmd\":\"get_faces\", \"user_id\":\"5\", \"photo_id\":\"GOPR0491\"}\0";	// cut faces and train base
-	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(get_photos), get_photos);
+	//char get_photos[] = "{\"cmd\":\"get_faces\", \"user_id\":\"5\", \"photo_id\":\"GOPR0491\"}\0";	// cut faces and train base
+	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(get_photos), get_photos);
 
 	/*char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"6\"], \"photo_id\": \"11\"}\0";	// recognize name = 1.jpg
 	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);*/
