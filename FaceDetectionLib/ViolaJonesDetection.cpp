@@ -469,12 +469,14 @@ void equalizeFace(IplImage *faceImg) {
 	faceImg = &IplImage(leftSide);
 }
 
-void ViolaJonesDetection::cutFaceToBase(string destPath, int x, int y, int w, int h){
+void ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, string destPath, int x, int y, int w, int h){
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 	ImageCoordinats points;
 
 	points.p1 = cvPoint(x, y);
 	points.p2 = cvPoint(x + w, y + h);
+
+	gray_img = bigImage;
 
 	face_img = cvCreateImage(cvSize(w, h), gray_img->depth, gray_img->nChannels);
 	cvSetImageROI(gray_img, cvRect(x, y, w, h));
@@ -531,7 +533,7 @@ UINT_PTR WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 
 		if (faces->total == 1)
 		{
-			psParams->pThis->cutFaceToBase(psParams->destPath, x, y, w, h);
+			psParams->pThis->cutFaceToBase(psParams->pThis->gray_img, psParams->destPath, x, y, w, h);
 		}
 		else
 		{
