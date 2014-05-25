@@ -1,6 +1,6 @@
 /**
 * \file ViolaJonesDetection.h
-* \brief This file defines class ViolaJonesDetection for face detection, downloading database with faces, 
+* \brief This file defines class ViolaJonesDetection for face detection, downloading database with faces,
 * finding key points on faces and faces normalization. Includes structure with different cascades to recognize face parts.
 * Counting similarity of the faces on picture.
 *
@@ -9,38 +9,76 @@
 #pragma once
 
 /** \addtogroup DescriptorDetection
-* \brief Structure FaceCascades includse additional cascades to recognize face parts.
-*	
-*\param[in]		*face		Cascade to recognize a face.
-*\param[in]		*eyes		Cascade to recognize the eyes on the face.
-*\param[in]		*righteye	Cascade to recognize the right eye on the face if previuos cascade hasn't worked.
-*\param[in]		*lefteye	Cascade to recognize the left eye on the face if cascade "eyes" hasn't worked.
-*\param[in]		*righteye2	Cascade to recognize the right eye on the face if cascade "eyes" and cascade "righteye" haven't worked.
-*\param[in]		*lefteye2	Cascade to recognize the left eye on the face if cascade "eyes" and cascade "lefteye" haven't worked.
-*\param[in]		*eye		Cascade to detect an open eyes only.
-*\param[in]		*nose		Cascade to detect a nose.
-*\param[in]		*mouth		Cascade to detect a mouth.
-*
+* \brief Structure that includes additional cascades to recognize face parts.
 */
 
 struct FaceCascades{
-	//Загрузка базы данных, обученной на детектирование лиц в Фас
+
+	/**
+	* \brief Cascade to recognize a face..
+	*/
 	CvHaarClassifierCascade *face = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml", 0, 0, 0);
-	//Загрузка быза данных, обученной для детектирования глаз
+
+	/**
+	* \brief Cascade to recognize the eyes on the face.
+	*/
+
 	CvHaarClassifierCascade *eyes = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml", 0, 0, 0);
+
+	/**
+	* \brief Cascade to recognize the right eye on the face if previuos cascade hasn't worked.
+	*/
+
 	CvHaarClassifierCascade *righteye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_righteye.xml", 0, 0, 0);
+
+	/**
+	* \brief Cascade to recognize the left eye on the face if cascade "eyes" hasn't worked.
+	*/
+
 	CvHaarClassifierCascade *lefteye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_lefteye.xml", 0, 0, 0);
+
+	/**
+	* \brief Cascade to recognize the right eye on the face if cascade "eyes" and cascade "righteye" haven't worked.
+	*/
+
 	CvHaarClassifierCascade *righteye2 = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_righteye_2splits.xml", 0, 0, 0);
+
+	/**
+	* \brief Cascade to recognize the left eye on the face if cascade "eyes" and cascade "lefteye" haven't worked.
+	*/
+
 	CvHaarClassifierCascade *lefteye2 = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_lefteye_2splits.xml", 0, 0, 0);
+
+	/**
+	* \brief Cascade to detect an open eyes only.
+	*/
+
 	CvHaarClassifierCascade *eye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye.xml", 0, 0, 0);
-	//Загрузка быза данных, обученной для детектирования носа
+
+	/**
+	* \brief Cascade to detect a nose.
+	*/
+
 	CvHaarClassifierCascade *nose = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_nose.xml", 0, 0, 0);
-	//Загрузка быза данных, обученной для детектирования рта
+
+	/**
+	* \brief Cascade to detect a mouth.
+	*/
+
 	CvHaarClassifierCascade *mouth = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_mouth.xml", 0, 0, 0);
 };
 
+/**
+* \brief Object of structure FaceCascades for using cascdes to recognize parts of the face.
+*
+*/
 
 extern FaceCascades faceCascades;
+
+/**
+* \brief faceDetectionCS is used to provide access to shared resources.
+*
+*/
 
 extern CRITICAL_SECTION faceDetectionCS;
 
@@ -54,7 +92,7 @@ class ViolaJonesDetection
 protected:
 
 	/**
-	* \brief Memory for Cascades detection.
+	* \brief Common objects of image.
 	*
 	* *image		Downloading picture.
 	* *imageResults Picture with detected faces.
@@ -78,7 +116,21 @@ protected:
 	CvMemStorage* strg;
 
 public:
+
+	/**
+	* \brief Constructor of ViolaJonesDetection class.
+	*
+	* Creating the object of the ViolaJonesDetection class and initializing fields of class.
+	*
+	*/
 	ViolaJonesDetection();
+
+	/**
+	* \brief Destructor of ViolaJonesDetection class.
+	*
+	*  Used to "clean up" when an object is no longer necessary.
+	*
+	*/
 	~ViolaJonesDetection();
 
 	/**
@@ -104,14 +156,15 @@ public:
 
 	void faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock = INVALID_SOCKET);
 
-	// return -1 for failure, 0 in case of success
 	/**
 	* \brief Selecting a face on the picture and saving the face.
 	*
-	* Selecting a face on the picture from id/photos/.jpg directory and saving the face in id/faces/.jpg.
+	* Selecting a face on the picture from id/photos/ and saving the face in id/faces/.
 	* Argument of this fuction is structure cutFaceThreadParams which describes below.
-	* This function works in a thread.
-	* 
+	* This functions should be called in a new thread. Return expected_event_type of this event.
+	*
+	* \return -1 for failure, 0 in for success.
+	*
 	* <b>Usage example:</b>
 	*
 	* \code
@@ -132,7 +185,7 @@ private:
 	*
 	*
 	* \param[in]		&pointFase		Structure with coordinates of faces points;
-	* \param[out]		draw			Flag to draw on picture defined faces or not.
+	* \param[in]		draw			Flag to draw on picture defined faces or not.
 	*
 	*/
 
@@ -192,7 +245,7 @@ private:
 	*
 	*  Finding all key points on the face of eyes, nose and mouth.
 	*
-	* \param[in]	point		All key points on the recognized face.	
+	* \param[in]	point		All key points on the recognized face.
 	*
 	* <b>Usage example:</b>
 	*
@@ -215,8 +268,6 @@ private:
 	*
 	* This function defines how to rotate recognized face.
 	*
-	* \Doesn't have any arguments.
-	*
 	* <b>Usage example:</b>
 	*
 	* \code
@@ -232,13 +283,13 @@ private:
 	int defineRotate();
 
 	//Mat BEImage(Mat img, Rect roi, int maxFadeDistance);
-	
+
 	/**
-	* \brief Imposes mask.
+	* \brief Selecting face.
 	*
-	* This function imposes mask on the face to remove some noises around the bottom part of the face.
+	* This function finds a face on the picture and selects the face.
 	*
-	* \return Returns the picture with mask on it.
+	* \return Returns the picture with face.
 	*
 	* \param[in]	p		Face points.
 	*
@@ -257,11 +308,11 @@ private:
 	IplImage* imposeMask(CvPoint p);
 
 	//void scanSIFT(Mat, int);
-		
+
 	/**
 	* \brief Function createJson.
 	*
-	*  It is used primarily to transmit data from our database between a server and web application.
+	*  It is used primarily to transmit data of recognizing through specified socket.
 	*
 	* \param[in]	&dataJson		JSON with data of our faces.
 	* \param[in]	sock			An end-point in a communication across a network of distant side.
@@ -273,16 +324,14 @@ private:
 	/**
 	* \brief Normalization of histogram on the face.
 	*
-	*  It is used primarily to transmit data from our database between a server and web application.
-	*
-	* \Doesn't have any arguments.	
+	*  Normalization of histogram on the face to aviod some noises.
 	*
 	* <b>Usage example:</b>
 	*
 	* \code
 	*
 	*  for (int j = 0; j < 8; j++)
-	*		facePoints[j] = cvPoint(-1, -1);					
+	*		facePoints[j] = cvPoint(-1, -1);
 	*
 	*  normalizateHistFace();
 	*
@@ -296,14 +345,20 @@ private:
 
 /**
 * \brief Structure cutFaceThreadParams includes input arguments for function cutFaceThread.
-*
-* \param[in]	inputImage		Downloading picture.
-* \param[in]	destPath		Directory with cut faces.
-*
 */
 
 struct cutFaceThreadParams
 {
+	/**
+	* \brief Constructor of structure cutFaceThreadParams.
+	*
+	* Creating the object of the cutFaceThreadParams structure and initializing fields of structure.
+	*
+	* \param[in]	inputImage			The picture from which we select faces.
+	* \param[in]	destPath			Directory with selected faces.
+	*
+	*/
+
 	cutFaceThreadParams(IplImage *inputImage, const char* destPath)
 	{
 		this->inputImage = new IplImage;
@@ -312,6 +367,13 @@ struct cutFaceThreadParams
 		strcpy(this->destPath, destPath);
 		pThis = new ViolaJonesDetection;
 	}
+
+	/**
+	* \brief Destructor of ViolaJonesDetection class.
+	*
+	*  Used to "clean up" when an object is no longer necessary.
+	*
+	*/
 
 	~cutFaceThreadParams()
 	{

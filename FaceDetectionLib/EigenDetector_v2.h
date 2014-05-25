@@ -31,7 +31,7 @@ public:
 	*
 	* Training Eigen detection algorythm on faces we've got in our faces database.
 	*
-	* \param[in]	idPath		Direction to folder with faces;
+	* \param[in]	idPath		Direction to folder with faces with specified id.
 	*
 	* <b>Usage example:</b>
 	*
@@ -78,7 +78,9 @@ public:
 	*
 	* Imposition mask on recognized face.
 	*
-	* \param[in]	*img		Recognized face with mask on it;
+	* \return Returns the picture with mask on it.
+	*
+	* \param[in]	*img		Recognized face.
 	*
 	* <b>Usage example:</b>
 	*
@@ -121,9 +123,9 @@ private:
 	void loadBaseFace(const char* facesPath, vector<Mat> * images, vector<int>* labels, int id);
 
 	/**
-	* \brief This function finds similarity of two pictures
+	* \brief This function finds similarity of two pictures by comparing eigenvectors.
 	*
-	* This function finds defference between two matrixes and
+	* This function finds difference between two eigenvectors and
 	* returns probability of similarity of two pictures.
 	*
 	* \return probability of similarity of two pictures;
@@ -144,9 +146,9 @@ private:
 	double getSimilarity(const Mat &image_mat, const Mat &reconstructedFace);
 
 	/**
-	* \brief This function finds similarity of two pictures
+	* \brief This function finds similarity of two pictures by comparing matrix.
 	*
-	* This function finds defference between two matrixes and
+	* This function finds difference between two matrix and
 	* returns probability of similarity of two pictures.
 	*
 	* \return probability of similarity of two pictures;

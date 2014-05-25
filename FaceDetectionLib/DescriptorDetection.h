@@ -21,6 +21,8 @@ public:
 	* Description of this function. It may have got some links to other function.
 	* Sample: here is link to \a matchDescriptors
 	*
+	*\return number of matches. (Warinng! Valid number of matches depends on size of target picture!)
+	*
 	* \param[out]	face		target face
 	* \param[in]	name		description of name.
 	* \param[in]	showImage	found descriptors will be shown if bariable is set true
