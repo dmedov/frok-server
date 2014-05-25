@@ -22,6 +22,14 @@ DWORD getFacesFromPhoto(void *pContext)
 
 	ViolaJonesDetection detector;
 
+	try{
+		detector.allFacesDetection(img, psContext->sock);
+	}
+	catch (...)
+	{
+
+	}
+
 	net.SendData(psContext->sock, "{ \"success\":\"get faces succeed\" }\n\0", strlen("{ \"success\":\"get faces succeed\" }\n\0"));
 
 	FilePrintMessage(NULL, _SUCC("Get faces finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
