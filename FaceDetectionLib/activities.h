@@ -3,8 +3,8 @@
 #define CUT_TIMEOUT			(600000)
 #define MAX_THREADS_NUM		(10)
 
-#define ID_PATH				"D:\\HerFace\\Faces\\"
-#define TARGET_PATH			"D:\\HerFace\\Faces\\"
+#define ID_PATH				"C:\\OK\\tmp\\"
+#define TARGET_PATH			"C:\\OK\\target\\"
 
 #pragma pack(push, 1)
 struct ContextForRecognize{

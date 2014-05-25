@@ -4,8 +4,8 @@
 
 #define	NET_CMD_RECOGNIZE	"recognize"
 #define NET_CMD_TRAIN		"train"
-#define	NET_CMD_GET_FACES	"save_faces"
-#define NET_CMD_SAVE_FACES	"get_faces"
+#define	NET_CMD_GET_FACES	"get_faces"
+#define NET_CMD_SAVE_FACES	"save_faces"
 
 Network net;
 
@@ -98,7 +98,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				ContextForGetFaces *psContext = new ContextForGetFaces;
 				memset(psContext, 0, sizeof(ContextForGetFaces));
 				psContext->userId = objInputJson["user_id"].ToString();
-				psContext->photoName = objInputJson["photo_name"].ToString();
+				psContext->photoName = objInputJson["photo_id"].ToString();
 				psContext->sock = sock;
 
 				FilePrintMessage(NULL, _SUCC("Getting faces started..."));
@@ -205,8 +205,12 @@ int main(int argc, char *argv[])
 	}
 	FilePrintMessage(NULL, _SUCC("Network server started!"));
 	
-	char train[] = "{\"cmd\":\"train\", \"ids\":[\"6\"]}\0";	// cut faces and train base
-	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
+	//char train[] = "{\"cmd\":\"train\", \"ids\":[\"6\"]}\0";	// cut faces and train base
+	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
+
+	char get_photos[] = "{\"cmd\":\"get_faces\", \"user_id\":\"5\", \"photo_id\":\"GOPR0491\"}\0";	// cut faces and train base
+	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(get_photos), get_photos);
+
 	/*char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"6\"], \"photo_id\": \"11\"}\0";	// recognize name = 1.jpg
 	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);*/
 	getchar();

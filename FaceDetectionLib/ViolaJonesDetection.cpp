@@ -351,18 +351,16 @@ void ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
 
 		int x = cvRound(rect->x);			int y = cvRound(rect->y);
-		int w = cvRound(rect->width);		int h = cvRound(rect->height);
+		int w = cvRound(rect->width);		int h = cvRound(rect->height);		
 
-		char *coutData = "";
+		ostringstream coutData;
+		coutData << "{ " << x << "\", \"" << y << "\", \"" << x + w << "\", \"" << y + h << " }";
 
-		if (i != 0) outJson.append(", ");			
-		sprintf(coutData, "{ \"%d\", \"%d\", \"%d\", \"%d\"}", x, y, x + w, y + h);
-		outJson.append(coutData);
+		outJson.append(coutData.str());
 	}
 	outJson.append(" ] }");
-	const char *coutJson = outJson.c_str();
 
-	net.SendData(outSock, coutJson, outJson.length);
+	net.SendData(outSock, outJson.c_str(), (unsigned)outJson.length());
 }
 
 
