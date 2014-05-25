@@ -28,13 +28,13 @@
 * \brief Folder of id's.
 */
 
-#define ID_PATH				"D:\\HerFace\\Faces\\"
+#define ID_PATH				"C:\\OK\\tmp\\"
 
 /**
 * \brief Folder with downloading photos.
 */
 
-#define TARGET_PATH			"D:\\HerFace\\Faces\\"
+#define TARGET_PATH			"C:\\OK\\target"
 
 #pragma pack(push, 1)
 
