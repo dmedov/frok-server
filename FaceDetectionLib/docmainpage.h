@@ -11,5 +11,6 @@
 * -# \link DescriptorDetection.h Descriptor Detection \endlink
 * -# \link EigenDetector_v2.h EigenDetector_v2 \endlink
 * -# \link ViolaJonesDetection.h ViolaJonesDetection \endlink
+* -# \link activities.h activities \endlink
 *
 */

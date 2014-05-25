@@ -22,7 +22,7 @@ class DescriptorDetection
 public:
 
 	/**
-	* \brief Short description of function.
+	* \brief This function defines descriptor.
 	*
 	* Description of this function. It may have got some links to other function.
 	* Sample: here is link to \a matchDescriptors

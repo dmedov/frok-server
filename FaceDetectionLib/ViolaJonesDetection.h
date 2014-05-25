@@ -21,7 +21,7 @@
 struct FaceCascades{
 
 	/**
-	* \brief Cascade to recognize a face..
+	* \brief Cascade to recognize a face.
 	*/
 	CvHaarClassifierCascade *face = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml", 0, 0, 0);
 

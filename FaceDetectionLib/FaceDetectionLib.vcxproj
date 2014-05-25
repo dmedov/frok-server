@@ -93,12 +93,16 @@
     <ClInclude Include="activities.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="DescriptorDetection.h" />
+    <ClInclude Include="docmainpage.h" />
     <ClInclude Include="EigenDetector_v2.h" />
     <ClInclude Include="json.h" />
     <ClInclude Include="LibInclude.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="ViolaJonesDetection.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Doxyfile" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
