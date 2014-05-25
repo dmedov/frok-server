@@ -3,8 +3,6 @@
 #include "io.h"
 #include <ctime>
 
-FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
-
 DWORD getFacesFromPhoto(void *pContext)
 {
 	double startTime = clock();
@@ -22,7 +20,7 @@ DWORD getFacesFromPhoto(void *pContext)
 		return -1;
 	}
 
-	ViolaJonesDetection detector(cascades);
+	ViolaJonesDetection detector;
 
 	try{
 		detector.allFacesDetection(img, psContext->sock);
@@ -58,8 +56,10 @@ DWORD saveFaceFromPhoto(void *pContext)
 		delete psContext;
 		return -1;
 	}
-
-	ViolaJonesDetection detector(cascades);
+	//необходимо подавать черно-белую картинку в cutFaceToBase
+	ViolaJonesDetection detector;
+	IplImage *gray_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+	cvCvtColor(img, gray_img, CV_BGR2GRAY);
 
 	try
 	{
@@ -67,7 +67,7 @@ DWORD saveFaceFromPhoto(void *pContext)
 		int y1 = atoi(psContext->faceCoords["y1"].ToString().c_str());
 		int w = atoi(psContext->faceCoords["x2"].ToString().c_str()) - x1;
 		int h = atoi(psContext->faceCoords["y2"].ToString().c_str()) - y1;
-		detector.cutFaceToBase(img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg").c_str(), x1, y1, w, h);
+		detector.cutFaceToBase(gray_img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg"), x1, y1, w, h);
 	}
 	catch (...)
 	{
@@ -90,7 +90,7 @@ DWORD recognizeFromModel(void *pContext)
 	ContextForRecognize *psContext = (ContextForRecognize*)pContext;
 	CvMemStorage* storage = NULL;
 	IplImage *img = NULL;
-	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection(cascades);
+	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
 	map <string, Ptr<FaceRecognizer>> models;
 
 	for (UINT_PTR i = 0; i < psContext->arrFrinedsList.size(); i++)
@@ -193,12 +193,10 @@ DWORD generateAndTrainBase(void *pContext)
 
 				//cout << "Cutting face from image " << result.name;
 
-				cutFaceThreadParams * param = new cutFaceThreadParams(img, 
-					(((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(result.name)).c_str(),
-					&cascades[uNumOfThreads]);
+				cutFaceThreadParams * param = new cutFaceThreadParams(img, (((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(result.name)).c_str());
 				threads.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)param->pThis->cutFaceThread, (LPVOID)param, 0, NULL));
 
-				if (++uNumOfThreads = MAX_THREADS_AND_CASCADES_NUM)
+				if (++uNumOfThreads > MAX_THREADS_NUM)
 				{
 					DWORD res;
 					if (WAIT_OBJECT_0 != (res = WaitForMultipleObjects((unsigned)threads.size(), &threads[0], TRUE, CUT_TIMEOUT)))

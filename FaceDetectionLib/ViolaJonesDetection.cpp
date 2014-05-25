@@ -486,6 +486,7 @@ void ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath
 
 	allKeysFaceDetection(points.p1);
 	normalizateHistFace();
+	
 	if (drawEvidence(points, true)){
 		if (defineRotate() == 0){
 			face_img = imposeMask(points.p1);
