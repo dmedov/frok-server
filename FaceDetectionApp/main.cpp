@@ -354,10 +354,10 @@ int main(int argc, char *argv[])
 	}
 	FilePrintMessage(NULL, _SUCC("Network server started!"));
 	
-	/*char train[] = "{\"cmd\":\"train\", \"ids\":[\"6\"]}\0";	// cut faces and train base
-	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);*/
-	char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"6\"], \"photo_id\": \"11\"}\0";	// recognize name = 1.jpg
-	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
+	char train[] = "{\"cmd\":\"train\", \"ids\":[\"6\"]}\0";	// cut faces and train base
+	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
+	/*char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"6\"], \"photo_id\": \"11\"}\0";	// recognize name = 1.jpg
+	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);*/
 	getchar();
 
 	cvReleaseHaarClassifierCascade(&faceCascades.face);
