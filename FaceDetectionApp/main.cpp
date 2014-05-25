@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
 	/*char train[] = "{\"cmd\":\"train\", \"ids\":[\"5\"]}\0";	// cut faces and train base
 	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);*/
 
-	char get_photos[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_points\":{\"x1\": \"100\", \"y1\": \"100\", \"x2\": \"200\", \"y2\": \"200\"}}\0";	// cut faces and train base
+	char get_photos[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_points\":{\"x1\": \"102\", \"y1\": \"75\", \"x2\": \"253\", \"y2\": \"248\"}}\0";	// cut faces and train base
 	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(get_photos), get_photos);
 
 	//char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"12\",\"13\",\"14\",\"15\",\"16\"], \"photo_id\": \"1\"}\0";	// recognize name = 1.jpg

@@ -56,8 +56,10 @@ DWORD saveFaceFromPhoto(void *pContext)
 		delete psContext;
 		return -1;
 	}
-
+	//необходимо подавать черно-белую картинку в cutFaceToBase
 	ViolaJonesDetection detector;
+	IplImage *gray_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+	cvCvtColor(img, gray_img, CV_BGR2GRAY);
 
 	try
 	{
@@ -65,7 +67,7 @@ DWORD saveFaceFromPhoto(void *pContext)
 		int y1 = atoi(psContext->faceCoords["y1"].ToString().c_str());
 		int w = atoi(psContext->faceCoords["x2"].ToString().c_str()) - x1;
 		int h = atoi(psContext->faceCoords["y2"].ToString().c_str()) - y1;
-		detector.cutFaceToBase(img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg"), x1, y1, w, h);
+		detector.cutFaceToBase(gray_img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg"), x1, y1, w, h);
 	}
 	catch (...)
 	{

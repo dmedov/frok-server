@@ -34,7 +34,7 @@
 * \brief Folder with downloading photos.
 */
 
-#define TARGET_PATH			"C:\\OK\\target"
+#define TARGET_PATH			"C:\\OK\\target\\"
 
 #pragma pack(push, 1)
 
