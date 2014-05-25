@@ -102,7 +102,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				psContext->sock = sock;
 
 				FilePrintMessage(NULL, _SUCC("Getting faces started..."));
-				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)generateAndTrainBase, psContext, 0, NULL);
+				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getFacesFromPhoto, psContext, 0, NULL);
 				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
 			else if (objInputJson["cmd"].ToString() == NET_CMD_SAVE_FACES)
@@ -136,7 +136,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				psContext->sock = sock;
 
 				FilePrintMessage(NULL, _SUCC("Training started..."));
-				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)generateAndTrainBase, psContext, 0, NULL);
+				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)saveFaceFromPhoto, psContext, 0, NULL);
 				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
 			else if (objInputJson["cmd"].ToString() == NET_CMD_TRAIN)
