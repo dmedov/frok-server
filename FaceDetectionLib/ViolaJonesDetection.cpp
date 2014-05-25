@@ -1,8 +1,10 @@
 #include "stdafx.h"
-#include "common.h"
+#include "LibInclude.h"
+/*
 #include "ViolaJonesDetection.h"
+#include "common.h"
 #include "DescriptorDetection.h"
-#include "EigenDetector_v2.h"
+#include "EigenDetector_v2.h"*/
 #include <fstream>
 #include <vector>
 #include <string>
@@ -13,7 +15,6 @@
 #include "network.h"
 
 FaceCascades faceCascades;
-CRITICAL_SECTION faceDetectionCS;
 
 ViolaJonesDetection::ViolaJonesDetection(){
 }

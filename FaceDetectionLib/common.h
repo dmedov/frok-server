@@ -30,3 +30,7 @@ void ChooseTextColor(char* msg);
 void RestoreTextColor();
 extern HANDLE			hStdHandle;
 extern CRITICAL_SECTION fileCS;
+extern CRITICAL_SECTION faceDetectionCS;
+
+void InitFaceDetectionLib();
+void DeinitFaceDetectionLib();

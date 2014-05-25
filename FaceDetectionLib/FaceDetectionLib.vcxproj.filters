@@ -19,6 +19,9 @@
     <ClCompile Include="common.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="activities.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DescriptorDetection.h">
@@ -43,6 +46,9 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="common.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="activities.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,8 +1,28 @@
 #include "stdafx.h"
-#include "common.h"
+#include "LibInclude.h"
 
 HANDLE	hStdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 CRITICAL_SECTION fileCS;
+CRITICAL_SECTION faceDetectionCS;
+
+void InitFaceDetectionLib()
+{
+	InitializeCriticalSection(&faceDetectionCS);
+	InitializeCriticalSection(&fileCS);
+}
+
+void DeinitFaceDetectionLib()
+{
+	cvReleaseHaarClassifierCascade(&faceCascades.face);
+	cvReleaseHaarClassifierCascade(&faceCascades.eyes);
+	cvReleaseHaarClassifierCascade(&faceCascades.nose);
+	cvReleaseHaarClassifierCascade(&faceCascades.mouth);
+	cvReleaseHaarClassifierCascade(&faceCascades.eye);
+	cvReleaseHaarClassifierCascade(&faceCascades.righteye2);
+	cvReleaseHaarClassifierCascade(&faceCascades.lefteye2);
+	DeleteCriticalSection(&faceDetectionCS);
+	DeleteCriticalSection(&fileCS);
+}
 
 void FilePrintMessage(char* file, char* expr...)
 {

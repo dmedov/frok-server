@@ -421,4 +421,9 @@ struct cutFaceThreadParams
 	ViolaJonesDetection *pThis;
 };
 
+/**
+* \brief External for face Cascades database
+*/
+extern FaceCascades faceCascades;
+
 /** \} */
