@@ -329,6 +329,44 @@ void ViolaJonesDetection::normalizateHistFace(){
 }
 
 //Детектирование лица (вызывается из main)
+void ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock)
+{
+	if (!faceCascades.face){
+		cout << "cascade error" << endl;
+		cvReleaseHaarClassifierCascade(&faceCascades.face);
+		return;
+	}
+	string outJson;
+	outJson.append("{ result_face: [");
+
+
+	image = cvCloneImage(inputImage);
+
+	gray_img = cvCreateImage(cvGetSize(image), 8, 1);
+	cvCvtColor(image, gray_img, CV_BGR2GRAY);
+	strg = cvCreateMemStorage(0);										//Создание хранилища памяти
+	CvSeq *faces = cvHaarDetectObjects(gray_img, faceCascades.face, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+
+	for (int i = 0; i < (faces ? faces->total : 0); i++){
+		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
+
+		int x = cvRound(rect->x);			int y = cvRound(rect->y);
+		int w = cvRound(rect->width);		int h = cvRound(rect->height);
+
+		char *coutData = "";
+
+		if (i != 0) outJson.append(", ");			
+		sprintf(coutData, "{ \"%d\", \"%d\", \"%d\", \"%d\"}", x, y, x + w, y + h);
+		outJson.append(coutData);
+	}
+	outJson.append(" ] }");
+	const char *coutJson = outJson.c_str();
+
+	net.SendData(outSock, coutJson, outJson.length);
+}
+
+
+//Детектирование лица (вызывается из main)
 void ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock)
 {
 	if (!faceCascades.face){
@@ -362,6 +400,7 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 		points.p1 = cvPoint(x, y);
 		points.p2 = cvPoint(x + w, y + h);
 
+
 		face_img = cvCreateImage(cvSize(w, h), gray_img->depth, gray_img->nChannels);
 
 		cvSetImageROI(gray_img, cvRect(x, y, w, h));
@@ -382,12 +421,12 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 			IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
 			cvResize(face_img, dest, 1);
 			eigenDetector_v2->recognize(models, &dataJson, dest);//Распознавание
-			dataJson.p1s.push_back(points.p1);
-			dataJson.p2s.push_back(points.p2);
+			dataJson.p1s.push_back(points.p1/*cvPoint(points.p1.x / inputImage->width, points.p1.y / inputImage->height)*/);
+			dataJson.p2s.push_back(points.p2/*cvPoint(points.p2.x / inputImage->width, points.p2.y / inputImage->height)*/);
 			cvReleaseImage(&dest);//-> to introduce to function
 		}
 	}
-	
+
 	createJson(dataJson, outSock);
 #ifdef SHOW_IMAGE
 	cvShowImage("image", imageResults);
@@ -434,7 +473,6 @@ void equalizeFace(IplImage *faceImg) {
 //ВЫрезание изображения с лицом
 UINT_PTR WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 	cutFaceThreadParams *psParams = (cutFaceThreadParams*)params;
-
 	psParams->pThis->image = cvCloneImage(psParams->inputImage);
 
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
@@ -464,7 +502,7 @@ UINT_PTR WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 		cvCopy(psParams->pThis->gray_img, psParams->pThis->face_img, NULL);
 		cvResetImageROI(psParams->pThis->gray_img);									//копируем лицо в отдельную картинку
 
-		for (int j = 0; j < 8; j++)	
+		for (int j = 0; j < 8; j++)
 			psParams->pThis->facePoints[j] = cvPoint(-1, -1);						//по умолчанию координаты всех точек равны -1; -1
 
 		psParams->pThis->allKeysFaceDetection(points.p1);
@@ -517,52 +555,52 @@ UINT_PTR WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 
 //void ViolaJonesDetection::scanSIFT(Mat ffDescriptors, int faceNumber){
 
-	//cerr << "Function not supported!" << endl;
-	/*
-	DescriptorDetection *descriptorDetection = new DescriptorDetection();
-	_finddata_t result;
-	char name[512];
-	long done;
-	IplImage *base_face = 0, *gray_face = 0;
+//cerr << "Function not supported!" << endl;
+/*
+DescriptorDetection *descriptorDetection = new DescriptorDetection();
+_finddata_t result;
+char name[512];
+long done;
+IplImage *base_face = 0, *gray_face = 0;
 
-	sprintf(name, "%s\\*.jpg", currentUserPath);
+sprintf(name, "%s\\*.jpg", currentUserPath);
 
-	memset(&result, 0, sizeof(result));
-	done = _findfirst(name, &result);
+memset(&result, 0, sizeof(result));
+done = _findfirst(name, &result);
 
-	int max_p = 0;
-	if (done != -1)
-	{
-		int res = 0;
-		while (res == 0)
-		{
-			cout << result.name;
-			sprintf(name, "%s\\faces\\%s", currentUserPath, result.name);
-			base_face = cvLoadImage(name);
+int max_p = 0;
+if (done != -1)
+{
+int res = 0;
+while (res == 0)
+{
+cout << result.name;
+sprintf(name, "%s\\faces\\%s", currentUserPath, result.name);
+base_face = cvLoadImage(name);
 
-			if (!base_face) {
-				cerr << "base image load error" << endl;
-				return;
-			}
-			else {
-				gray_face = cvCreateImage(cvGetSize(base_face), 8, 1);
-				cvCvtColor(base_face, gray_face, CV_BGR2GRAY);
-				Mat bfDescriptors = descriptorDetection->findDescriptors(base_face, result.name, false);
+if (!base_face) {
+cerr << "base image load error" << endl;
+return;
+}
+else {
+gray_face = cvCreateImage(cvGetSize(base_face), 8, 1);
+cvCvtColor(base_face, gray_face, CV_BGR2GRAY);
+Mat bfDescriptors = descriptorDetection->findDescriptors(base_face, result.name, false);
 
-				if (bfDescriptors.rows > 0){
-					int p = descriptorDetection->matchDescriptors(ffDescriptors, bfDescriptors);
-					if (p >= max_p){
-						max_p = p;
-						sprintf(name, "F%d", faceNumber);
-						//cvShowImage(name, base_face);
-					}
-				}
-			}
-			res = _findnext(done, &result);
-		}
-	}
-	_findclose(done);
-	cvReleaseImage(&base_face);
-	cvReleaseImage(&gray_face);
-	delete descriptorDetection;*/
+if (bfDescriptors.rows > 0){
+int p = descriptorDetection->matchDescriptors(ffDescriptors, bfDescriptors);
+if (p >= max_p){
+max_p = p;
+sprintf(name, "F%d", faceNumber);
+//cvShowImage(name, base_face);
+}
+}
+}
+res = _findnext(done, &result);
+}
+}
+_findclose(done);
+cvReleaseImage(&base_face);
+cvReleaseImage(&gray_face);
+delete descriptorDetection;*/
 //}

@@ -1,6 +1,6 @@
 /**
 * \file ViolaJonesDetection.h
-* \brief This file defines class ViolaJonesDetection for face detection, downloading database with faces,
+* \brief This file defines class ViolaJonesDetection for face detection, downloading database with faces, 
 * finding key points on faces and faces normalization. Includes structure with different cascades to recognize face parts.
 * Counting similarity of the faces on picture.
 *
@@ -15,7 +15,7 @@
 
 /**
 * \brief Structure that includes additional cascades to recognize face parts.
-*
+*	
 */
 
 struct FaceCascades{
@@ -153,6 +153,8 @@ public:
 	*/
 	~ViolaJonesDetection();
 
+	void allFacesDetection(IplImage *inputImage, SOCKET outSock);
+
 	/**
 	* \brief Funtion to detect a face by Haar-Cascade
 	*
@@ -184,7 +186,7 @@ public:
 	* This functions should be called in a new thread. Return expected_event_type of this event.
 	*
 	* \return -1 for failure, 0 in for success.
-	*
+	* 
 	* <b>Usage example:</b>
 	*
 	* \code
@@ -265,7 +267,7 @@ private:
 	*
 	*  Finding all key points on the face of eyes, nose and mouth.
 	*
-	* \param[in]	point		All key points on the recognized face.
+	* \param[in]	point		All key points on the recognized face.	
 	*
 	* <b>Usage example:</b>
 	*
@@ -303,7 +305,7 @@ private:
 	int defineRotate();
 
 	//Mat BEImage(Mat img, Rect roi, int maxFadeDistance);
-
+	
 	/**
 	* \brief Selecting face.
 	*
@@ -328,7 +330,7 @@ private:
 	IplImage* imposeMask(CvPoint p);
 
 	//void scanSIFT(Mat, int);
-
+		
 	/**
 	* \brief Function createJson.
 	*
@@ -351,7 +353,7 @@ private:
 	* \code
 	*
 	*  for (int j = 0; j < 8; j++)
-	*		facePoints[j] = cvPoint(-1, -1);
+	*		facePoints[j] = cvPoint(-1, -1);					
 	*
 	*  normalizateHistFace();
 	*
@@ -373,11 +375,11 @@ struct cutFaceThreadParams
 	* \brief Constructor of structure cutFaceThreadParams.
 	*
 	* Creating the object of the cutFaceThreadParams structure and initializing fields of structure.
-	*
+*
 	* \param[in]	inputImage			The picture from which we select faces.
 	* \param[in]	destPath			Directory with selected faces.
-	*
-	*/
+*
+*/
 
 	cutFaceThreadParams(IplImage *inputImage, const char* destPath)
 	{
