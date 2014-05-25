@@ -309,6 +309,8 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
 
 // [TBD] magic number 4 (int type) should be EnumType
 void ViolaJonesDetection::allKeysFaceDetection(CvPoint point){
+	if(strg == NULL)
+		strg = cvCreateMemStorage(0);
 	EnterCriticalSection(&faceDetectionCS);
 	keysFaceDetect(faceCascades.eye, point, 4);					//правый общий		
 	keysFaceDetect(faceCascades.righteye2, point, 4);			//правый 

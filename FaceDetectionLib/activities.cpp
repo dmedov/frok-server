@@ -61,9 +61,11 @@ DWORD saveFaceFromPhoto(void *pContext)
 
 	try
 	{
-		detector.cutFaceToBase(img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg"),
-			atoi(psContext->faceCoords["x1"].ToString().c_str()), atoi(psContext->faceCoords["y1"].ToString().c_str()),
-			atoi(psContext->faceCoords["x2"].ToString().c_str()), atoi(psContext->faceCoords["y2"].ToString().c_str()));
+		int x1 = atoi(psContext->faceCoords["x1"].ToString().c_str());
+		int y1 = atoi(psContext->faceCoords["y1"].ToString().c_str());
+		int w = atoi(psContext->faceCoords["x2"].ToString().c_str()) - x1;
+		int h = atoi(psContext->faceCoords["y2"].ToString().c_str()) - y1;
+		detector.cutFaceToBase(img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg"), x1, y1, w, h);
 	}
 	catch (...)
 	{
