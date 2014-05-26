@@ -141,7 +141,7 @@ struct ContextForSaveFaces{
 	* \brief Coordinates of face to be cut.
 	*/
 
-	json::Object faceCoords;
+	int faceNumber;
 };
 
 #pragma pack(pop)

@@ -66,16 +66,10 @@ DWORD saveFaceFromPhoto(void *pContext)
 	}
 	//необходимо подавать черно-белую картинку в cutFaceToBase
 	ViolaJonesDetection detector(cascades);
-	IplImage *gray_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
-	cvCvtColor(img, gray_img, CV_BGR2GRAY);
 
 	try
 	{
-		int x1 = atoi(psContext->faceCoords["x1"].ToString().c_str());
-		int y1 = atoi(psContext->faceCoords["y1"].ToString().c_str());
-		int w = atoi(psContext->faceCoords["x2"].ToString().c_str()) - x1;
-		int h = atoi(psContext->faceCoords["y2"].ToString().c_str()) - y1;
-		if (!detector.cutFaceToBase(gray_img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg").c_str(), x1, y1, w, h, true))
+		if (!detector.cutTheFace(img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg").c_str(), psContext->faceNumber))
 		{
 			FilePrintMessage(NULL, _FAIL("cut face FAILED"), photoName.c_str());
 			net.SendData(psContext->sock, "{ \"error\":\"cut face FAILED\" }\n\0", strlen("{ \"error\":\"cut face FAILED\" }\n\0"));

@@ -474,7 +474,7 @@ void equalizeFace(IplImage *faceImg) {
 	faceImg = &IplImage(leftSide);
 }
 
-bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h, bool KOSTIL){
+bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h){
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 	ImageCoordinats points;
 
@@ -493,16 +493,14 @@ bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath
 
 	allKeysFaceDetection(points.p1);
 	normalizateHistFace();
-	
-	if (KOSTIL == true)
-		goto KOTSIL_GOTO;
+
 	if (!drawEvidence(points, true)){
 		return false;
 	}
 	if (defineRotate() != 0){
 		return false;
 	}
-KOTSIL_GOTO:
+
 	face_img = imposeMask(points.p1);
 	face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
 
@@ -576,6 +574,61 @@ UINT_PTR WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 	delete psParams;
 
 	return 0;
+}
+
+bool ViolaJonesDetection::cutTheFace(IplImage *inputImage, const char* destPath, int faceNumber){
+
+	if (this->faceCascades == NULL){
+		FilePrintMessage(NULL, _FAIL("Face cascade == NULL"));
+		return false;
+	}
+
+	image = cvCloneImage(inputImage);
+
+	gray_img = cvCreateImage(cvGetSize(image), 8, 1);
+	cvCvtColor(image, gray_img, CV_BGR2GRAY);
+
+	//Ptr<CLAHE> clahe = createCLAHE(2, Size(8, 8));
+	//clahe->apply(Mat(gray_img), Mat(gray_img));
+
+	strg = cvCreateMemStorage(0);										//Создание хранилища памяти
+	CvSeq *faces = cvHaarDetectObjects(gray_img, faceCascades->face, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+	
+	if (faces != NULL)
+	{
+		CvRect* rect = (CvRect*)cvGetSeqElem(faces, faceNumber);
+
+		int x = cvRound(rect->x);			int y = cvRound(rect->y);
+		int w = cvRound(rect->width);		int h = cvRound(rect->height);
+
+		if (faces->total == 1)
+		{
+			if (!cutFaceToBase(gray_img, destPath, x, y, w, h))
+			{
+				FilePrintMessage(NULL, "-");
+				cvClearMemStorage(strg);
+				cvReleaseImage(&face_img);			// освобождаем ресурсы
+				cvReleaseImage(&gray_img);
+				cvReleaseImage(&image);
+				return false;
+			}
+		}
+		else
+		{
+			FilePrintMessage(NULL, "-");
+		}
+	}
+	else
+	{
+		return false;
+	}
+
+	cvClearMemStorage(strg);
+	cvReleaseImage(&face_img);			// освобождаем ресурсы
+	cvReleaseImage(&gray_img);
+	cvReleaseImage(&image);
+
+	return true;
 }
 
 //Сканирование по SIFT 
