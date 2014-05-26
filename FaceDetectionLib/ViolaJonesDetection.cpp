@@ -337,7 +337,7 @@ void ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock
 		return;
 	}
 	string outJson;
-	outJson.append("{ result_face: [");
+	outJson.append("{ \"result_faces\": [");
 
 
 	image = cvCloneImage(inputImage);
@@ -348,17 +348,22 @@ void ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock
 	CvSeq *faces = cvHaarDetectObjects(gray_img, faceCascades->face, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 
 	for (int i = 0; i < (faces ? faces->total : 0); i++){
+		
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
 
 		int x = cvRound(rect->x);			int y = cvRound(rect->y);
 		int w = cvRound(rect->width);		int h = cvRound(rect->height);
 
 		ostringstream coutData;
-		coutData << "{ " << x << "\", \"" << y << "\", \"" << x + w << "\", \"" << y + h << " }";
+		if (i != 0)
+		{
+			coutData << ", ";
+		}
+		coutData << "{ \"x1\": \"" << x << "\", \"y1\": \"" << y << "\", \"x2\": \"" << x + w << "\", \"y2\": \"" << y + h << "\" }";
 
 		outJson.append(coutData.str());
 	}
-	outJson.append(" ] }");
+	outJson.append(" ] }\n");
 
 	net.SendData(outSock, outJson.c_str(), (unsigned)outJson.length());
 }
@@ -467,7 +472,7 @@ void equalizeFace(IplImage *faceImg) {
 	faceImg = &IplImage(leftSide);
 }
 
-void ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h){
+bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h){
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 	ImageCoordinats points;
 
@@ -487,25 +492,31 @@ void ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath
 	allKeysFaceDetection(points.p1);
 	normalizateHistFace();
 	
-	if (drawEvidence(points, true)){
-		if (defineRotate() == 0){
-			face_img = imposeMask(points.p1);
-			face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
-
-			IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
-			cvResize(face_img, dest, 1);
-			try
-			{
-				cvSaveImage(destPath, dest);
-			}
-			catch (...)
-			{
-				FilePrintMessage(NULL, _FAIL("Failed to save image. Runtime error occured"));
-			}
-			FilePrintMessage(NULL, "+");
-			cvReleaseImage(&dest);
-		}
+	if (!drawEvidence(points, true)){
+		return false;
 	}
+	if (defineRotate() != 0){
+		return false;
+	}
+	
+	face_img = imposeMask(points.p1);
+	face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
+
+	IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
+	cvResize(face_img, dest, 1);
+	try
+	{
+		cvSaveImage(destPath, dest);
+	}
+	catch (...)
+	{
+		FilePrintMessage(NULL, _FAIL("Failed to save image. Runtime error occured"));
+		return false;
+	}
+	FilePrintMessage(NULL, "+");
+	cvReleaseImage(&dest);
+
+	return true;
 }
 
 //ВЫрезание изображения с лицом
@@ -526,9 +537,7 @@ UINT_PTR WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 	//clahe->apply(Mat(gray_img), Mat(gray_img));
 
 	psParams->pThis->strg = cvCreateMemStorage(0);										//Создание хранилища памяти
-	//EnterCriticalSection(&faceDetectionCS);
 	CvSeq *faces = cvHaarDetectObjects(psParams->pThis->gray_img, psParams->pThis->faceCascades->face, psParams->pThis->strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
-	//LeaveCriticalSection(&faceDetectionCS);
 	for (int i = 0; i < (faces ? faces->total : 0); i++){
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
 
@@ -538,7 +547,16 @@ UINT_PTR WINAPI ViolaJonesDetection::cutFaceThread(LPVOID params){
 
 		if (faces->total == 1)
 		{
-			psParams->pThis->cutFaceToBase(psParams->pThis->gray_img, psParams->destPath, x, y, w, h);
+			if (!psParams->pThis->cutFaceToBase(psParams->pThis->gray_img, psParams->destPath, x, y, w, h))
+			{
+				FilePrintMessage(NULL, "-");
+				cvClearMemStorage(psParams->pThis->strg);
+				cvReleaseImage(&psParams->pThis->face_img);			// освобождаем ресурсы
+				cvReleaseImage(&psParams->pThis->gray_img);
+				cvReleaseImage(&psParams->pThis->image);
+				delete psParams;
+				return -1;
+			}
 		}
 		else
 		{
