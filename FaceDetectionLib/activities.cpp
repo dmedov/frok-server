@@ -75,7 +75,7 @@ DWORD saveFaceFromPhoto(void *pContext)
 		int y1 = atoi(psContext->faceCoords["y1"].ToString().c_str());
 		int w = atoi(psContext->faceCoords["x2"].ToString().c_str()) - x1;
 		int h = atoi(psContext->faceCoords["y2"].ToString().c_str()) - y1;
-		if (!detector.cutFaceToBase(gray_img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg").c_str(), x1, y1, w, h))
+		if (!detector.cutFaceToBase(gray_img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg").c_str(), x1, y1, w, h, true))
 		{
 			FilePrintMessage(NULL, _FAIL("cut face FAILED"), photoName.c_str());
 			net.SendData(psContext->sock, "{ \"error\":\"cut face FAILED\" }\n\0", strlen("{ \"error\":\"cut face FAILED\" }\n\0"));

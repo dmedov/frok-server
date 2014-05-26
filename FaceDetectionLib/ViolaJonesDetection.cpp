@@ -474,7 +474,7 @@ void equalizeFace(IplImage *faceImg) {
 	faceImg = &IplImage(leftSide);
 }
 
-bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h){
+bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h, bool KOSTIL){
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 	ImageCoordinats points;
 
@@ -494,13 +494,15 @@ bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath
 	allKeysFaceDetection(points.p1);
 	normalizateHistFace();
 	
+	if (KOSTIL == true)
+		goto KOTSIL_GOTO;
 	if (!drawEvidence(points, true)){
 		return false;
 	}
 	if (defineRotate() != 0){
 		return false;
 	}
-	
+KOTSIL_GOTO:
 	face_img = imposeMask(points.p1);
 	face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
 
