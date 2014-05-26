@@ -330,11 +330,11 @@ void ViolaJonesDetection::normalizateHistFace(){
 
 
 //Детектирование лица (вызывается из main)
-void ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock)
+bool ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock)
 {
 	if (faceCascades == NULL){
 		FilePrintMessage(NULL, _FAIL("Face cascade == NULL"));
-		return;
+		return false;
 	}
 	string outJson;
 	outJson.append("{ \"result_faces\": [");
@@ -366,15 +366,16 @@ void ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock
 	outJson.append(" ] }\n");
 
 	net.SendData(outSock, outJson.c_str(), (unsigned)outJson.length());
+	return true;
 }
 
 
 //Детектирование лица (вызывается из main)
-void ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock)
+bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock)
 {
 	if (faceCascades == NULL){
 		FilePrintMessage(NULL, _FAIL("Face cascade == NULL"));
-		return;
+		return false;
 	}
 
 	DataJson dataJson;
@@ -444,6 +445,7 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 #ifdef SHOW_IMAGE
 	cvReleaseImage(&imageResults);
 #endif //SHOW_IMAGE
+	return true;
 }
 
 //Sharing on 3 gistagrams
