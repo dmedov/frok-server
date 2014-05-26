@@ -24,6 +24,8 @@ typedef struct StructImageCoordinats
 #define _FAIL(__x__) "[FAIL] " __x__ "\n"
 #define _WARN(__x__) "[WARN] " __x__ "\n"
 #define _SUCC(__x__) "[SUCC] " __x__ "\n"
+#define _RES(__x__) "[RES] " __x__ "\n"
+#define _N(__x__) __x__ "\n"
 
 void FilePrintMessage(char* file, char* expr...);
 void ChooseTextColor(char* msg);

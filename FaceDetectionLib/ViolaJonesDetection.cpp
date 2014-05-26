@@ -240,7 +240,7 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
 	, CvPoint pointFace, int type){
 
 	if (!cscd){
-		cout << "cascade error" << endl;
+		FilePrintMessage(NULL, _FAIL("Empty cascade"));
 		return;
 	}
 
@@ -330,11 +330,11 @@ void ViolaJonesDetection::normalizateHistFace(){
 
 
 //Детектирование лица (вызывается из main)
-void ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock)
+bool ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock)
 {
 	if (faceCascades == NULL){
 		FilePrintMessage(NULL, _FAIL("Face cascade == NULL"));
-		return;
+		return false;
 	}
 	string outJson;
 	outJson.append("{ \"result_faces\": [");
@@ -366,15 +366,16 @@ void ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock
 	outJson.append(" ] }\n");
 
 	net.SendData(outSock, outJson.c_str(), (unsigned)outJson.length());
+	return true;
 }
 
 
 //Детектирование лица (вызывается из main)
-void ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock)
+bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock)
 {
 	if (faceCascades == NULL){
 		FilePrintMessage(NULL, _FAIL("Face cascade == NULL"));
-		return;
+		return false;
 	}
 
 	DataJson dataJson;
@@ -444,6 +445,7 @@ void ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 #ifdef SHOW_IMAGE
 	cvReleaseImage(&imageResults);
 #endif //SHOW_IMAGE
+	return true;
 }
 
 //Sharing on 3 gistagrams
@@ -472,7 +474,7 @@ void equalizeFace(IplImage *faceImg) {
 	faceImg = &IplImage(leftSide);
 }
 
-bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h){
+bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h, bool KOSTIL){
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 	ImageCoordinats points;
 
@@ -492,13 +494,15 @@ bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath
 	allKeysFaceDetection(points.p1);
 	normalizateHistFace();
 	
+	if (KOSTIL == true)
+		goto KOTSIL_GOTO;
 	if (!drawEvidence(points, true)){
 		return false;
 	}
 	if (defineRotate() != 0){
 		return false;
 	}
-	
+KOTSIL_GOTO:
 	face_img = imposeMask(points.p1);
 	face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
 

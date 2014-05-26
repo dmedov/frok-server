@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "DescriptorDetection.h"
+#include "LibInclude.h"
 
 //Сравнение дескрипторов (доделать)
 int DescriptorDetection::matchDescriptors(Mat &ffd, Mat &bfd){
@@ -24,7 +25,7 @@ int DescriptorDetection::matchDescriptors(Mat &ffd, Mat &bfd){
 			c++;
 		}
 	}
-	cout << c << endl;
+	FilePrintMessage(NULL, _N("matchDescriptors: c = %d"), c);
 	return c;
 }
 

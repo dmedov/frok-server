@@ -158,8 +158,8 @@ public:
 	*/
 	~ViolaJonesDetection();
 
-	void allFacesDetection(IplImage *inputImage, SOCKET outSock);
-	bool cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h);
+	bool allFacesDetection(IplImage *inputImage, SOCKET outSock);
+	bool cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h, bool KOSTIL = false);
 
 	/**
 	* \brief Funtion to detect a face by Haar-Cascade
@@ -182,7 +182,7 @@ public:
 	* \endcode
 	*/
 
-	void faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock = INVALID_SOCKET);
+	bool faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock = INVALID_SOCKET);
 
 	/**
 	* \brief Selecting a face on the picture and saving the face.

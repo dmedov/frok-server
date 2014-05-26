@@ -25,7 +25,13 @@ DWORD getFacesFromPhoto(void *pContext)
 	ViolaJonesDetection detector(cascades);
 
 	try{
-		detector.allFacesDetection(img, psContext->sock);
+		if (!detector.allFacesDetection(img, psContext->sock))
+		{
+			FilePrintMessage(NULL, _FAIL("All Faces Detection FAILED"), photoName.c_str());
+			net.SendData(psContext->sock, "{ \"error\":\"All Faces Detection FAILED\" }\n\0", strlen("{ \"error\":\"All Faces Detection FAILED\" }\n\0"));
+			delete psContext;
+			return -1;
+		}
 	}
 	catch (...)
 	{
@@ -69,7 +75,7 @@ DWORD saveFaceFromPhoto(void *pContext)
 		int y1 = atoi(psContext->faceCoords["y1"].ToString().c_str());
 		int w = atoi(psContext->faceCoords["x2"].ToString().c_str()) - x1;
 		int h = atoi(psContext->faceCoords["y2"].ToString().c_str()) - y1;
-		if (!detector.cutFaceToBase(gray_img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg").c_str(), x1, y1, w, h))
+		if (!detector.cutFaceToBase(gray_img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg").c_str(), x1, y1, w, h, true))
 		{
 			FilePrintMessage(NULL, _FAIL("cut face FAILED"), photoName.c_str());
 			net.SendData(psContext->sock, "{ \"error\":\"cut face FAILED\" }\n\0", strlen("{ \"error\":\"cut face FAILED\" }\n\0"));
@@ -96,7 +102,7 @@ DWORD recognizeFromModel(void *pContext)
 {
 	double startTime = clock();
 	ContextForRecognize *psContext = (ContextForRecognize*)pContext;
-	CvMemStorage* storage = NULL;
+	//CvMemStorage* storage = NULL;
 	IplImage *img = NULL;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection(cascades);
 	map <string, Ptr<FaceRecognizer>> models;
@@ -113,7 +119,7 @@ DWORD recognizeFromModel(void *pContext)
 			FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), psContext->arrFrinedsList[i].ToString().c_str());
 			continue;
 		}
-		models[psContext->arrFrinedsList[i].operator std::string()] = model;
+		models[psContext->arrFrinedsList[i].ToString()] = model;
 	}
 
 	if (models.empty())
@@ -125,7 +131,19 @@ DWORD recognizeFromModel(void *pContext)
 		return -1;
 	}
 
-	img = cvLoadImage(((string)(TARGET_PATH)).append(psContext->targetImg.append(".jpg")).c_str());
+	try
+	{
+		img = cvLoadImage(((string)(TARGET_PATH)).append(psContext->targetImg.append(".jpg")).c_str());
+	}
+	catch (...)
+	{
+		FilePrintMessage(NULL, _FAIL("Failed to load image %s"), (((string)(TARGET_PATH)).append(psContext->targetImg)).c_str());
+		net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
+		delete violaJonesDetection;
+		delete psContext;
+		return -1;
+	}
+	
 
 	if (!img)
 	{
@@ -136,10 +154,17 @@ DWORD recognizeFromModel(void *pContext)
 		return -1;
 	}
 
-	storage = cvCreateMemStorage();					// Создание хранилища памяти
+	//storage = cvCreateMemStorage();					// Создание хранилища памяти
 	try
 	{
-		violaJonesDetection->faceDetect(img, models, psContext->sock);
+		if (!violaJonesDetection->faceDetect(img, models, psContext->sock))
+		{
+			FilePrintMessage(NULL, _FAIL("Some error occured during recognze call"));
+			net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
+			delete violaJonesDetection;
+			delete psContext;
+			return -1;
+		}
 	}
 	catch (...)
 	{
@@ -161,7 +186,7 @@ DWORD recognizeFromModel(void *pContext)
 
 	FilePrintMessage(NULL, _SUCC("Recognize finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
 	cvReleaseImage(&img);
-	cvClearMemStorage(storage);
+	//cvClearMemStorage(storage);
 	cvDestroyAllWindows();
 	delete violaJonesDetection;
 	delete psContext;
@@ -198,8 +223,6 @@ DWORD generateAndTrainBase(void *pContext)
 					FilePrintMessage(NULL, _WARN("Failed to load image %s. Continue..."), photoName.c_str());
 					continue;
 				}
-
-				//cout << "Cutting face from image " << result.name;
 
 				cutFaceThreadParams * param = new cutFaceThreadParams(img,
 					(((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(result.name)).c_str(),
