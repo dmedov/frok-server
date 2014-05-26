@@ -121,17 +121,17 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 					return;
 				}
 
-				if (!objInputJson.HasKey("face_points"))
+				if (!objInputJson.HasKey("face_number"))
 				{
-					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no face_points field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no face_points field\" }\n\0", strlen("{ \"error\":\"no face_points field\" }\n\0"));
+					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no face_number field (%s)"), (char*)param);
+					net.SendData(sock, "{ \"error\":\"no face_points field\" }\n\0", strlen("{ \"error\":\"no face_number field\" }\n\0"));
 					return;
 				}
 
 				ContextForSaveFaces *psContext = new ContextForSaveFaces;
 				psContext->userId = objInputJson["user_id"].ToString();
 				psContext->photoName = objInputJson["photo_id"].ToString();
-				psContext->faceNumber = objInputJson["face_number"].ToInt();
+				psContext->faceNumber = atoi(objInputJson["face_number"].ToString().c_str());
 				psContext->sock = sock;
 
 				FilePrintMessage(NULL, _SUCC("Cut face started..."));
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
 	/*char train[] = "{\"cmd\":\"train\", \"ids\":[\"5\"]}\0";	// cut faces and train base
 	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);*/
 
-	/*char get_photos[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_points\":{\"x1\": \"102\", \"y1\": \"75\", \"x2\": \"253\", \"y2\": \"248\"}}\0";	// cut faces and train base
+/*	char get_photos[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_number\":\"0\"}\0";	// cut faces and train base
 	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(get_photos), get_photos);*/
 
 	//char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"12\",\"13\",\"14\",\"15\",\"16\"], \"photo_id\": \"1\"}\0";	// recognize name = 1.jpg
