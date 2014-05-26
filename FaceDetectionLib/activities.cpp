@@ -206,7 +206,7 @@ DWORD generateAndTrainBase(void *pContext)
 					&cascades[uNumOfThreads]);
 				threads.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)param->pThis->cutFaceThread, (LPVOID)param, 0, NULL));
 
-				if (++uNumOfThreads = MAX_THREADS_AND_CASCADES_NUM)
+				if (++uNumOfThreads == MAX_THREADS_AND_CASCADES_NUM)
 				{
 					DWORD res;
 					if (WAIT_OBJECT_0 != (res = WaitForMultipleObjects((unsigned)threads.size(), &threads[0], TRUE, CUT_TIMEOUT)))
