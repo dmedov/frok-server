@@ -199,8 +199,6 @@ DWORD generateAndTrainBase(void *pContext)
 					continue;
 				}
 
-				//cout << "Cutting face from image " << result.name;
-
 				cutFaceThreadParams * param = new cutFaceThreadParams(img,
 					(((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(result.name)).c_str(),
 					&cascades[uNumOfThreads]);

@@ -82,6 +82,8 @@ void ChooseTextColor(char* msg)
 				SetConsoleTextAttribute(hStdHandle, 0x0007 | FOREGROUND_INTENSITY);
 			else if (memcmp(msg, "[WARN]", i + 1) == 0)
 				SetConsoleTextAttribute(hStdHandle, 0x0006 | FOREGROUND_INTENSITY);
+			else if (memcmp(msg, "[RES]", i + 1) == 0)
+				SetConsoleTextAttribute(hStdHandle, 0x000b | FOREGROUND_INTENSITY);
 			else
 				SetConsoleTextAttribute(hStdHandle, 0x0002 | FOREGROUND_INTENSITY);
 

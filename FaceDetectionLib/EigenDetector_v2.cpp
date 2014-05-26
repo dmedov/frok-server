@@ -34,7 +34,7 @@ void EigenDetector_v2::loadBaseFace(const char* facesPath, vector<Mat> * images,
 			images->push_back(Mat(resize, true));
 			labels->push_back(id);
 
-			cout << name << endl;
+			FilePrintMessage(NULL, _N("%s"), name.c_str());
 		} while (_findnext(done, &result) == 0);
 	}
 	_findclose(done);
@@ -237,7 +237,7 @@ double testMatch(IplImage* image, IplImage* rec){
 
 	cvReleaseImage(&binI);
 	cvReleaseImage(&binT);
-	cout << matchM << endl;
+	FilePrintMessage(NULL, _N("match = %lf"), matchM);
 	/*double probability = ((double)koef_image / (double)koef_dif) / 1.7;
 	if (probability >= 1) probability = 0.99;*/
 
@@ -343,15 +343,14 @@ void EigenDetector_v2::recognize(const map <string, Ptr<FaceRecognizer>> &models
 
 			prob = max(prob2, prob1) / 2;
 
-			cout << (*it).first << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
+			FilePrintMessage(NULL, _RES("id = %s probability \t= \t%lf \t(%lf | %lf)"), (*it).first.c_str(), prob, prob1, prob2);
+			//cout << (*it).first << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
 
 			if (prob > oldProb){
 				oldProb = prob;
 				result_name = (*it).first;
 			}
 		}
-
-		cout << endl;
 	}
 
 	char *pcResultName = new char[result_name.length()];

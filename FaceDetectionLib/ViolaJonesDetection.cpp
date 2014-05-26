@@ -240,7 +240,7 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
 	, CvPoint pointFace, int type){
 
 	if (!cscd){
-		cout << "cascade error" << endl;
+		FilePrintMessage(NULL, _FAIL("Empty cascade"));
 		return;
 	}
 
