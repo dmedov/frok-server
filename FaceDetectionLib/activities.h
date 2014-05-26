@@ -21,7 +21,7 @@
 * \brief Max amount of cut threads.
 */
 
-#define MAX_THREADS_AND_CASCADES_NUM		(15)
+#define MAX_THREADS_AND_CASCADES_NUM		(5)
 
 extern FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
 

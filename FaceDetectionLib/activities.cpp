@@ -69,7 +69,13 @@ DWORD saveFaceFromPhoto(void *pContext)
 		int y1 = atoi(psContext->faceCoords["y1"].ToString().c_str());
 		int w = atoi(psContext->faceCoords["x2"].ToString().c_str()) - x1;
 		int h = atoi(psContext->faceCoords["y2"].ToString().c_str()) - y1;
-		detector.cutFaceToBase(gray_img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg").c_str(), x1, y1, w, h);
+		if (!detector.cutFaceToBase(gray_img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg").c_str(), x1, y1, w, h))
+		{
+			FilePrintMessage(NULL, _FAIL("cut face FAILED"), photoName.c_str());
+			net.SendData(psContext->sock, "{ \"error\":\"cut face FAILED\" }\n\0", strlen("{ \"error\":\"cut face FAILED\" }\n\0"));
+			delete psContext;
+			return -1;
+		}
 	}
 	catch (...)
 	{
@@ -200,7 +206,7 @@ DWORD generateAndTrainBase(void *pContext)
 					&cascades[uNumOfThreads]);
 				threads.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)param->pThis->cutFaceThread, (LPVOID)param, 0, NULL));
 
-				if (++uNumOfThreads = MAX_THREADS_AND_CASCADES_NUM)
+				if (++uNumOfThreads == MAX_THREADS_AND_CASCADES_NUM)
 				{
 					DWORD res;
 					if (WAIT_OBJECT_0 != (res = WaitForMultipleObjects((unsigned)threads.size(), &threads[0], TRUE, CUT_TIMEOUT)))

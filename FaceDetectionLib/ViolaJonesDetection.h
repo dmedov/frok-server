@@ -159,7 +159,7 @@ public:
 	~ViolaJonesDetection();
 
 	void allFacesDetection(IplImage *inputImage, SOCKET outSock);
-	void cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h);
+	bool cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h);
 
 	/**
 	* \brief Funtion to detect a face by Haar-Cascade
