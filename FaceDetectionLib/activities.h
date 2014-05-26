@@ -4,15 +4,15 @@
 *
 */
 
-/** \addtogroup Activities.
-*  \brief List of possible actions of our applications:
+/** \addtogroup Activities
+*  \brief List possible FaceDetectionApp's activities
 *  \{
 */
 
 #pragma once
 
 /**
-* \brief Max time of waiting untill faces select.
+* \brief Max timeout of waiting untill face selects.
 */
 
 #define CUT_TIMEOUT			(600000)
@@ -21,8 +21,9 @@
 * \brief Max amount of cut threads.
 */
 
-#define MAX_THREADS_NUM		(10)
+#define MAX_THREADS_AND_CASCADES_NUM		(15)
 
+extern FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
 
 /**
 * \brief Folder of id's.
@@ -42,104 +43,104 @@
 
 
 /**
-* \brief This Structure includes context for function Recognize in class EigenDetector_v2.
+* \brief Context for recognizeFromModel function.
 *
 */
 
 struct ContextForRecognize{
 
 	/**
-	* \brief An end-point in a communication across a network of distant side.
+	* \brief Remote side's socket
 	*/
 
 	SOCKET sock;
 
 	/**
-	* \brief The name of the picture where faces should be recognized.
+	* \brief The name of the picture where faces will be recognized.
 	*/
 
 	string targetImg;
 
 	/**
-	* \brief List of id's of friends.
+	* \brief List of friends' ids.
 	*/
 
 	json::Array arrFrinedsList;
 };
 
 /**
-* \brief This Structure includes context for function Train in class EigenDetector_v2.
+* \brief Context for generateAndTrainBase function.
 *
 */
 
 struct ContextForTrain{
 
 	/**
-	* \brief An end-point in a communication across a network of distant side.
+	* \brief Remote side's socket
 	*/
 
 	SOCKET sock;
 
 	/**
-	* \brief List of id's on which we are going to train our application.
+	* \brief List of id's for which train will be called
 	*/
 
 	json::Array arrIds;
 };
 
 /**
-* \brief This Structure includes context to get faces.
+* \brief Context for getFacesFromPhoto function.
 *
 */
 
 struct ContextForGetFaces{
 
 	/**
-	* \brief An end-point in a communication across a network of distant side.
+	* \brief Remote side's socket
 	*/
 
 	SOCKET sock;
 
 	/**
-	* \brief Getting user id.
+	* \brief photo owner's id
 	*/
 
 	string userId;
 
 	/**
-	* \brief Name of the photo from which we are going to get faces.
+	* \brief Name of the photo from which faces would be found.
 	*/
 
 	string photoName;
 };
 
 /**
-* \brief This Structure includes context to get faces.
+* \brief Context for saveFaceFromPhoto function.
 *
 */
 
 struct ContextForSaveFaces{
 
 	/**
-	* \brief An end-point in a communication across a network of distant side.
+	* \brief Remote side's socket
 	*/
 
 	SOCKET sock;
 
 	/**
-	* \brief Getting user id.
+	* \brief photo owner's id
 	*/
 
 	string userId;
 
 	/**
-	* \brief Name of the photo with recognized face.
+	* \brief Name of the photo from which face with coorinates \a faceCoords will be cut.
 	*/
 
 	string photoName;
 
 	/**
-	* \brief List of faces coordinates.
+	* \brief Coordinates of face to be cut.
 	*/
 
 	json::Object faceCoords;
@@ -148,30 +149,26 @@ struct ContextForSaveFaces{
 #pragma pack(pop)
 
 /**
-* 
-*/
-
-/**
 * \brief Recognizing a person on the picture.
 *
-* Recognizing a person on the picture by using cascades.
+* Recognizing a person on the picture by using the cascades.
 *
-* \return Returns 1 for succes and -1 if failure.
+* \return Returns 1 for succes and -1 for failure.
 *
-* \param[in]	*pContext		Have a look for more information at /a ContextForRecognize.
+* \param[in]	*pContext		See \a ContextForRecognize.
 *
 */
 
 DWORD recognizeFromModel(void *pContext);
 
 /**
-* \brief Generating and training database with faces.
+* \brief Cutting faces and training database.
 *
-* Generating and training database by faces recognized on the picture.
+* Cutting faces and training database.
 *
-* \return Returns 1 for succes and -1 if failure.
+* \return Returns 1 for succes and -1 for failure.
 *
-* \param[in]	*pContext		Have a look for more information at /a ContextForTrain.
+* \param[in]	*pContext		See \a ContextForTrain.
 *
 */
 
@@ -180,24 +177,24 @@ DWORD generateAndTrainBase(void *pContext);
 /**
 * \brief Getting faces from photo.
 *
-* Selectiing faces on the picture with many faces.
+* Selectiing faces from photo.
 *
-* \return Returns 1 for succes and -1 if failure.
+* \return Returns 1 for succes and -1 for failure.
 *
-* \param[in]	*pContext		Have a look for more information at /a ContextForGetFaces.
+* \param[in]	*pContext		See \a ContextForGetFaces.
 *
 */
 
 DWORD getFacesFromPhoto(void *pContext);
 
 /**
-* \brief Saving recognized faces on the picture.
+* \brief Saving recognized on the picture face.
 *
-* Saving recognized faces on the picture.
+* Saving recognized on the picture face.
 *
 * \return Returns 1 for succes and -1 if failure.
 *
-* \param[in]	*pContext		Have a look for more information at /a ContextForSaveFaces.
+* \param[in]	*pContext		See \a ContextForSaveFaces.
 *
 */
 

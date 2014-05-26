@@ -5,7 +5,7 @@
 #define	NET_CMD_RECOGNIZE	"recognize"
 #define NET_CMD_TRAIN		"train"
 #define	NET_CMD_GET_FACES	"get_faces"
-#define NET_CMD_SAVE_FACES	"save_faces"
+#define NET_CMD_SAVE_FACE	"save_face"
 
 Network net;
 
@@ -105,7 +105,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getFacesFromPhoto, psContext, 0, NULL);
 				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
-			else if (objInputJson["cmd"].ToString() == NET_CMD_SAVE_FACES)
+			else if (objInputJson["cmd"].ToString() == NET_CMD_SAVE_FACE)
 			{
 				if (!objInputJson.HasKey("user_id"))
 				{
@@ -129,13 +129,12 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 				}
 
 				ContextForSaveFaces *psContext = new ContextForSaveFaces;
-				memset(psContext, 0, sizeof(ContextForSaveFaces));
 				psContext->userId = objInputJson["user_id"].ToString();
 				psContext->photoName = objInputJson["photo_id"].ToString();
 				psContext->faceCoords = objInputJson["face_points"].ToObject();
 				psContext->sock = sock;
 
-				FilePrintMessage(NULL, _SUCC("Training started..."));
+				FilePrintMessage(NULL, _SUCC("Cut face started..."));
 				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)saveFaceFromPhoto, psContext, 0, NULL);
 				// Notice that psContext should be deleted in recognizeFromModel function!
 			}
@@ -205,14 +204,14 @@ int main(int argc, char *argv[])
 	}
 	FilePrintMessage(NULL, _SUCC("Network server started!"));
 	
-	//char train[] = "{\"cmd\":\"train\", \"ids\":[\"6\"]}\0";	// cut faces and train base
-	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
+	/*char train[] = "{\"cmd\":\"train\", \"ids\":[\"5\"]}\0";	// cut faces and train base
+	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);*/
 
-	//char get_photos[] = "{\"cmd\":\"get_faces\", \"user_id\":\"5\", \"photo_id\":\"GOPR0491\"}\0";	// cut faces and train base
-	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(get_photos), get_photos);
+	char get_photos[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_points\":{\"x1\": \"102\", \"y1\": \"75\", \"x2\": \"253\", \"y2\": \"248\"}}\0";	// cut faces and train base
+	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(get_photos), get_photos);
 
-	/*char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"6\"], \"photo_id\": \"11\"}\0";	// recognize name = 1.jpg
-	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);*/
+	//char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"12\",\"13\",\"14\",\"15\",\"16\"], \"photo_id\": \"1\"}\0";	// recognize name = 1.jpg
+	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
 	getchar();
 
 	DeinitFaceDetectionLib();

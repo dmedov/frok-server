@@ -79,7 +79,6 @@ struct FaceCascades{
 *
 */
 
-extern FaceCascades faceCascades;
 
 /**
 * \brief faceDetectionCS is used to provide access to shared resources.
@@ -135,6 +134,12 @@ private:
 
 	CvMemStorage* strg;
 
+	/**
+	* \brief face cascade.
+	*
+	*/
+	FaceCascades *faceCascades;
+
 public:
 
 	/**
@@ -143,7 +148,7 @@ public:
 	* Creating the object of the ViolaJonesDetection class and initializing fields of class.
 	*
 	*/
-	ViolaJonesDetection();
+	ViolaJonesDetection(FaceCascades *cascades);
 
 	/**
 	* \brief Destructor of ViolaJonesDetection class.
@@ -154,6 +159,7 @@ public:
 	~ViolaJonesDetection();
 
 	void allFacesDetection(IplImage *inputImage, SOCKET outSock);
+	void cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h);
 
 	/**
 	* \brief Funtion to detect a face by Haar-Cascade
@@ -375,19 +381,19 @@ struct cutFaceThreadParams
 	* \brief Constructor of structure cutFaceThreadParams.
 	*
 	* Creating the object of the cutFaceThreadParams structure and initializing fields of structure.
-*
+	*
 	* \param[in]	inputImage			The picture from which we select faces.
 	* \param[in]	destPath			Directory with selected faces.
-*
-*/
+	*
+	*/
 
-	cutFaceThreadParams(IplImage *inputImage, const char* destPath)
+	cutFaceThreadParams(IplImage *inputImage, const char* destPath, FaceCascades *pCascade)
 	{
 		this->inputImage = new IplImage;
 		this->inputImage = inputImage;
 		this->destPath = new char[strlen(destPath)];
 		strcpy(this->destPath, destPath);
-		pThis = new ViolaJonesDetection;
+		pThis = new ViolaJonesDetection(pCascade);
 	}
 
 	/**
@@ -422,10 +428,5 @@ struct cutFaceThreadParams
 
 	ViolaJonesDetection *pThis;
 };
-
-/**
-* \brief External for face Cascades database
-*/
-extern FaceCascades faceCascades;
 
 /** \} */

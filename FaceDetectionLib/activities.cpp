@@ -3,6 +3,8 @@
 #include "io.h"
 #include <ctime>
 
+FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
+
 DWORD getFacesFromPhoto(void *pContext)
 {
 	double startTime = clock();
@@ -14,20 +16,20 @@ DWORD getFacesFromPhoto(void *pContext)
 	
 	if (img == NULL)
 	{
-		FilePrintMessage(NULL, _WARN("Failed to load image %s. Continue..."), photoName.c_str());
+		FilePrintMessage(NULL, _FAIL("Failed to load image %s. Continue..."), photoName.c_str());
 		net.SendData(psContext->sock, "{ \"error\":\"failed to load photo\" }\n\0", strlen("{ \"error\":\"failed to load photo\" }\n\0"));
 		delete psContext;
 		return -1;
 	}
 
-	ViolaJonesDetection detector;
+	ViolaJonesDetection detector(cascades);
 
 	try{
 		detector.allFacesDetection(img, psContext->sock);
 	}
 	catch (...)
 	{
-		FilePrintMessage(NULL, _WARN("All Faces Detection FAILED"), photoName.c_str());
+		FilePrintMessage(NULL, _FAIL("All Faces Detection FAILED"), photoName.c_str());
 		net.SendData(psContext->sock, "{ \"error\":\"All Faces Detection FAILED\" }\n\0", strlen("{ \"error\":\"All Faces Detection FAILED\" }\n\0"));
 		delete psContext;
 		return -1;
@@ -51,17 +53,35 @@ DWORD saveFaceFromPhoto(void *pContext)
 
 	if (img == NULL)
 	{
-		FilePrintMessage(NULL, _WARN("Failed to load image %s. Continue..."), photoName.c_str());
+		FilePrintMessage(NULL, _FAIL("Failed to load image %s. Continue..."), photoName.c_str());
 		net.SendData(psContext->sock, "{ \"error\":\"failed to load photo\" }\n\0", strlen("{ \"error\":\"failed to load photo\" }\n\0"));
 		delete psContext;
 		return -1;
 	}
+	//необходимо подавать черно-белую картинку в cutFaceToBase
+	ViolaJonesDetection detector(cascades);
+	IplImage *gray_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+	cvCvtColor(img, gray_img, CV_BGR2GRAY);
 
-	ViolaJonesDetection detector;
+	try
+	{
+		int x1 = atoi(psContext->faceCoords["x1"].ToString().c_str());
+		int y1 = atoi(psContext->faceCoords["y1"].ToString().c_str());
+		int w = atoi(psContext->faceCoords["x2"].ToString().c_str()) - x1;
+		int h = atoi(psContext->faceCoords["y2"].ToString().c_str()) - y1;
+		detector.cutFaceToBase(gray_img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg").c_str(), x1, y1, w, h);
+	}
+	catch (...)
+	{
+		FilePrintMessage(NULL, _FAIL("cut face FAILED"), photoName.c_str());
+		net.SendData(psContext->sock, "{ \"error\":\"cut face FAILED\" }\n\0", strlen("{ \"error\":\"cut face FAILED\" }\n\0"));
+		delete psContext;
+		return -1;
+	}
 
-	net.SendData(psContext->sock, "{ \"success\":\"get faces succeed\" }\n\0", strlen("{ \"success\":\"get faces succeed\" }\n\0"));
+	net.SendData(psContext->sock, "{ \"success\":\"cut face succeed\" }\n\0", strlen("{ \"success\":\"cut face succeed\" }\n\0"));
 
-	FilePrintMessage(NULL, _SUCC("Get faces finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
+	FilePrintMessage(NULL, _SUCC("Cut face finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
 	delete psContext;
 	return 0;
 }
@@ -72,7 +92,7 @@ DWORD recognizeFromModel(void *pContext)
 	ContextForRecognize *psContext = (ContextForRecognize*)pContext;
 	CvMemStorage* storage = NULL;
 	IplImage *img = NULL;
-	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection();
+	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection(cascades);
 	map <string, Ptr<FaceRecognizer>> models;
 
 	for (UINT_PTR i = 0; i < psContext->arrFrinedsList.size(); i++)
@@ -175,10 +195,12 @@ DWORD generateAndTrainBase(void *pContext)
 
 				//cout << "Cutting face from image " << result.name;
 
-				cutFaceThreadParams * param = new cutFaceThreadParams(img, (((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(result.name)).c_str());
+				cutFaceThreadParams * param = new cutFaceThreadParams(img,
+					(((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(result.name)).c_str(),
+					&cascades[uNumOfThreads]);
 				threads.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)param->pThis->cutFaceThread, (LPVOID)param, 0, NULL));
 
-				if (++uNumOfThreads > MAX_THREADS_NUM)
+				if (++uNumOfThreads = MAX_THREADS_AND_CASCADES_NUM)
 				{
 					DWORD res;
 					if (WAIT_OBJECT_0 != (res = WaitForMultipleObjects((unsigned)threads.size(), &threads[0], TRUE, CUT_TIMEOUT)))
