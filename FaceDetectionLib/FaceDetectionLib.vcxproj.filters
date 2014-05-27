@@ -67,5 +67,6 @@
     <None Include="Doxyfile">
       <Filter>headers</Filter>
     </None>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>
