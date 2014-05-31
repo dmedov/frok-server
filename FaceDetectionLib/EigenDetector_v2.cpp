@@ -52,8 +52,8 @@ bool EigenDetector_v2::train(const char* idPath){
 
 	vector<Mat> images;
 	vector<int> labels;
-	//Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
-	Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
+	Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
+	//Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
 
 	try
 	{
@@ -375,10 +375,10 @@ void EigenDetector_v2::recognize(const map <string, Ptr<FaceRecognizer>> &models
 			double prob_res2 = max(prob3, prob2); //prob_res2 = max(prob_res2, prob1);
 			double prob_res3 = min(prob3, prob2); //prob_res3 = min(prob_res3, prob1);
 
-			prob = abs(prob_res1 - abs(prob_res2 - prob_res3))/1.5;
+			prob = abs(prob_res1 - abs(prob_res2 - prob_res3));		
 					
 
-		FilePrintMessage(NULL, _RES("id = %s probability \t= \t%lf \t(%lf | %lf | %lf)"), (*it).first.c_str(), prob, prob1,prob2, prob3);
+		//FilePrintMessage(NULL, _RES("id = %s probability \t= \t%lf \t(%lf | %lf | %lf)"), (*it).first.c_str(), prob, prob1,prob2, prob3);
 		//cout << (*it).first << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
 
 		if (prob > oldProb){

@@ -151,7 +151,7 @@ DWORD recognizeFromModel(void *pContext)
 	//storage = cvCreateMemStorage();					// Создание хранилища памяти
 	try
 	{
-		if (!violaJonesDetection->faceDetect(img, models, psContext->sock))
+		if (!violaJonesDetection->faceDetect(img, models, psContext->good_id, psContext->sock))
 		{
 			FilePrintMessage(NULL, _FAIL("Some error occured during recognze call"));
 			net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));

@@ -8,6 +8,7 @@
 #define NET_CMD_SAVE_FACE	"save_face"
 
 Network net;
+int good_id;
 
 void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 {
@@ -24,152 +25,153 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 			printf("Received connection. Socket = 0x%x\n", sock);
 			break;
 		}
-		case
-		NET_SERVER_DISCONNECTED:
-		{
-			printf("Received disconnection. Socket = 0x%x\n", sock);
-			break;
-		}
-		case
-		NET_RECEIVED_REMOTE_DATA:
-		{
-			json::Object objInputJson;
-			try
+			case
+			NET_SERVER_DISCONNECTED:
 			{
-				objInputJson = ((json::Value)json::Deserialize((string)((char*)param))).ToObject();
+				printf("Received disconnection. Socket = 0x%x\n", sock);
+				break;
 			}
-			catch (...)
-			{
-				FilePrintMessage(NULL, _FAIL("Failed to parse incoming JSON: %s"), (char*)param);
-				net.SendData(sock, "{ \"error\":\"bad command\" }\n\0", strlen("{ \"error\":\"bad command\" }\n\0"));
-				return;
-			}
-			
-			if (!objInputJson.HasKey("cmd"))
-			{
-				FilePrintMessage(NULL, _FAIL("Invalid input JSON: no cmd field (%s)"), (char*)param);
-				net.SendData(sock, "{ \"error\":\"no cmd field\" }\n\0", strlen("{ \"error\":\"no cmd field\" }\n\0"));
-				return;
-			}
-
-			// Parse cmd
-			if (objInputJson["cmd"].ToString() == NET_CMD_RECOGNIZE)
-			{
-				if (!objInputJson.HasKey("friends"))
+				case
+				NET_RECEIVED_REMOTE_DATA:
 				{
-					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no friends field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no friends field\" }\n\0", strlen("{ \"error\":\"no friends field\" }\n\0"));
-					return;
+					json::Object objInputJson;
+					try
+					{
+						objInputJson = ((json::Value)json::Deserialize((string)((char*)param))).ToObject();
+					}
+					catch (...)
+					{
+						FilePrintMessage(NULL, _FAIL("Failed to parse incoming JSON: %s"), (char*)param);
+						net.SendData(sock, "{ \"error\":\"bad command\" }\n\0", strlen("{ \"error\":\"bad command\" }\n\0"));
+						return;
+					}
+
+					if (!objInputJson.HasKey("cmd"))
+					{
+						FilePrintMessage(NULL, _FAIL("Invalid input JSON: no cmd field (%s)"), (char*)param);
+						net.SendData(sock, "{ \"error\":\"no cmd field\" }\n\0", strlen("{ \"error\":\"no cmd field\" }\n\0"));
+						return;
+					}
+
+					// Parse cmd
+					if (objInputJson["cmd"].ToString() == NET_CMD_RECOGNIZE)
+					{
+						if (!objInputJson.HasKey("friends"))
+						{
+							FilePrintMessage(NULL, _FAIL("Invalid input JSON: no friends field (%s)"), (char*)param);
+							net.SendData(sock, "{ \"error\":\"no friends field\" }\n\0", strlen("{ \"error\":\"no friends field\" }\n\0"));
+							return;
+						}
+
+						if (!objInputJson.HasKey("photo_id"))
+						{
+							FilePrintMessage(NULL, _FAIL("Invalid input JSON: no photo_id field (%s)"), (char*)param);
+							net.SendData(sock, "{ \"error\":\"no photo_id field\" }\n\0", strlen("{ \"error\":\"no photo_id field\" }\n\0"));
+							return;
+						}
+
+						ContextForRecognize *psContext = new ContextForRecognize;
+						memset(psContext, 0, sizeof(ContextForRecognize));
+						psContext->arrFrinedsList = objInputJson["friends"].ToArray();
+						psContext->targetImg = objInputJson["photo_id"];
+						psContext->sock = sock;
+						psContext->good_id = good_id;
+
+						//FilePrintMessage(NULL, _SUCC("Recognizing started..."));
+						CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recognizeFromModel, psContext, 0, NULL);
+						// Notice that psContext should be deleted in recognizeFromModel function!
+					}
+					else if (objInputJson["cmd"].ToString() == NET_CMD_GET_FACES)
+					{
+						if (!objInputJson.HasKey("user_id"))
+						{
+							FilePrintMessage(NULL, _FAIL("Invalid input JSON: no user_id field (%s)"), (char*)param);
+							net.SendData(sock, "{ \"error\":\"no user_id field\" }\n\0", strlen("{ \"error\":\"no user_id field\" }\n\0"));
+							return;
+						}
+
+						if (!objInputJson.HasKey("photo_id"))
+						{
+							FilePrintMessage(NULL, _FAIL("Invalid input JSON: no photo_id field (%s)"), (char*)param);
+							net.SendData(sock, "{ \"error\":\"no photo_id field\" }\n\0", strlen("{ \"error\":\"no photo_id field\" }\n\0"));
+							return;
+						}
+
+						ContextForGetFaces *psContext = new ContextForGetFaces;
+						memset(psContext, 0, sizeof(ContextForGetFaces));
+						psContext->userId = objInputJson["user_id"].ToString();
+						psContext->photoName = objInputJson["photo_id"].ToString();
+						psContext->sock = sock;
+
+						FilePrintMessage(NULL, _SUCC("Getting faces started..."));
+						CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getFacesFromPhoto, psContext, 0, NULL);
+						// Notice that psContext should be deleted in recognizeFromModel function!
+					}
+					else if (objInputJson["cmd"].ToString() == NET_CMD_SAVE_FACE)
+					{
+						if (!objInputJson.HasKey("user_id"))
+						{
+							FilePrintMessage(NULL, _FAIL("Invalid input JSON: no user_id field (%s)"), (char*)param);
+							net.SendData(sock, "{ \"error\":\"no user_id field\" }\n\0", strlen("{ \"error\":\"no user_id field\" }\n\0"));
+							return;
+						}
+
+						if (!objInputJson.HasKey("photo_id"))
+						{
+							FilePrintMessage(NULL, _FAIL("Invalid input JSON: no photo_id field (%s)"), (char*)param);
+							net.SendData(sock, "{ \"error\":\"no photo_id field\" }\n\0", strlen("{ \"error\":\"no photo_id field\" }\n\0"));
+							return;
+						}
+
+						if (!objInputJson.HasKey("face_number"))
+						{
+							FilePrintMessage(NULL, _FAIL("Invalid input JSON: no face_number field (%s)"), (char*)param);
+							net.SendData(sock, "{ \"error\":\"no face_points field\" }\n\0", strlen("{ \"error\":\"no face_number field\" }\n\0"));
+							return;
+						}
+
+						ContextForSaveFaces *psContext = new ContextForSaveFaces;
+						psContext->userId = objInputJson["user_id"].ToString();
+						psContext->photoName = objInputJson["photo_id"].ToString();
+						psContext->faceNumber = atoi(objInputJson["face_number"].ToString().c_str());
+						psContext->sock = sock;
+
+						FilePrintMessage(NULL, _SUCC("Cut face started..."));
+						CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)saveFaceFromPhoto, psContext, 0, NULL);
+						// Notice that psContext should be deleted in recognizeFromModel function!
+					}
+					else if (objInputJson["cmd"].ToString() == NET_CMD_TRAIN)
+					{
+						if (!objInputJson.HasKey("ids"))
+						{
+							FilePrintMessage(NULL, _FAIL("Invalid input JSON: no ids field (%s)"), (char*)param);
+							net.SendData(sock, "{ \"error\":\"no ids field\" }\n\0", strlen("{ \"error\":\"no ids field\" }\n\0"));
+							return;
+						}
+
+						ContextForTrain *psContext = new ContextForTrain;
+						memset(psContext, 0, sizeof(ContextForTrain));
+						psContext->arrIds = objInputJson["ids"].ToArray();
+						psContext->sock = sock;
+
+						FilePrintMessage(NULL, _SUCC("Training started..."));
+						CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)generateAndTrainBase, psContext, 0, NULL);
+						// Notice that psContext should be deleted in recognizeFromModel function!
+					}
+					else
+					{
+						FilePrintMessage(NULL, _FAIL("Invalid input JSON: invalid cmd received (%s)"), (char*)param);
+						net.SendData(sock, "{ \"error\":\"invalid cmd\" }\n\0", strlen("{ \"error\":\"invalid cmd\" }\n\0"));
+						return;
+					}
+					break;
 				}
-				
-				if (!objInputJson.HasKey("photo_id"))
-				{
-					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no photo_id field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no photo_id field\" }\n\0", strlen("{ \"error\":\"no photo_id field\" }\n\0"));
-					return;
-				}
-
-				ContextForRecognize *psContext = new ContextForRecognize;
-				memset(psContext, 0, sizeof(ContextForRecognize));
-				psContext->arrFrinedsList = objInputJson["friends"].ToArray();
-				psContext->targetImg = objInputJson["photo_id"];
-				psContext->sock = sock;
-
-				FilePrintMessage(NULL, _SUCC("Recognizing started..."));
-				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recognizeFromModel, psContext, 0, NULL);
-				// Notice that psContext should be deleted in recognizeFromModel function!
-			}
-			else if (objInputJson["cmd"].ToString() == NET_CMD_GET_FACES)
-			{
-				if (!objInputJson.HasKey("user_id"))
-				{
-					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no user_id field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no user_id field\" }\n\0", strlen("{ \"error\":\"no user_id field\" }\n\0"));
-					return;
-				}
-
-				if (!objInputJson.HasKey("photo_id"))
-				{
-					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no photo_id field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no photo_id field\" }\n\0", strlen("{ \"error\":\"no photo_id field\" }\n\0"));
-					return;
-				}
-
-				ContextForGetFaces *psContext = new ContextForGetFaces;
-				memset(psContext, 0, sizeof(ContextForGetFaces));
-				psContext->userId = objInputJson["user_id"].ToString();
-				psContext->photoName = objInputJson["photo_id"].ToString();
-				psContext->sock = sock;
-
-				FilePrintMessage(NULL, _SUCC("Getting faces started..."));
-				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getFacesFromPhoto, psContext, 0, NULL);
-				// Notice that psContext should be deleted in recognizeFromModel function!
-			}
-			else if (objInputJson["cmd"].ToString() == NET_CMD_SAVE_FACE)
-			{
-				if (!objInputJson.HasKey("user_id"))
-				{
-					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no user_id field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no user_id field\" }\n\0", strlen("{ \"error\":\"no user_id field\" }\n\0"));
-					return;
-				}
-
-				if (!objInputJson.HasKey("photo_id"))
-				{
-					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no photo_id field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no photo_id field\" }\n\0", strlen("{ \"error\":\"no photo_id field\" }\n\0"));
-					return;
-				}
-
-				if (!objInputJson.HasKey("face_number"))
-				{
-					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no face_number field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no face_points field\" }\n\0", strlen("{ \"error\":\"no face_number field\" }\n\0"));
-					return;
-				}
-
-				ContextForSaveFaces *psContext = new ContextForSaveFaces;
-				psContext->userId = objInputJson["user_id"].ToString();
-				psContext->photoName = objInputJson["photo_id"].ToString();
-				psContext->faceNumber = atoi(objInputJson["face_number"].ToString().c_str());
-				psContext->sock = sock;
-
-				FilePrintMessage(NULL, _SUCC("Cut face started..."));
-				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)saveFaceFromPhoto, psContext, 0, NULL);
-				// Notice that psContext should be deleted in recognizeFromModel function!
-			}
-			else if (objInputJson["cmd"].ToString() == NET_CMD_TRAIN)
-			{
-				if (!objInputJson.HasKey("ids"))
-				{
-					FilePrintMessage(NULL, _FAIL("Invalid input JSON: no ids field (%s)"), (char*)param);
-					net.SendData(sock, "{ \"error\":\"no ids field\" }\n\0", strlen("{ \"error\":\"no ids field\" }\n\0"));
-					return;
-				}
-
-				ContextForTrain *psContext = new ContextForTrain;
-				memset(psContext, 0, sizeof(ContextForTrain));
-				psContext->arrIds = objInputJson["ids"].ToArray();
-				psContext->sock = sock;
-
-				FilePrintMessage(NULL, _SUCC("Training started..."));
-				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)generateAndTrainBase, psContext, 0, NULL);
-				// Notice that psContext should be deleted in recognizeFromModel function!
-			}
-			else
-			{
-				FilePrintMessage(NULL, _FAIL("Invalid input JSON: invalid cmd received (%s)"), (char*)param);
-				net.SendData(sock, "{ \"error\":\"invalid cmd\" }\n\0", strlen("{ \"error\":\"invalid cmd\" }\n\0"));
-				return;
-			}
-			break;
-		}
-		default
-			:
-		{
-			FilePrintMessage(NULL, _FAIL("Unknown event 0x%x"), evt);
-			break;
-		}
+					default
+						:
+					{
+						FilePrintMessage(NULL, _FAIL("Unknown event 0x%x"), evt);
+						break;
+					}
 	}
 	return;
 }
@@ -180,7 +182,7 @@ void usage()
 	return;
 }
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
 	InitFaceDetectionLib();
 	if (argc != 2)
@@ -191,7 +193,7 @@ int main(int argc, char *argv[])
 		DeleteCriticalSection(&fileCS);
 		return -1;
 	}
-	
+
 	unsigned uPort = atoi(argv[1]);
 
 	FilePrintMessage(NULL, _SUCC("Starting network server with port = %d"), uPort);
@@ -203,16 +205,20 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	FilePrintMessage(NULL, _SUCC("Network server started!"));
-	
-	//char train[] = "{\"cmd\":\"train\", \"ids\":[\"3\"]}\0";	// cut faces and train base
+
+	//char train[] = "{\"cmd\":\"train\", \"ids\":[\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"11\",\"12\",\"13\",\"14\",\"15\",\"16\",\"17\",\"18\",\"19\",\"20\",\"21\",\"22\",\"23\",\"24\",\"25\",\"26\",\"27\",\"28\",\"29\",\"30\",\"31\",\"32\",\"33\",\"34\",\"35\",\"36\",\"37\",\"38\",\"39\",\"40\"]}\0";	// cut faces and train base
 	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
 
-/*	char get_photos[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_number\":\"0\"}\0";	// cut faces and train base
-	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(get_photos), get_photos);*/
+	/*	char get_photos[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_number\":\"0\"}\0";	// cut faces and train base
+		callback(1, NET_RECEIVED_REMOTE_DATA, strlen(get_photos), get_photos);*/
 
-	//char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"11\",\"12\",\"13\",\"14\",\"15\",\"16\",\"17\",\"18\",\"19\"], \"photo_id\": \"48\"}\0";	// recognize name = 1.jpg
-	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
-	
+	char recognize[] = "";	// recognize name = 1.jpg
+	for (int i = 21; i <= 39; i++){
+	sprintf(recognize, "{\"cmd\":\"recognize\", \"friends\":[\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"11\",\"12\",\"13\",\"14\",\"15\",\"16\",\"17\",\"18\",\"19\",\"20\",\"21\",\"22\",\"23\",\"24\",\"25\",\"26\",\"27\",\"28\",\"29\",\"30\",\"31\",\"32\",\"33\",\"34\",\"35\",\"36\",\"37\",\"38\"], \"photo_id\": \"%d\"}\0", i);
+	good_id = i;
+	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
+	Sleep(10000);
+	}
 	getchar();
 
 	DeinitFaceDetectionLib();

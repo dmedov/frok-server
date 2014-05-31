@@ -29,13 +29,13 @@ extern FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
 * \brief Folder of id's.
 */
 
-#define ID_PATH				"C:\\OK\\tmp\\"
+#define ID_PATH				"C:\\OK\\temp\\"
 
 /**
 * \brief Folder with downloading photos.
 */
 
-#define TARGET_PATH			"C:\\OK\\test_photos\\"
+#define TARGET_PATH			"C:\\OK\\stat_test\\"
 
 #pragma pack(push, 1)
 
@@ -64,6 +64,8 @@ struct ContextForRecognize{
 	*/
 
 	json::Array arrFrinedsList;
+
+	int good_id;
 };
 
 /**

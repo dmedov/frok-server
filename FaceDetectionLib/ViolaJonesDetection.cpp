@@ -186,7 +186,7 @@ IplImage* ViolaJonesDetection::imposeMask(CvPoint p){
 	return img;
 }
 
-void ViolaJonesDetection::createJson(const DataJson &dataJson, SOCKET sock){
+void ViolaJonesDetection::createJson(const DataJson &dataJson, SOCKET sock, int good_id){
 	//{ results:[{ "id": "1", "x1" : "503", "y1" : "182", "x2" : "812", "y2" : "491", "P" : "30.4" }] }
 
 	json::Object obj;
@@ -211,6 +211,10 @@ void ViolaJonesDetection::createJson(const DataJson &dataJson, SOCKET sock){
 			<< "\", \"y1\": \"" << dataJson.p1s.at(i).y << "\", \"x2\": \"" << dataJson.p2s.at(i).x << "\", \"y2\": \""
 			<< dataJson.p2s.at(i).y << "\", \"P\": \"" << std::fixed << setprecision(1) << probability << "\" }";
 
+
+		cout << id.c_str() << " < - >" << good_id << endl;
+
+		
 		outJson.append(stringStream.str());
 
 		if (i != (vector_size - 1)) {
@@ -373,7 +377,7 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
 
 // [TBD] magic number 4 (int type) should be EnumType
 void ViolaJonesDetection::allKeysFaceDetection(CvPoint point){
-	if(strg == NULL)
+	if (strg == NULL)
 		strg = cvCreateMemStorage(0);
 	keysFaceDetect(faceCascades->eye, point, 4);				//правый общий		
 	keysFaceDetect(faceCascades->righteye2, point, 4);			//правый 
@@ -412,7 +416,7 @@ bool ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock
 	CvSeq *faces = cvHaarDetectObjects(gray_img, faceCascades->face, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 
 	for (int i = 0; i < (faces ? faces->total : 0); i++){
-		
+
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
 
 		int x = cvRound(rect->x);			int y = cvRound(rect->y);
@@ -435,7 +439,7 @@ bool ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock
 
 
 //Детектирование лица (вызывается из main)
-bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock)
+bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, int good_id, SOCKET outSock)
 {
 	if (faceCascades == NULL){
 		FilePrintMessage(NULL, _FAIL("Face cascade == NULL"));
@@ -494,7 +498,7 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 		}
 	}
 
-	createJson(dataJson, outSock);
+	createJson(dataJson, outSock, good_id);
 #ifdef SHOW_IMAGE
 	cvShowImage("image", imageResults);
 #endif //SHOW_IMAGE
@@ -657,7 +661,7 @@ bool ViolaJonesDetection::cutTheFace(IplImage *inputImage, const char* destPath,
 
 	strg = cvCreateMemStorage(0);										//Создание хранилища памяти
 	CvSeq *faces = cvHaarDetectObjects(gray_img, faceCascades->face, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
-	
+
 	if (faces != NULL)
 	{
 		CvRect* rect = (CvRect*)cvGetSeqElem(faces, faceNumber);

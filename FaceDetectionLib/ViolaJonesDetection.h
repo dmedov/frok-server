@@ -183,7 +183,7 @@ public:
 	* \endcode
 	*/
 
-	bool faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock = INVALID_SOCKET);
+	bool faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models,int good_id, SOCKET outSock = INVALID_SOCKET);
 
 	/**
 	* \brief Selecting a face on the picture and saving the face.
@@ -350,7 +350,7 @@ private:
 	*
 	*/
 
-	void createJson(const DataJson &dataJson, SOCKET sock);		// [TBD] change it to smth like show on photo or send response etc
+	void createJson(const DataJson &dataJson, SOCKET sock, int good_id);		// [TBD] change it to smth like show on photo or send response etc
 
 	/**
 	* \brief Normalization of histogram on the face.
