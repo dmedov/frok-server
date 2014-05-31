@@ -52,7 +52,9 @@ bool EigenDetector_v2::train(const char* idPath){
 
 	vector<Mat> images;
 	vector<int> labels;
-	Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
+	//Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
+	Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
+
 	try
 	{
 		loadBaseFace(facesPath.c_str(), &images, &labels, 0);
