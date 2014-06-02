@@ -92,9 +92,9 @@ DWORD saveFaceFromPhoto(void *pContext)
 	return 0;
 }
 
-DWORD recognizeFromModel(void *pContext)
+int recognizeFromModel(void *pContext)
 {
-	double startTime = clock();
+	//double startTime = clock();
 	ContextForRecognize *psContext = (ContextForRecognize*)pContext;
 	//CvMemStorage* storage = NULL;
 	IplImage *img = NULL;
@@ -119,7 +119,7 @@ DWORD recognizeFromModel(void *pContext)
 	if (models.empty())
 	{
 		FilePrintMessage(NULL, _FAIL("No models loaded."));
-		net.SendData(psContext->sock, "{ \"error\":\"training was not called\" }\n\0", strlen("{ \"error\":\"training was not called\" }\n\0"));
+		//net.SendData(psContext->sock, "{ \"error\":\"training was not called\" }\n\0", strlen("{ \"error\":\"training was not called\" }\n\0"));
 		delete violaJonesDetection;
 		delete psContext;
 		return -1;
@@ -170,15 +170,15 @@ DWORD recognizeFromModel(void *pContext)
 	}
 
 #ifdef SHOW_IMAGE
-	while (1){
-		if (cvWaitKey(0) == 27)
-			break;
-	}
+	//while (1){
+	//	if (cvWaitKey(0) == 27)
+	//		break;
+	//}
 #endif
 
 	net.SendData(psContext->sock, "{ \"success\":\"recognize faces succeed\" }\n\0", strlen("{ \"success\":\"recognize faces succeed\" }\n\0"));
 
-	FilePrintMessage(NULL, _SUCC("Recognize finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
+	//FilePrintMessage(NULL, _SUCC("Recognize finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
 	cvReleaseImage(&img);
 	//cvClearMemStorage(storage);
 	cvDestroyAllWindows();

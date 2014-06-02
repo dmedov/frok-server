@@ -13,6 +13,7 @@
 #include "io.h"
 #include "json.h"
 #include "network.h"
+#include <ctime>
 
 ViolaJonesDetection::ViolaJonesDetection(FaceCascades *cascade){
 	assert(cascade != NULL);
@@ -212,7 +213,7 @@ void ViolaJonesDetection::createJson(const DataJson &dataJson, SOCKET sock, int 
 			<< dataJson.p2s.at(i).y << "\", \"P\": \"" << std::fixed << setprecision(1) << probability << "\" }";
 
 
-		cout << id.c_str() << " < - >" << good_id << endl;
+		cout << id.c_str() << " < - > " << good_id << " P:" << probability << endl;
 
 		
 		outJson.append(stringStream.str());
@@ -452,7 +453,7 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 #ifdef SHOW_IMAGE
 	imageResults = cvCloneImage(inputImage);
 #endif //SHOW_IMAGE
-
+	double startTime = clock();
 	DescriptorDetection *descriptorDetection = new DescriptorDetection();
 	EigenDetector_v2 *eigenDetector_v2 = new EigenDetector_v2();
 
@@ -496,13 +497,17 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 			dataJson.p2s.push_back(points.p2/*cvPoint(points.p2.x / inputImage->width, points.p2.y / inputImage->height)*/);
 			cvReleaseImage(&dest);//-> to introduce to function
 		}
+
 	}
 
 	createJson(dataJson, outSock, good_id);
+	FilePrintMessage(NULL, _SUCC("Get faces finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
 #ifdef SHOW_IMAGE
-	cvShowImage("image", imageResults);
+	//cvShowImage("image", imageResults);
 #endif //SHOW_IMAGE
 	// освобождаем ресурсы
+
+
 	delete descriptorDetection;
 	delete eigenDetector_v2;
 

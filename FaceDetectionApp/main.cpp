@@ -78,7 +78,8 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 						psContext->good_id = good_id;
 
 						//FilePrintMessage(NULL, _SUCC("Recognizing started..."));
-						CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recognizeFromModel, psContext, 0, NULL);
+						//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recognizeFromModel, psContext, 0, NULL);
+						recognizeFromModel(psContext);
 						// Notice that psContext should be deleted in recognizeFromModel function!
 					}
 					else if (objInputJson["cmd"].ToString() == NET_CMD_GET_FACES)
@@ -206,18 +207,21 @@ int main(int argc, char *argv[])
 	}
 	FilePrintMessage(NULL, _SUCC("Network server started!"));
 
-	//char train[] = "{\"cmd\":\"train\", \"ids\":[\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"11\",\"12\",\"13\",\"14\",\"15\",\"16\",\"17\",\"18\",\"19\",\"20\",\"21\",\"22\",\"23\",\"24\",\"25\",\"26\",\"27\",\"28\",\"29\",\"30\",\"31\",\"32\",\"33\",\"34\",\"35\",\"36\",\"37\",\"38\",\"39\",\"40\"]}\0";	// cut faces and train base
+	//char train[] = "{\"cmd\":\"train\", \"ids\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"11\",\"12\",\"13\",\"14\",\"15\",\"16\",\"17\",\"18\",\"19\",\"20\",\"21\",\"22\",\"23\"]}\0";	// cut faces and train base
 	//callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
 
 	/*	char get_photos[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_number\":\"0\"}\0";	// cut faces and train base
 		callback(1, NET_RECEIVED_REMOTE_DATA, strlen(get_photos), get_photos);*/
 
 	char recognize[] = "";	// recognize name = 1.jpg
-	for (int i = 21; i <= 39; i++){
-	sprintf(recognize, "{\"cmd\":\"recognize\", \"friends\":[\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"11\",\"12\",\"13\",\"14\",\"15\",\"16\",\"17\",\"18\",\"19\",\"20\",\"21\",\"22\",\"23\",\"24\",\"25\",\"26\",\"27\",\"28\",\"29\",\"30\",\"31\",\"32\",\"33\",\"34\",\"35\",\"36\",\"37\",\"38\"], \"photo_id\": \"%d\"}\0", i);
-	good_id = i;
-	callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
-	Sleep(10000);
+
+	for (int i = 12; i <= 12; i++){
+		InitFaceDetectionLib();
+		sprintf(recognize, "{\"cmd\":\"recognize\", \"friends\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"11\",\"12\",\"13\",\"14\",\"15\",\"16\",\"17\",\"18\",\"19\",\"20\",\"21\",\"22\",\"23\"], \"photo_id\": \"%d\"}\0", i);
+		good_id = i;
+		cout << "Recognize id " << i << "..." << endl;
+		callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
+		
 	}
 	getchar();
 

@@ -29,13 +29,13 @@ extern FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
 * \brief Folder of id's.
 */
 
-#define ID_PATH				"C:\\OK\\temp\\"
+#define ID_PATH				"C:\\OK\\base2\\"
 
 /**
 * \brief Folder with downloading photos.
 */
 
-#define TARGET_PATH			"C:\\OK\\stat_test\\"
+#define TARGET_PATH			"C:\\OK\\stat_test2\\"
 
 #pragma pack(push, 1)
 
@@ -159,7 +159,7 @@ struct ContextForSaveFaces{
 *
 */
 
-DWORD recognizeFromModel(void *pContext);
+int recognizeFromModel(void *pContext);
 
 /**
 * \brief Cutting faces and training database.
