@@ -160,6 +160,7 @@ public:
 
 	bool allFacesDetection(IplImage *inputImage, SOCKET outSock);
 	bool cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h);
+	void keysFaceDetectFromForeignImage(CvHaarClassifierCascade* cscd, IplImage *face, int type, CvPoint facePoints[]);
 
 	/**
 	* \brief Funtion to detect a face by Haar-Cascade

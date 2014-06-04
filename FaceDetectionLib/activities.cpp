@@ -103,7 +103,7 @@ DWORD recognizeFromModel(void *pContext)
 
 	for (UINT_PTR i = 0; i < psContext->arrFrinedsList.size(); i++)
 	{
-		Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
+		Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
 		try
 		{
 			model->load(((string)(ID_PATH)).append(psContext->arrFrinedsList[i].operator std::string()).append("//eigenface.yml"));

@@ -49,7 +49,7 @@ void EigenDetector_v2::loadBaseFace(const char* facesPath, vector<Mat> * images,
 bool EigenDetector_v2::train(const char* idPath){
 
 	string facesPath = ((string)idPath).append("\\faces\\");
-	
+
 	vector<Mat> images;
 	vector<int> labels;
 	Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
@@ -62,17 +62,17 @@ bool EigenDetector_v2::train(const char* idPath){
 		FilePrintMessage(NULL, _FAIL("Failed to load images for learning (path = %s)."), facesPath.c_str());
 		return false;
 	}
-	
+
 	try
 	{
 		model->train(images, labels);
 	}
-	catch(...)
+	catch (...)
 	{
 		FilePrintMessage(NULL, _FAIL("Failed to train model."));
 		return false;
 	}
-	
+
 	try
 	{
 		model->save(((string)idPath).append("\\eigenface.yml").c_str());
@@ -136,18 +136,40 @@ double EigenDetector_v2::getSimilarity(const Mat &image_mat, const Mat &reconstr
 
 }
 
+// Compare two images by getting the L2 error (square-root of sum of squared error).
+double getSimilarity3(const Mat A, const Mat B)
+{
+	if (A.rows > 0 && A.rows == B.rows && A.cols > 0 && A.cols == B.cols) {
+		// Calculate the L2 relative error between the 2 images.
+		double errorL2 = norm(A, B, CV_L2);
+		// Convert to a reasonable scale, since L2 error is summed across all pixels of the image.
+		double similarity = errorL2 / (double)(A.rows * A.cols);
+		return similarity;
+	}
+	else {
+		//cout << "WARNING: Images have a different size in 'getSimilarity()'." << endl;
+		return 100000000.0;  // Return a bad value
+	}
+}
+
+
 double EigenDetector_v2::getSimilarity2(const Mat &projected_mat, const Mat &face_mat) {
 
 	CvSize imagesSize = cvSize(projected_mat.cols, projected_mat.rows);
 	IplImage *projectedStorage = cvCreateImage(imagesSize, IPL_DEPTH_32F, 1);
 	IplImage *faceSorage = cvCreateImage(imagesSize, IPL_DEPTH_32F, 1);
 
-	cvCornerMinEigenVal(&(IplImage)projected_mat, projectedStorage, 15, 7);
-	cvCornerMinEigenVal(&(IplImage)face_mat, faceSorage, 15, 7);
+	cvCornerMinEigenVal(&(IplImage)projected_mat, projectedStorage, 20, 7);
+	cvCornerMinEigenVal(&(IplImage)face_mat, faceSorage, 20, 7);
 
 	Mat dif_mat = abs(Mat(projectedStorage) - Mat(faceSorage));
-	//imshow("dif", dif);
+	//imshow("ri", projected_mat);
+	//imshow("fi", face_mat);
+	//imshow("r", Mat(projectedStorage));
+	//imshow("f", Mat(faceSorage));
+	//imshow("d", dif_mat);
 
+	//cvWaitKey(0);
 
 	IplImage *dif_img = &(IplImage)dif_mat;
 
@@ -159,23 +181,22 @@ double EigenDetector_v2::getSimilarity2(const Mat &projected_mat, const Mat &fac
 	}
 
 
-	err /= ((double)dif_mat.rows * (double)dif_mat.cols);
-	//imshow("dif", dif_mat);
-	//imshow("rep", projected_mat);
-	//imshow("img", face_mat);
-
-	cvReleaseImage(&projectedStorage);
-	cvReleaseImage(&faceSorage);
+	err /= ((double)dif_mat.rows * (double)dif_mat.cols);	
 
 	err *= 2.5;
 	double prob = (1 - err);
 	if (prob > 1) prob = 0.99;
 	if (prob < 0) prob = 0.01;
-	prob -= 0.65;
-	prob *= 3;
-
+	//prob -= 0.65;
+	//prob *= 3;
+	cvReleaseImage(&projectedStorage);
+	cvReleaseImage(&faceSorage);
 	return prob;
 }
+
+
+
+
 // сравнение объектов по моментам их контуров 
 double testMatch(IplImage* image, IplImage* rec){
 	assert(image != 0);
@@ -302,6 +323,7 @@ __int64 calcHammingDistance(__int64 x, __int64 y)
 	return dist;
 }
 
+
 void EigenDetector_v2::recognize(const map <string, Ptr<FaceRecognizer>> &models, DataJson *psDataJson, IplImage* image)
 {
 	if (psDataJson == NULL)
@@ -311,6 +333,7 @@ void EigenDetector_v2::recognize(const map <string, Ptr<FaceRecognizer>> &models
 	}
 	double oldProb = 0;		// probability
 	string result_name = "-1";
+
 
 	for (map <string, Ptr<FaceRecognizer>>::const_iterator it = models.begin(); it != models.end(); ++it)
 	{
@@ -332,24 +355,34 @@ void EigenDetector_v2::recognize(const map <string, Ptr<FaceRecognizer>> &models
 		Mat reconstructedFace = Mat(reconstructionMat.size(), CV_8U);
 		reconstructionMat.convertTo(reconstructedFace, CV_8U, 1, 0);//-> to introduce to function
 
+
+
 		__int64 hashO = calcImageHash(&(IplImage)reconstructedFace, true);
-		__int64 hashI = calcImageHash(image, false);
+		__int64 hashI = calcImageHash(&(IplImage)image_mat, false);
 		__int64 dist = calcHammingDistance(hashO, hashI);//-> to introduce to function
 
-		if (dist <= 11){  // если хэш больше 8, то вероятность -> 0
 
-			double prob2 = getSimilarity2(reconstructedFace, image_mat);
+		if (dist <= 18){
+
 			double prob1 = getSimilarity(reconstructedFace, image_mat);
+			double prob2 = getSimilarity2(reconstructedFace, image_mat);
+			double prob3 = 1 - getSimilarity3(reconstructedFace, image_mat);
 
-			prob = max(prob2, prob1) / 2;
+			double prob_res1 = pow(prob1*prob2*prob3, 1. / 3);
 
-			FilePrintMessage(NULL, _RES("id = %s probability \t= \t%lf \t(%lf | %lf)"), (*it).first.c_str(), prob, prob1, prob2);
-			//cout << (*it).first << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
+			double prob_res2 = max(prob3, prob2); //prob_res2 = max(prob_res2, prob1);
+			double prob_res3 = min(prob3, prob2); //prob_res3 = min(prob_res3, prob1);
 
-			if (prob > oldProb){
-				oldProb = prob;
-				result_name = (*it).first;
-			}
+			prob = abs(prob_res1 - abs(prob_res2 - prob_res3))/1.5;
+					
+
+		FilePrintMessage(NULL, _RES("id = %s probability \t= \t%lf \t(%lf | %lf | %lf)"), (*it).first.c_str(), prob, prob1,prob2, prob3);
+		//cout << (*it).first << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
+
+		if (prob > oldProb){
+			oldProb = prob;
+			result_name = (*it).first;
+		}
 		}
 	}
 

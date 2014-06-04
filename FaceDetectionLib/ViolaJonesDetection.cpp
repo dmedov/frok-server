@@ -235,6 +235,70 @@ void ViolaJonesDetection::createJson(const DataJson &dataJson, SOCKET sock){
 	net.SendData(sock, outJson.c_str(), (unsigned)outJson.length());		// Send response with recognize results
 }
 
+void ViolaJonesDetection::keysFaceDetectFromForeignImage(CvHaarClassifierCascade* cscd, IplImage *face, int type, CvPoint facePoints[]){
+
+	if (!cscd){
+		FilePrintMessage(NULL, _FAIL("Empty cascade"));
+		return;
+	}
+
+	IplImage* dst = 0;
+	int k;
+	CvSize minSize, maxSize;
+	CvSeq *objects;
+
+
+	int width = face->width;
+	int height = face->height;
+	int depth = face->depth;
+	int nChannels = face->nChannels;
+
+	if (width < 200 || height < 200)	k = 5;
+	else k = 1;
+
+	width *= k;
+	height *= k;
+	dst = cvCreateImage(cvSize(width, height), depth, nChannels);
+	cvResize(face, dst, 1);
+
+	minSize = cvSize(width / 4, height / 4);
+	maxSize = cvSize(width / 2, height / 2);
+
+	double scale_factor = 1.2;
+
+	if (type == 0 || type == 3 || type == 4){
+		minSize = cvSize(width / 6, height / 7);
+		maxSize = cvSize(width / 3, height / 4);
+		scale_factor = 1.01;
+	}
+	else if (type == 1){
+		minSize = cvSize(width / 5, height / 6);
+		maxSize = cvSize((int)(width / 3.5), (int)(height / 3.5));
+	}
+	else if (type == 2){
+		minSize = cvSize(width / 5, height / 6);
+		scale_factor = 1.4;
+	}
+
+	CvMemStorage* strg = cvCreateMemStorage(0);
+	objects = cvHaarDetectObjects(dst, cscd, strg, scale_factor, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, minSize, maxSize);
+
+	for (int i = 0; i < (objects ? objects->total : 0); i++){
+		CvRect* r = (CvRect*)cvGetSeqElem(objects, i);
+		int x = cvRound(r->x) / k;
+		int y = cvRound(r->y) / k;
+		int w = cvRound(r->width) / k;
+		int h = cvRound(r->height) / k;
+
+		CvPoint p1 = cvPoint(x, y), p2 = cvPoint(x + w, y + h);
+		//p1,p2 - координаты части лица
+
+	}
+
+	cvReleaseImage(&dst);
+	cvRelease((void**)&objects);
+}
+
 //Детектирование ключевых точек лица 
 void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
 	, CvPoint pointFace, int type){
@@ -291,7 +355,7 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
 		int w = cvRound(r->width) / k;
 		int h = cvRound(r->height) / k;
 
-		CvPoint p1 = cvPoint(x + pointFace.x, y + pointFace.y), p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
+		//CvPoint p1 = cvPoint(x + pointFace.x, y + pointFace.y), p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
 		ImageCoordinats pointKeyFaсe, facePointCoordinates;
 
 		pointKeyFaсe.p1 = cvPoint(x + pointFace.x, y + pointFace.y);
@@ -311,12 +375,12 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
 void ViolaJonesDetection::allKeysFaceDetection(CvPoint point){
 	if(strg == NULL)
 		strg = cvCreateMemStorage(0);
-	keysFaceDetect(faceCascades->eye, point, 4);					//правый общий		
+	keysFaceDetect(faceCascades->eye, point, 4);				//правый общий		
 	keysFaceDetect(faceCascades->righteye2, point, 4);			//правый 
 	keysFaceDetect(faceCascades->righteye, point, 4);			//правый альтернатива
-	keysFaceDetect(faceCascades->eye, point, 3);					//левый общий
+	keysFaceDetect(faceCascades->eye, point, 3);				//левый общий
 	keysFaceDetect(faceCascades->lefteye2, point, 3);			//левый 
-	keysFaceDetect(faceCascades->lefteye, point, 3);				//левый альтернатива
+	keysFaceDetect(faceCascades->lefteye, point, 3);			//левый альтернатива
 	keysFaceDetect(faceCascades->eyes, point, 0);				//глаза в очках
 	keysFaceDetect(faceCascades->nose, point, 1);				//нос
 	keysFaceDetect(faceCascades->mouth, point, 2);				//рот
