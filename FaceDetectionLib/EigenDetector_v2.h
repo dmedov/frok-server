@@ -167,5 +167,27 @@ private:
 	*/
 
 	double getSimilarity2(const Mat &projected_mat, const Mat &face_mat);
+
+	/**
+	* \brief This function finds similarity of two pictures by getting L2 error.
+	*
+	* This function compares two images by getting the L2 error (square-root of sum of squared error).
+	*
+	* \return probability of similarity of two pictures;
+	*
+	* \param[in]	&projected_mat			first picture matrix;
+	* \param[in]	&face_mat				second picture matrix.
+	*
+	* <b>Usage example:</b>
+	*
+	* \code
+	*
+	* double prob2 = getSimilarity2(reconstructedFace, image_mat);
+	* double prob1 = getSimilarity(reconstructedFace, image_mat);
+	*
+	* \endcode
+	*/
+
+	double getSimilarity3(const Mat &projected_mat, const Mat &face_mat);
 };
 /** \} */
