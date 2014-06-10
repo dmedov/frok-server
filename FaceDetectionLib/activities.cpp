@@ -4,6 +4,7 @@
 #include <ctime>
 
 FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
+map <string, Ptr<FaceRecognizer>> models;
 
 DWORD getFacesFromPhoto(void *pContext)
 {
@@ -99,24 +100,24 @@ DWORD recognizeFromModel(void *pContext)
 	//CvMemStorage* storage = NULL;
 	IplImage *img = NULL;
 	ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection(cascades);
-	map <string, Ptr<FaceRecognizer>> models;
+	map <string, Ptr<FaceRecognizer>> currentModels;
 
 	for (UINT_PTR i = 0; i < psContext->arrFrinedsList.size(); i++)
 	{
-		Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
-		try
+		map <string, Ptr<FaceRecognizer>>::iterator it;
+		it = models.find(psContext->arrFrinedsList[i].ToString());
+		if (it != models.end())
 		{
-			model->load(((string)(ID_PATH)).append(psContext->arrFrinedsList[i].operator std::string()).append("//eigenface.yml"));
-		}
-		catch (...)
+			currentModels[psContext->arrFrinedsList[i].ToString()] = models[psContext->arrFrinedsList[i].ToString()];
+		}		
+		else
 		{
-			FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), psContext->arrFrinedsList[i].ToString().c_str());
-			continue;
+			FilePrintMessage(NULL, _WARN("No model found for user %s"), psContext->arrFrinedsList[i].ToString().c_str());
 		}
-		models[psContext->arrFrinedsList[i].ToString()] = model;
 	}
 
-	if (models.empty())
+
+	if (currentModels.empty())
 	{
 		FilePrintMessage(NULL, _FAIL("No models loaded."));
 		net.SendData(psContext->sock, "{ \"error\":\"training was not called\" }\n\0", strlen("{ \"error\":\"training was not called\" }\n\0"));
@@ -151,7 +152,7 @@ DWORD recognizeFromModel(void *pContext)
 	//storage = cvCreateMemStorage();					// Создание хранилища памяти
 	try
 	{
-		if (!violaJonesDetection->faceDetect(img, models, psContext->sock))
+		if (!violaJonesDetection->faceDetect(img, currentModels, psContext->sock))
 		{
 			FilePrintMessage(NULL, _FAIL("Some error occured during recognze call"));
 			net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
@@ -275,6 +276,7 @@ DWORD generateAndTrainBase(void *pContext)
 		{
 			if (!eigenDetector_v2->train((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str()))
 			{
+				FilePrintMessage(NULL, _FAIL("Some error has occured during Learn call."));
 				delete eigenDetector_v2;
 				continue;
 			}
@@ -285,6 +287,35 @@ DWORD generateAndTrainBase(void *pContext)
 			delete eigenDetector_v2;
 			continue;
 		}
+
+		EnterCriticalSection(&faceDetectionCS);
+		Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
+		try
+		{
+			string fileName = ((string)(ID_PATH)).append(psContext->arrIds[i].ToString()).append("//eigenface.yml");
+			if (_access(fileName.c_str(), 0) != -1)
+			{
+				model->load(fileName.c_str());
+				FilePrintMessage(NULL, _SUCC("Model base for user %s successfully loaded. Continue..."), psContext->arrIds[i].ToString().c_str());
+			}
+			else
+			{
+				FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), psContext->arrIds[i].ToString().c_str());
+				LeaveCriticalSection(&faceDetectionCS);
+				continue;
+			}
+
+		}
+		catch (...)
+		{
+			FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), psContext->arrIds[i].ToString().c_str());
+			LeaveCriticalSection(&faceDetectionCS);
+			continue;
+		}
+
+		models[psContext->arrIds[i].ToString()] = model;
+		LeaveCriticalSection(&faceDetectionCS);
+
 		delete eigenDetector_v2;
 		uSuccCounter++;
 	}

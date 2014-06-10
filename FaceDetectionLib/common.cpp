@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "LibInclude.h"
+#include "io.h"
 
 HANDLE	hStdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 CRITICAL_SECTION fileCS;
@@ -9,6 +10,45 @@ void InitFaceDetectionLib()
 {
 	InitializeCriticalSection(&faceDetectionCS);
 	InitializeCriticalSection(&fileCS);
+	
+	_finddata_t result;
+
+	intptr_t firstHandle = _findfirst(((string)(ID_PATH)).append("*").c_str(), &result);
+
+	UINT_PTR uNumOfThreads = 0;
+
+	if (firstHandle != -1)
+	{
+		do
+		{
+			Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
+			try
+			{
+				string fileName = ((string)(ID_PATH)).append(result.name).append("//eigenface.yml");
+				if (_access(fileName.c_str(), 0) != -1)
+				{
+					model->load(fileName.c_str());
+					FilePrintMessage(NULL, _SUCC("Model base for user %s successfully loaded. Continue..."), result.name);
+				}
+				else
+				{
+					FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), result.name);
+					continue;
+				}
+				
+			}
+			catch (...)
+			{
+				FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), result.name);
+				continue;
+			}
+			models[(string)result.name] = model;
+		} while (_findnext(firstHandle, &result) == 0);
+	}
+	else
+	{
+		FilePrintMessage(NULL, _WARN("No trained users found in %s folder"), ID_PATH);
+	}
 }
 
 void DeinitFaceDetectionLib()

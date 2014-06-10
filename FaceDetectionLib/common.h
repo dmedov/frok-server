@@ -33,6 +33,6 @@ void RestoreTextColor();
 extern HANDLE			hStdHandle;
 extern CRITICAL_SECTION fileCS;
 extern CRITICAL_SECTION faceDetectionCS;
-
+extern map <string, Ptr<FaceRecognizer>> models;
 void InitFaceDetectionLib();
 void DeinitFaceDetectionLib();
