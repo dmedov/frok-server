@@ -137,18 +137,18 @@ double EigenDetector_v2::getSimilarity(const Mat &image_mat, const Mat &reconstr
 }
 
 // Compare two images by getting the L2 error (square-root of sum of squared error).
-double getSimilarity3(const Mat A, const Mat B)
+double EigenDetector_v2::getSimilarity3(const Mat &projected_mat, const Mat &face_mat)
 {
-	if (A.rows > 0 && A.rows == B.rows && A.cols > 0 && A.cols == B.cols) {
+	if ((projected_mat.rows > 0) && (projected_mat.rows == face_mat.rows ) && 
+		(projected_mat.cols > 0) && (projected_mat.cols == face_mat.cols)) {
 		// Calculate the L2 relative error between the 2 images.
-		double errorL2 = norm(A, B, CV_L2);
+		double errorL2 = norm(projected_mat, face_mat, CV_L2);
 		// Convert to a reasonable scale, since L2 error is summed across all pixels of the image.
-		double similarity = errorL2 / (double)(A.rows * A.cols);
-		return similarity;
+		return errorL2 / (double)(projected_mat.rows * projected_mat.cols);;
 	}
 	else {
 		//cout << "WARNING: Images have a different size in 'getSimilarity()'." << endl;
-		return 100000000.0;  // Return a bad value
+		return 100000000.0;  // Return a bad value			[TBD] this is not invalid value. Value must be really invalid
 	}
 }
 
