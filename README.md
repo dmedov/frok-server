@@ -27,7 +27,8 @@ P.S. note that Additional Library Directories should consider path to libraries 
  "REG ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v EnableLUA /t REG_DWORD /d 0 /f"
  
 8)  Указать пути к папкам где будут сохраняться фотки и модели юзеров в файле FaceDetectionLib/activities.h
-#define ID_PATH				"Z:\\frok\\"
-#define TARGET_PATH			"Z:\\frok\\1\\"
+Например:
+define ID_PATH				"Z:\\frok\\"
+define TARGET_PATH			"Z:\\frok\\1\\"
 
 9) Build project and see FaceDetection_manual for additional information
