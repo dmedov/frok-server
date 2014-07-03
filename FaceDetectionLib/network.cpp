@@ -13,7 +13,6 @@
 
 // Include the internal headers
 #include "network.h"
-#include "common_includes.h"
 pthread_mutex_t gnd_network_cs;
 
 GNDNetwork::GNDNetwork()
@@ -318,7 +317,7 @@ void GNDNetwork::SocketListener(void* Param)
             }
             else
             {
-				NETWORK_TRACE("SocketListener: NULL callback");
+                NETWORK_TRACE("SocketListener: NULL callback");
             }
             recvlen = 0;
         }
@@ -341,7 +340,7 @@ void GNDNetwork::SocketListener(void* Param)
     }
     else
     {
-		NETWORK_TRACE("SocketListener: NULL callback");
+        NETWORK_TRACE("SocketListener: NULL callback");
         return;
     }
     NETWORK_TRACE("SocketListener shutdown");

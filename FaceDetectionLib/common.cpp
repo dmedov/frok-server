@@ -68,13 +68,11 @@ void DeinitFaceDetectionLib()
     DeleteCriticalSection(&fileCS);
 }
 
-void FilePrintMessage(char* file, char* expr...)
+void FilePrintMessage(char* file, const char* expr...)
 {
-    EnterCriticalSection(&fileCS);
+    UNREFERENCED_PARAMETER(file);
     char message[LOG_MESSAGE_MAX_LENGTH];
     va_list args;
-
-    errno_t err = 0;
 
     if (expr)
     {
@@ -82,14 +80,15 @@ void FilePrintMessage(char* file, char* expr...)
 
         vsprintf(message, expr, args);
 
-        ChooseTextColor(message);
+        pthread_mutex_lock(&file_cs);
 
         printf("%s", message);
-
-        RestoreTextColor();
+        pthread_mutex_unlock(&file_cs);
 
         if (file)
         {
+            pthread_mutex_lock(&file_cs);
+
             FILE* fl = NULL;
 
             if ((fl = fopen(file, "a+")) != NULL)
@@ -98,41 +97,15 @@ void FilePrintMessage(char* file, char* expr...)
                 {
                     fprintf(fl, "%s", message);
                 }
+
+                fclose(fl);
             }
-        }
-        va_end(args);
-    }
-    LeaveCriticalSection(&fileCS);
-}
-
-void ChooseTextColor(char* msg)
-{
-    if (memcmp(&msg[0], "[", sizeof(char)) != 0)
-        return;
-
-    for (int i = 0; i < 20; i++) // (18 + 2) - max prefix length
-    {
-        if (memcmp(&msg[i], "]", sizeof(char)) == 0)
-        {
-            if (memcmp(msg, "[PASS]", i + 1) == 0)
-                SetConsoleTextAttribute(hStdHandle, 0x0002 | FOREGROUND_INTENSITY);
-            else if (memcmp(msg, "[FAIL]", i + 1) == 0)
-                SetConsoleTextAttribute(hStdHandle, 0x0004 | FOREGROUND_INTENSITY);
-            else if (memcmp(msg, "[SUCC]", i + 1) == 0)
-                SetConsoleTextAttribute(hStdHandle, 0x0007 | FOREGROUND_INTENSITY);
-            else if (memcmp(msg, "[WARN]", i + 1) == 0)
-                SetConsoleTextAttribute(hStdHandle, 0x0006 | FOREGROUND_INTENSITY);
-            else if (memcmp(msg, "[RES]", i + 1) == 0)
-                SetConsoleTextAttribute(hStdHandle, 0x000b | FOREGROUND_INTENSITY);
             else
-                SetConsoleTextAttribute(hStdHandle, 0x0002 | FOREGROUND_INTENSITY);
+            {
+                printf("Failed to open file %s, error = %u", file, errno);
+            }
 
-            break;
+            pthread_mutex_unlock(&file_cs);
         }
     }
-}
-
-void RestoreTextColor()
-{
-    SetConsoleTextAttribute(hStdHandle, 0x0007);
 }

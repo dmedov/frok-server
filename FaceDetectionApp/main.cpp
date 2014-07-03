@@ -187,8 +187,7 @@ int main(int argc, char *argv[])
     {
         FilePrintMessage(NULL, _FAIL("Invalid input patemeters."));
         usage();
-        DeleteCriticalSection(&faceDetectionCS);
-        DeleteCriticalSection(&fileCS);
+        DeinitFaceDetectionLib();
         return -1;
     }
     
@@ -198,8 +197,7 @@ int main(int argc, char *argv[])
     if (NET_SUCCESS != net.StartNetworkServer(callback, uPort))
     {
         FilePrintMessage(NULL, _FAIL("Failed to start network. For additional info build project with NET_DEBUG_PRINT flag enabled"));
-        DeleteCriticalSection(&faceDetectionCS);
-        DeleteCriticalSection(&fileCS);
+        DeinitFaceDetectionLib();
         return -1;
     }
     FilePrintMessage(NULL, _SUCC("Network server started!"));

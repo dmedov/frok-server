@@ -19,21 +19,25 @@ typedef struct StructImageCoordinats
     }
 } ImageCoordinats;
 
+// Common defines
 #define LOG_MESSAGE_MAX_LENGTH    1024
 
-#define _FAIL(__x__) "[FAIL] " __x__ "\n"
-#define _WARN(__x__) "[WARN] " __x__ "\n"
-#define _SUCC(__x__) "[SUCC] " __x__ "\n"
-#define _RES(__x__) "[RES] " __x__ "\n"
-#define _N(__x__) __x__ "\n"
+// Colored prints
+#define _FAIL(__x__)    "\x1b[1;91m[FAIL] " __x__ "\n\x1b[0m"
+#define _WARN(__x__)    "\x1b[1;93m[WARN] " __x__ "\n\x1b[0m"
+#define _SUCC(__x__)    "\x1b[1;97m[SUCC] " __x__ "\n\x1b[0m"
+#define _RES(__x__)     "\x1b[1;96m[RES] "  __x__ "\n\x1b[0m"
+#define _N(__x__)                           __x__ "\n"
+
+// Common externs
+extern pthread_mutex_t fileCS;
+extern pthread_mutex_t faceDetectionCS;
+extern map < string, Ptr<FaceRecognizer> > models;
+
 
 void FilePrintMessage(char* file, char* expr...);
 void ChooseTextColor(char* msg);
 void RestoreTextColor();
-extern HANDLE            hStdHandle;
-extern CRITICAL_SECTION fileCS;
-extern CRITICAL_SECTION faceDetectionCS;
-extern map <string, Ptr<FaceRecognizer>> models;
 void InitFaceDetectionLib();
 void DeinitFaceDetectionLib();
 #endif //COMMON_H

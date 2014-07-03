@@ -19,10 +19,12 @@
 #define NETWORK_TRACE(format, ...)
 #endif
 
+#include <semaphore.h>
+
 #define UNREFERENCED_PARAMETER(P)       (P=P)
-#define INVALID_SOCKET                  -1
-#define SOCKET          int
-#define SOCKET_ERROR                  -1
+#define INVALID_SOCKET                  (-1)
+#define SOCKET                          int
+#define SOCKET_ERROR                    (-1)
 
 /*******************************************************************************
 * NetResult - Return code for TSNetwork functions
@@ -66,15 +68,15 @@ protected:
     // Local socket
     SOCKET                  localSock;
     // Socket Listener's thread.
-    pthread_t                  sockListenerThread;
+    pthread_t               sockListenerThread;
     // Accept incoming connection thread.
-    pthread_t                  AcceptConnectionThread;
+    pthread_t               AcceptConnectionThread;
     // HANDLE for NetworkProtocolCallback
-    sem_t *CallbackEventSema;
+    sem_t                   *CallbackEventSema;
     // local server IP address. just for app use
     char*                   ipv4_addr;
     // Callback function for TSNetwork
-    NetworkProtocolCallback       protocolCallback;
+    NetworkProtocolCallback protocolCallback;
     // Indicates that local socket is closed, and NetworkServerThread needs to be finished.
     bool                    localSockClosed;
 private:
@@ -100,9 +102,6 @@ public:
     char* GetLocalIpAddr();
     // TMP for debug and tests
     void StartSocketListener(SOCKET sock);
-    //GetCallbackEvent - returns CallbackEvent
-    HANDLE GetCallbackEvent();
-
 private:
     // Accepts any incoming connection
     static void AcceptConnection(void* Param);

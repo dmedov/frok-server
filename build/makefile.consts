@@ -5,9 +5,9 @@
 export MAKE ?= make
 export AR ?= AR
 export CC ?= gcc
-export CPPC ?= g++
+export CPPC ?= g++ -std=c++11
 export RANLIB ?= ranlib
-export OPENCV ?= /opt/opencv
+export OPENCV ?= /opt/opencv-2.4.9
 #ifdef KWDB
 #export KW_DB ?= $(KWDB)
 #else
