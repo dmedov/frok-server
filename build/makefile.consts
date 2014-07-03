@@ -1,0 +1,61 @@
+# Phony targets
+.PHONY: all build clean rebuild prebuild run debug make_dependencies start_build #klocwork
+
+# Toolchain and its settings
+export MAKE ?= make
+export AR ?= AR
+export CC ?= gcc
+export CPPC ?= g++
+export RANLIB ?= ranlib
+
+#ifdef KWDB
+#export KW_DB ?= $(KWDB)
+#else
+#export KW_DB := ../klocwork
+#endif
+
+export CFG ?= release
+export TRM ?= /usr/bin/xterm -e
+export DBG ?= /usr/bin/gdb
+export VERB ?= 0
+export EXCLUDE ?= @echo
+
+ifdef CCFLAG
+CFLAGS := $(CCFLAG)
+else
+CFLAGS := -MMD -Wall -pipe
+endif
+
+ifdef LDFLAG
+LDFLAGS := $(LDFLAG)
+else
+LDFLAGS := 
+endif
+
+# Configuration settings
+ifeq ($(CFG),release)
+LDFLAGS += -Wl,-O1
+CONFIG := build_release
+else
+CFLAGS += -g -DDBG -DDEBUG -DMBT_USE_TEST_INTERFACE -fPIC
+CONFIG := build_debug
+endif
+
+# Verbose settings
+ifeq ($(VERB),0)
+export SILENT ?= @
+else
+export SILENT ?= 
+endif
+
+# Shadow build settings
+CONFIGDIR := $(CONFIG)
+BINOUTDIR := $(CONFIGDIR)/bin
+OBJOUTDIR := $(CONFIGDIR)/obj
+
+RED:=\\033[31m
+GREEN:=\\033[32m
+YELLOW:=\\033[33m
+CYAN:=\\033[36m
+BRIGHT:=\\033[1m
+RESET:=\\033[0m
