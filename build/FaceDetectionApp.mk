@@ -3,7 +3,7 @@
 ###########################################################
 
 include makefile.consts
-
+include opencv.include
 SRCDIR = FaceDetectionApp
 
 # Target settings
@@ -18,8 +18,11 @@ STATLIBS := $(BINOUTDIR)/FaceDetectionLib.a
 DEPENDENCIES := $(BINOUTDIR)/libFaceDetectionLib.a
 
 SRCDIRS :=  ../$(SRCDIR)/			
-HDRDIRS :=  ../$(SRCDIR)/	\
-	../FaceDetectionLib/	
+HDRDIRS :=  ../$(SRCDIR)/			\
+	../FaceDetectionLib/			\
+	$(OPENCV_INCLUDES)
+
+
 	
 			
 make_dependencies:

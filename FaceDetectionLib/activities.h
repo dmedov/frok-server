@@ -1,3 +1,5 @@
+#ifndef ACTIVITIES_H
+#define ACTIVITIES_H
 /**
 * \file activities.h
 * \brief This file defines actions which our application can do via NetWork.
@@ -9,19 +11,17 @@
 *  \{
 */
 
-#pragma once
-
 /**
 * \brief Max timeout of waiting untill face selects.
 */
 
-#define CUT_TIMEOUT			(600000)
+#define CUT_TIMEOUT            (600000)
 
 /**
 * \brief Max amount of cut threads.
 */
 
-#define MAX_THREADS_AND_CASCADES_NUM		(5)
+#define MAX_THREADS_AND_CASCADES_NUM        (5)
 
 extern FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
 
@@ -29,15 +29,15 @@ extern FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
 * \brief Folder of id's.
 */
 
-//#define ID_PATH				"Z:\\HerFace\\Faces\\"
-#define ID_PATH				"Z:\\frok\\"
+//#define ID_PATH                "Z:\\HerFace\\Faces\\"
+#define ID_PATH                "Z:\\frok\\"
 
 /**
 * \brief Folder with downloading photos.
 */
 
-//#define TARGET_PATH			"Z:\\HerFace\\Faces\\"
-#define TARGET_PATH			"Z:\\frok\\1\\"
+//#define TARGET_PATH            "Z:\\HerFace\\Faces\\"
+#define TARGET_PATH            "Z:\\frok\\1\\"
 
 #pragma pack(push, 1)
 
@@ -49,23 +49,23 @@ extern FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
 
 struct ContextForRecognize{
 
-	/**
-	* \brief Remote side's socket
-	*/
+    /**
+    * \brief Remote side's socket
+    */
 
-	SOCKET sock;
+    SOCKET sock;
 
-	/**
-	* \brief The name of the picture where faces will be recognized.
-	*/
+    /**
+    * \brief The name of the picture where faces will be recognized.
+    */
 
-	string targetImg;
+    string targetImg;
 
-	/**
-	* \brief List of friends' ids.
-	*/
+    /**
+    * \brief List of friends' ids.
+    */
 
-	json::Array arrFrinedsList;
+    json::Array arrFrinedsList;
 };
 
 /**
@@ -75,17 +75,17 @@ struct ContextForRecognize{
 
 struct ContextForTrain{
 
-	/**
-	* \brief Remote side's socket
-	*/
+    /**
+    * \brief Remote side's socket
+    */
 
-	SOCKET sock;
+    SOCKET sock;
 
-	/**
-	* \brief List of id's for which train will be called
-	*/
+    /**
+    * \brief List of id's for which train will be called
+    */
 
-	json::Array arrIds;
+    json::Array arrIds;
 };
 
 /**
@@ -95,23 +95,23 @@ struct ContextForTrain{
 
 struct ContextForGetFaces{
 
-	/**
-	* \brief Remote side's socket
-	*/
+    /**
+    * \brief Remote side's socket
+    */
 
-	SOCKET sock;
+    SOCKET sock;
 
-	/**
-	* \brief photo owner's id
-	*/
+    /**
+    * \brief photo owner's id
+    */
 
-	string userId;
+    string userId;
 
-	/**
-	* \brief Name of the photo from which faces would be found.
-	*/
+    /**
+    * \brief Name of the photo from which faces would be found.
+    */
 
-	string photoName;
+    string photoName;
 };
 
 /**
@@ -121,29 +121,29 @@ struct ContextForGetFaces{
 
 struct ContextForSaveFaces{
 
-	/**
-	* \brief Remote side's socket
-	*/
+    /**
+    * \brief Remote side's socket
+    */
 
-	SOCKET sock;
+    SOCKET sock;
 
-	/**
-	* \brief photo owner's id
-	*/
+    /**
+    * \brief photo owner's id
+    */
 
-	string userId;
+    string userId;
 
-	/**
-	* \brief Name of the photo from which face with coorinates \a faceCoords will be cut.
-	*/
+    /**
+    * \brief Name of the photo from which face with coorinates \a faceCoords will be cut.
+    */
 
-	string photoName;
+    string photoName;
 
-	/**
-	* \brief Coordinates of face to be cut.
-	*/
+    /**
+    * \brief Coordinates of face to be cut.
+    */
 
-	int faceNumber;
+    int faceNumber;
 };
 
 #pragma pack(pop)
@@ -155,7 +155,7 @@ struct ContextForSaveFaces{
 *
 * \return Returns 1 for succes and -1 for failure.
 *
-* \param[in]	*pContext		See \a ContextForRecognize.
+* \param[in]    *pContext        See \a ContextForRecognize.
 *
 */
 
@@ -168,7 +168,7 @@ DWORD recognizeFromModel(void *pContext);
 *
 * \return Returns 1 for succes and -1 for failure.
 *
-* \param[in]	*pContext		See \a ContextForTrain.
+* \param[in]    *pContext        See \a ContextForTrain.
 *
 */
 
@@ -181,7 +181,7 @@ DWORD generateAndTrainBase(void *pContext);
 *
 * \return Returns 1 for succes and -1 for failure.
 *
-* \param[in]	*pContext		See \a ContextForGetFaces.
+* \param[in]    *pContext        See \a ContextForGetFaces.
 *
 */
 
@@ -194,7 +194,7 @@ DWORD getFacesFromPhoto(void *pContext);
 *
 * \return Returns 1 for succes and -1 if failure.
 *
-* \param[in]	*pContext		See \a ContextForSaveFaces.
+* \param[in]    *pContext        See \a ContextForSaveFaces.
 *
 */
 
@@ -202,3 +202,4 @@ DWORD saveFaceFromPhoto(void *pContext);
 
 
 /** \} */
+#endif // ACTIVITIES_H

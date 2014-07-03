@@ -1,0 +1,34 @@
+###########################################################
+# Includes for OPENCV
+###########################################################
+include makefile.consts
+
+OPENCV_INCLUDES := 				\
+	$(OPENCV)/include/opencv/		\
+	$(OPENCV)/include/opencv2/		\
+	$(OPENCV)/modules/core/include/		\
+	$(OPENCV)/modules/imgproc/include/	\
+	$(OPENCV)/modules/imgproc/include/	\
+	$(OPENCV)/modules/video/include		\
+	$(OPENCV)/modules/features2d/include	\
+	$(OPENCV)/modules/flann/include		\
+	$(OPENCV)/modules/androidcamera/include	\
+	$(OPENCV)/modules/calib3d/include	\
+	$(OPENCV)/modules/contrib/include	\
+	$(OPENCV)/modules/dynamicuda/include	\
+	$(OPENCV)/modules/gpu/include		\
+	$(OPENCV)/modules/highgui/include	\
+	$(OPENCV)/modules/java/include		\
+	$(OPENCV)/modules/legacy/include	\
+	$(OPENCV)/modules/ml/include		\
+	$(OPENCV)/modules/nonfree/include	\
+	$(OPENCV)/modules/objdetect/include	\
+	$(OPENCV)/modules/ocl/include		\
+	$(OPENCV)/modules/photo/include		\
+	$(OPENCV)/modules/python/include	\
+	$(OPENCV)/modules/stitching/include	\
+	$(OPENCV)/modules/superres/include	\
+	$(OPENCV)/modules/ts/include		\
+	$(OPENCV)/modules/videostab/include	\
+	$(OPENCV)/modules/viz/include		\
+	$(OPENCV)/modules/world/include		\

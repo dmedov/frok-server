@@ -1,7 +1,7 @@
 # Initialize make tools
 include makefile.consts
-
-SRCDIR = lib-common
+include opencv.include
+SRCDIR = FaceDetectionLib
 
 # Target settings
 LANG := c++
@@ -12,7 +12,8 @@ CFLAGS += -Wno-unknown-pragmas
 
 SRCDIRS :=  ../$(SRCDIR)/
 
-HDRDIRS :=  ../$(SRCDIR)/
+HDRDIRS :=  ../$(SRCDIR)/		\
+	$(OPENCV_INCLUDES)
 
 # Automated target make procedures: designed to fit any product
 include makefile.actions

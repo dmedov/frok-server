@@ -1,3 +1,5 @@
+#ifndef VIOLAJONESDETECTION_H
+#define VIOLAJONESDETECTION_H
 /**
 * \file ViolaJonesDetection.h
 * \brief This file defines class ViolaJonesDetection for face detection, downloading database with faces, 
@@ -433,3 +435,4 @@ struct cutFaceThreadParams
 };
 
 /** \} */
+#endif //VIOLAJONESDETECTION_H

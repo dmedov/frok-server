@@ -1,3 +1,6 @@
+#ifndef EIGENDETECTOR_H
+#define EIGENDETECTOR_H
+
 /**
 * \file EigenDetector_v2.h
 * \brief This file defines class for face detection recognision
@@ -5,8 +8,6 @@
 * In this class we use EigenDetector algorythm. For more information google "Eigen detection algorythm".
 *
 */
-
-#pragma once
 
 /** \addtogroup EigenDetector_v2
 *  \brief Face recognision subsystem:
@@ -110,7 +111,7 @@ private:
 	*
 	* vector<Mat> images;
 	* vector<int> labels;
-	* Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
+    * Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
 	* try
 	* {
 	*	loadBaseFace(facesPath.c_str(), &images, &labels, 0);
@@ -130,8 +131,8 @@ private:
 	*
 	* \return probability of similarity of two pictures;
 	*
-	* \param[in] &image_mat				first picture matrix;
-	* \param[in] &reconstructedFace		second picture matrix.
+    * \param[in] &image_mat                 first picture matrix;
+    * \param[in] &reconstructedFace     second picture matrix.
 	*
 	* <b>Usage example:</b>
 	*
@@ -191,3 +192,4 @@ private:
 	double getSimilarity3(const Mat &projected_mat, const Mat &face_mat);
 };
 /** \} */
+#endif //EIGENDETECTOR_H

@@ -1,25 +1,25 @@
-#pragma once
-
+#ifndef COMMON_H
+#define COMMON_H
 typedef struct
 {
-	vector<char*> ids;
-	vector<CvPoint> p1s, p2s;
-	vector<double> probs;
+    vector<char*> ids;
+    vector<CvPoint> p1s, p2s;
+    vector<double> probs;
 } DataJson;
 
 typedef struct StructImageCoordinats
 {
-	CvPoint p1;
-	CvPoint p2;
-	public:
-	StructImageCoordinats()
-	{
-		p1 = cvPoint(-1, -1);
-		p2 = cvPoint(0, 0);
-	}
+    CvPoint p1;
+    CvPoint p2;
+    public:
+    StructImageCoordinats()
+    {
+        p1 = cvPoint(-1, -1);
+        p2 = cvPoint(0, 0);
+    }
 } ImageCoordinats;
 
-#define LOG_MESSAGE_MAX_LENGTH	1024
+#define LOG_MESSAGE_MAX_LENGTH    1024
 
 #define _FAIL(__x__) "[FAIL] " __x__ "\n"
 #define _WARN(__x__) "[WARN] " __x__ "\n"
@@ -30,9 +30,10 @@ typedef struct StructImageCoordinats
 void FilePrintMessage(char* file, char* expr...);
 void ChooseTextColor(char* msg);
 void RestoreTextColor();
-extern HANDLE			hStdHandle;
+extern HANDLE            hStdHandle;
 extern CRITICAL_SECTION fileCS;
 extern CRITICAL_SECTION faceDetectionCS;
 extern map <string, Ptr<FaceRecognizer>> models;
 void InitFaceDetectionLib();
 void DeinitFaceDetectionLib();
+#endif //COMMON_H

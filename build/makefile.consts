@@ -7,7 +7,7 @@ export AR ?= AR
 export CC ?= gcc
 export CPPC ?= g++
 export RANLIB ?= ranlib
-
+export OPENCV ?= /opt/opencv
 #ifdef KWDB
 #export KW_DB ?= $(KWDB)
 #else
