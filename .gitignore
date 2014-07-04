@@ -4,3 +4,4 @@ build_release
 bin
 obj
 
+/README.md~
