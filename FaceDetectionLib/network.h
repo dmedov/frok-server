@@ -20,6 +20,12 @@
 #endif
 
 #include <semaphore.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/tcp.h>
+#include <unistd.h>
 
 #define UNREFERENCED_PARAMETER(P)       (P=P)
 #define INVALID_SOCKET                  (-1)

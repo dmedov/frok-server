@@ -13,10 +13,16 @@
 
 // Include the internal headers
 #include "network.h"
+
 pthread_mutex_t gnd_network_cs;
 
 GNDNetwork::GNDNetwork()
 {
+    pthread_mutexattr_t mAttr;
+    pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&gnd_network_cs, &mAttr);
+    pthread_mutexattr_destroy(&mAttr);
+
     remotePortNumber = 0;
     localPortNumber = 0;
     localSock = INVALID_SOCKET;
@@ -52,11 +58,6 @@ GNDNetwork::GNDNetwork()
     }
 
     localSockClosed = false;
-
-    pthread_mutexattr_t mAttr;
-    pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&gnd_network_cs, &mAttr);
-    pthread_mutexattr_destroy(&mAttr);
 }
 
 GNDNetwork::~GNDNetwork()
@@ -291,7 +292,7 @@ void GNDNetwork::SocketListener(void* Param)
     char                    recvbuf[MAX_SOCKET_BUFF_SIZE];
     int                     recvlen = 0;
     SOCKET                  listenedSocket = sData->listenedSocket;
-    BYTE                   *callbackData = NULL;
+    unsigned char*         *callbackData = NULL;
 
     while(This->localSockClosed == false)
     {
@@ -350,11 +351,6 @@ void GNDNetwork::SocketListener(void* Param)
 char* GNDNetwork::GetLocalIpAddr()
 {
     return ipv4_addr;
-}
-
-HANDLE GNDNetwork::GetCallbackEvent()
-{
-    return CallbackEventSema;
 }
 
 NetResult GNDNetwork::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)

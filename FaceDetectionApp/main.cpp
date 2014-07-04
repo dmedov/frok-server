@@ -1,4 +1,4 @@
-//#include "stdafx.h"
+#include "stdafx.h"
 #include "LibInclude.h"
 // Add SHOW_IMAGE define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
 
@@ -7,7 +7,7 @@
 #define    NET_CMD_GET_FACES    "get_faces"
 #define NET_CMD_SAVE_FACE    "save_face"
 
-Network net;
+GNDNetwork net;
 
 void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 {
@@ -72,7 +72,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
                 ContextForRecognize *psContext = new ContextForRecognize;
                 memset(psContext, 0, sizeof(ContextForRecognize));
                 psContext->arrFrinedsList = objInputJson["friends"].ToArray();
-                psContext->targetImg = objInputJson["photo_id"];
+                psContext->targetImg = objInputJson["photo_id"].ToString();
                 psContext->sock = sock;
 
                 FilePrintMessage(NULL, _SUCC("Recognizing started..."));

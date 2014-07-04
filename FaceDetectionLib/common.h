@@ -33,11 +33,14 @@ typedef struct StructImageCoordinats
 extern pthread_mutex_t fileCS;
 extern pthread_mutex_t faceDetectionCS;
 extern map < string, Ptr<FaceRecognizer> > models;
+extern GNDNetwork net;
 
-
+// don't forget '/' in the end of dir name. Example: good = "/home/workspace/" bad: "/home/workspace"
+int getFilesFromDir(const char *dir, vector<string> &files);
+// Use colored prints - its cool
 void FilePrintMessage(char* file, char* expr...);
-void ChooseTextColor(char* msg);
-void RestoreTextColor();
+// Always call on your application start
 void InitFaceDetectionLib();
+// Call this on your application finish
 void DeinitFaceDetectionLib();
 #endif //COMMON_H

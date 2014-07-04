@@ -18,8 +18,13 @@
 #include <memory.h>
 #include "string.h"
 
+#include <vector>
+#include <string>
 #include <stdio.h>
 #include <iostream> 
+#include <dirent.h>
+#include <sys/stat.h>
+#include <cstring>
 
 using namespace std;
 using namespace cv;

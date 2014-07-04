@@ -230,8 +230,8 @@ private:
     *
     * \code
     *
-    *   pointKeyFañe.p1 = cvPoint(x + pointFace.x, y + pointFace.y);
-    *    pointKeyFañe.p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
+    *   pointKeyFace.p1 = cvPoint(x + pointFace.x, y + pointFace.y);
+    *    pointKeyFace.p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
     *    pointFace.p1 = pointFace;
     *    pointFace.p2 = cvPoint(pointFace.x + width / k, pointFace.y + height / k);
     *
@@ -299,7 +299,7 @@ private:
     *
     *   defineRotate();
     *    face_img = imposeMask(points.p1);
-    *    face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
+    *    face_img = cvCloneImage(&(IplImage)eigenDetector->MaskFace(face_img));
     *    IplImage *dist = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
     *
     * \endcode
@@ -324,7 +324,7 @@ private:
     *
     *    defineRotate();
     *    face_img = imposeMask();
-    *    face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
+    *    face_img = cvCloneImage(&(IplImage)eigenDetector->MaskFace(face_img));
     *    IplImage *dist = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
     *
     * \endcode

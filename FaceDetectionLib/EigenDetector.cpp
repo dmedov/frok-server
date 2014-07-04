@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "LibInclude.h"
 #include "common.h"
 #include "EigenDetector.h"
 #include "DescriptorDetection.h"
@@ -7,32 +8,31 @@
 #include <algorithm>
 #include "opencv2/contrib/contrib.hpp"
 
-void EigenDetector::loadBaseFace(const char* facesPath, vector<Mat> * images, vector<int>* labels, int id){
-
-    _finddata_t result;
-    string name = ((string)facesPath).append("\\*.jpg");
-    intptr_t done;
+void EigenDetector::loadBaseFace(const char* facesPath, vector<Mat> * images, vector<int>* labels, int id)
+{
     IplImage *base_face = 0;
+    vector<string> files = vector<string>();
+    getFilesFromDir(facesPath, files);
 
-    memset(&result, 0, sizeof(result));
-    done = _findfirst(name.c_str(), &result);
-
-    if (done != -1)
+    for (unsigned int i = 0; i < files.size(); i++)
     {
-        do
+        IplImage *dist = NULL;
+        try
         {
-            name = ((string)facesPath).append("\\").append(result.name);
-            IplImage *dist = cvLoadImage(name.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
-            IplImage *resize = cvCreateImage(cvSize(158, 190), dist->depth, dist->nChannels);
-            cvResize(dist, resize, 1);
+            dist = cvLoadImage(files[i].c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+        }
+        catch (...)
+        {
+            FilePrintMessage(NULL, _FAIL("failed to load image %s"), files[i].c_str());
+            continue;
+        }
+        IplImage *resize = cvCreateImage(cvSize(158, 190), dist->depth, dist->nChannels);
+        cvResize(dist, resize, 1);
 
-            images->push_back(Mat(resize, true));
-            labels->push_back(id);
-
-            FilePrintMessage(NULL, _N("%s"), name.c_str());
-        } while (_findnext(done, &result) == 0);
+        images->push_back(Mat(resize, true));
+        labels->push_back(id);
     }
-    _findclose(done);
+
     cvReleaseImage(&base_face);
 }
 
@@ -95,10 +95,10 @@ Mat EigenDetector::MaskFace(IplImage *img) {
     return _img;
 }
 
-double EigenDetector::getSimilarity(const Mat &image_mat, const Mat &reconstructedFace) {
-
-    IplImage *blr_img = cvCloneImage(&(IplImage)image_mat);
-    IplImage *blr_rec = cvCloneImage(&(IplImage)reconstructedFace);
+double EigenDetector::getSimilarity(const Mat *image_mat, const Mat *reconstructedFace)
+{
+    IplImage *blr_img = cvCloneImage((IplImage*)image_mat);
+    IplImage *blr_rec = cvCloneImage((IplImage*)reconstructedFace);
     cvErode(blr_img, blr_img, 0, 0);
     cvErode(blr_rec, blr_rec, 0, 0);
 
@@ -127,14 +127,14 @@ double EigenDetector::getSimilarity(const Mat &image_mat, const Mat &reconstruct
 }
 
 // Compare two images by getting the L2 error (square-root of sum of squared error).
-double EigenDetector::getSimilarity3(const Mat &projected_mat, const Mat &face_mat)
+double EigenDetector::getSimilarity3(const Mat *projected_mat, const Mat *face_mat)
 {
-    if ((projected_mat.rows > 0) && (projected_mat.rows == face_mat.rows ) &&
-        (projected_mat.cols > 0) && (projected_mat.cols == face_mat.cols)) {
+    if ((projected_mat->rows > 0) && (projected_mat->rows == projected_mat->rows ) &&
+        (projected_mat->cols > 0) && (projected_mat->cols == projected_mat->cols)) {
         // Calculate the L2 relative error between the 2 images.
-        double errorL2 = norm(projected_mat, face_mat, CV_L2);
+        double errorL2 = norm(*projected_mat, *face_mat, CV_L2);
         // Convert to a reasonable scale, since L2 error is summed across all pixels of the image.
-        return errorL2 / (double)(projected_mat.rows * projected_mat.cols);;
+        return errorL2 / (double)(projected_mat->rows * projected_mat->cols);;
     }
     else {
         //cout << "WARNING: Images have a different size in 'getSimilarity()'." << endl;
@@ -143,16 +143,16 @@ double EigenDetector::getSimilarity3(const Mat &projected_mat, const Mat &face_m
 }
 
 
-double EigenDetector::getSimilarity2(const Mat &projected_mat, const Mat &face_mat) {
+double EigenDetector::getSimilarity2(const Mat *projected_mat, const Mat *face_mat) {
 
-    CvSize imagesSize = cvSize(projected_mat.cols, projected_mat.rows);
+    CvSize imagesSize = cvSize(projected_mat->cols, projected_mat->rows);
     IplImage *projectedStorage = cvCreateImage(imagesSize, IPL_DEPTH_32F, 1);
     IplImage *faceSorage = cvCreateImage(imagesSize, IPL_DEPTH_32F, 1);
 
-    cvCornerMinEigenVal(&(IplImage)projected_mat, projectedStorage, 20, 7);
-    cvCornerMinEigenVal(&(IplImage)face_mat, faceSorage, 20, 7);
+    cvCornerMinEigenVal((IplImage*)projected_mat, projectedStorage, 20, 7);
+    cvCornerMinEigenVal((IplImage*)face_mat, faceSorage, 20, 7);
 
-    Mat dif_mat = abs(Mat(projectedStorage) - Mat(faceSorage));
+    Mat *dif_mat = new Mat(abs(Mat(projectedStorage) - Mat(faceSorage)));
     //imshow("ri", projected_mat);
     //imshow("fi", face_mat);
     //imshow("r", Mat(projectedStorage));
@@ -161,17 +161,17 @@ double EigenDetector::getSimilarity2(const Mat &projected_mat, const Mat &face_m
 
     //cvWaitKey(0);
 
-    IplImage *dif_img = &(IplImage)dif_mat;
+    //IplImage *dif_img = &(IplImage)dif_mat;
 
     double err = 0;
-    for (int y = 0; y < dif_mat.rows; ++y){
-        for (int x = 0; x < dif_mat.cols; ++x){
-            err += cvGet2D(dif_img, y, x).val[0];
+    for (int y = 0; y < dif_mat->rows; ++y){
+        for (int x = 0; x < dif_mat->cols; ++x){
+            err += cvGet2D((IplImage*)dif_mat, y, x).val[0];
         }
     }
 
 
-    err /= ((double)dif_mat.rows * (double)dif_mat.cols);
+    err /= ((double)dif_mat->rows * (double)dif_mat->cols);
 
     err *= 2.5;
     double prob = (1 - err);
@@ -181,6 +181,7 @@ double EigenDetector::getSimilarity2(const Mat &projected_mat, const Mat &face_m
     //prob *= 3;
     cvReleaseImage(&projectedStorage);
     cvReleaseImage(&faceSorage);
+    delete dif_mat;
     return prob;
 }
 
@@ -252,7 +253,7 @@ double testMatch(IplImage* image, IplImage* rec){
     return 0;
 }
 
-__int64 calcImageHash(IplImage* src, bool show_results)
+__int64_t calcImageHash(IplImage* src, bool show_results)
 {
     if (!src){
         return 0;
@@ -273,7 +274,7 @@ __int64 calcImageHash(IplImage* src, bool show_results)
     cvThreshold(res, bin, average.val[0], 255, CV_THRESH_BINARY);
 
     // построим хэш
-    __int64 hash = 0;
+    __int64_t hash = 0;
 
     int i = 0;
     // пробегаемся по всем пикселям изображения
@@ -283,7 +284,7 @@ __int64 calcImageHash(IplImage* src, bool show_results)
             // 1 канал
             if (ptr[x]){
                 // hash |= 1<<i;  // warning C4334: '<<' : result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)
-                hash |= 1i64 << i;
+                hash |= (__int64_t)1 << i;
             }
             i++;
         }
@@ -296,9 +297,9 @@ __int64 calcImageHash(IplImage* src, bool show_results)
     return hash;
 }
 
-__int64 calcHammingDistance(__int64 x, __int64 y)
+__int64_t calcHammingDistance(__int64_t x, __int64_t y)
 {
-    __int64 dist = 0, val = x ^ y;
+    __int64_t dist = 0, val = x ^ y;
 
     // Count the number of set bits
     while (val)
@@ -328,29 +329,29 @@ void EigenDetector::recognize(const map <string, Ptr<FaceRecognizer>> &models, D
 
         double prob = 0;
 
-        Mat image_mat = Mat(image, true);
+        Mat *image_mat = new Mat(image, true);
         // Get some required data from the FaceRecognizer model.
         Mat eigenvectors = model->get<Mat>("eigenvectors");
         Mat averageFaceRow = model->get<Mat>("mean");
         // Project the input image onto the eigenspace.
-        Mat projection = subspaceProject(eigenvectors, averageFaceRow, image_mat.reshape(1, 1));
+        Mat projection = subspaceProject(eigenvectors, averageFaceRow, image_mat->reshape(1, 1));
         // Generate the reconstructed face back from the eigenspace.
         Mat reconstructionRow = subspaceReconstruct(eigenvectors, averageFaceRow, projection);
         // Make it a rectangular shaped image instead of a single row.
         Mat reconstructionMat = reconstructionRow.reshape(1, image->height);
         // Convert the floating-point pixels to regular 8-bit uchar.
-        Mat reconstructedFace = Mat(reconstructionMat.size(), CV_8U);
-        reconstructionMat.convertTo(reconstructedFace, CV_8U, 1, 0);//-> to introduce to function
+        Mat *reconstructedFace = new Mat(reconstructionMat.size(), CV_8U);
+        reconstructionMat.convertTo(*reconstructedFace, CV_8U, 1, 0);//-> to introduce to function
 
 
 
-        __int64 hashO = calcImageHash(&(IplImage)reconstructedFace, true);
-        __int64 hashI = calcImageHash(&(IplImage)image_mat, false);
-        __int64 dist = calcHammingDistance(hashO, hashI);//-> to introduce to function
+        __int64_t hashO = calcImageHash((IplImage*)reconstructedFace, true);
+        __int64_t hashI = calcImageHash((IplImage*)image_mat, false);
+        __int64_t dist = calcHammingDistance(hashO, hashI);//-> to introduce to function
 
 
-        if (dist <= 18){
-
+        if (dist <= 18)
+        {
             double prob1 = getSimilarity(reconstructedFace, image_mat);
             double prob2 = getSimilarity2(reconstructedFace, image_mat);
             double prob3 = 1 - getSimilarity3(reconstructedFace, image_mat);
@@ -363,14 +364,17 @@ void EigenDetector::recognize(const map <string, Ptr<FaceRecognizer>> &models, D
             prob = abs(prob_res1 - abs(prob_res2 - prob_res3))/1.5;
 
 
-        FilePrintMessage(NULL, _RES("id = %s probability \t= \t%lf \t(%lf | %lf | %lf)"), (*it).first.c_str(), prob, prob1,prob2, prob3);
-        //cout << (*it).first << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
+            FilePrintMessage(NULL, _RES("id = %s probability \t= \t%lf \t(%lf | %lf | %lf)"), (*it).first.c_str(), prob, prob1,prob2, prob3);
+            //cout << (*it).first << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
 
-        if (prob > oldProb){
-            oldProb = prob;
-            result_name = (*it).first;
+            if (prob > oldProb)
+            {
+                oldProb = prob;
+                result_name = (*it).first;
+            }
         }
-        }
+        delete reconstructedFace;
+        delete image_mat;
     }
 
     char *pcResultName = new char[result_name.length()];

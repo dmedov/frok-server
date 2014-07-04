@@ -1,16 +1,14 @@
 #include "stdafx.h"
 #include "LibInclude.h"
-/*
 #include "ViolaJonesDetection.h"
 #include "common.h"
 #include "DescriptorDetection.h"
-#include "EigenDetector.h"*/
+#include "EigenDetector.h"
 #include <fstream>
 #include <vector>
 #include <string>
-#include <Math.h>
+#include <math.h>
 #include <stdlib.h>
-#include "io.h"
 #include "json.h"
 #include "network.h"
 
@@ -23,46 +21,48 @@ ViolaJonesDetection::ViolaJonesDetection(FaceCascades *cascade){
 ViolaJonesDetection::~ViolaJonesDetection(){
 }
 
-void ViolaJonesDetection::writeFacePoints(const ImageCoordinats &pointKeyFaсe, const ImageCoordinats &pointFace, int type){
-    CvPoint p1 = pointKeyFaсe.p1;
-    CvPoint p2 = pointKeyFaсe.p2;
+void ViolaJonesDetection::writeFacePoints(const ImageCoordinats &pointKeyFace, const ImageCoordinats &pointFace, int type)
+{
+    CvPoint p1 = pointKeyFace.p1;
+    CvPoint p2 = pointKeyFace.p2;
     CvPoint p = pointFace.p1;
     int w = pointFace.p2.x - pointFace.p1.x;
     int h = pointFace.p2.y - pointFace.p1.y;
 
     CvPoint center = cvPoint((p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
 
-    if (type == 0 && center.y <= h / 1.8 + p.y){
-        //tree_glasses, если центр глаза <= w/2? то он правый, в противном случае левый
-        if (center.x <= w / 2 + p.x){
+    if (type == 0 && center.y <= h / 1.8 + p.y)
+    {
+        if (center.x <= w / 2 + p.x)
+        {
             facePoints[0] = p1;    facePoints[4] = p2;
         }
-        else{
+        else
+        {
             facePoints[1] = p1;    facePoints[5] = p2;
         }
     }
-    else if (type == 1 && p1.y >= (facePoints[0].y)){
-        // нос
+    else if (type == 1 && p1.y >= (facePoints[0].y))
+    {
         facePoints[2] = p1;    facePoints[6] = p2;
     }
     else if (type == 2
-        && p1.y >= (facePoints[2].y)
-        && p1.y >= (facePoints[0].y)
-        && center.y > h / 1.35 + p.y){
-        // рот
+             && p1.y >= (facePoints[2].y)
+             && p1.y >= (facePoints[0].y)
+             && center.y > h / 1.35 + p.y)
+    {
         facePoints[3] = cvPoint(p1.x, p1.y);    facePoints[7] = cvPoint(p2.x, p2.y);
     }
     else if (type == 3
-        && center.x <= w / 2 + p.x
-        && center.y <= h / 1.8 + p.y
-        ){
+             && center.x <= w / 2 + p.x
+             && center.y <= h / 1.8 + p.y)
+    {
         facePoints[0] = p1;    facePoints[4] = p2;
     }
     else if (type == 4
-        && center.x >= w / 2 + p.x
-        && center.y <= h / 1.8 + p.y
-        ){
-        //второй глаз
+             && center.x >= w / 2 + p.x
+             && center.y <= h / 1.8 + p.y)
+    {
         facePoints[1] = p1;    facePoints[5] = p2;
     }
 }
@@ -185,20 +185,19 @@ IplImage* ViolaJonesDetection::imposeMask(CvPoint p){
     return img;
 }
 
-void ViolaJonesDetection::createJson(const DataJson &dataJson, SOCKET sock){
+void ViolaJonesDetection::createJson(const DataJson &dataJson, SOCKET sock)
+{
     //{ results:[{ "id": "1", "x1" : "503", "y1" : "182", "x2" : "812", "y2" : "491", "P" : "30.4" }] }
-
-    json::Object obj;
     string outJson;
     outJson.append("{ results: [");
 
-    UINT_PTR vector_size = dataJson.ids.size();
+    unsigned long vector_size = dataJson.ids.size();
 
-    for (UINT_PTR i = 0; i < vector_size; i++){
+    for (unsigned long i = 0; i < vector_size; i++){
         double probability = dataJson.probs.at(i);
         string id = dataJson.ids.at(i);
 
-        for (UINT_PTR j = 0; j < vector_size; j++){
+        for (unsigned long j = 0; j < vector_size; j++){
             if (dataJson.ids.at(j) == id && probability < dataJson.probs.at(j)){
                 id = "-1";
                 probability = 0;
@@ -355,15 +354,15 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
         int h = cvRound(r->height) / k;
 
         //CvPoint p1 = cvPoint(x + pointFace.x, y + pointFace.y), p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
-        ImageCoordinats pointKeyFaсe, facePointCoordinates;
+        ImageCoordinats pointKeyFace, facePointCoordinates;
 
-        pointKeyFaсe.p1 = cvPoint(x + pointFace.x, y + pointFace.y);
-        pointKeyFaсe.p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
+        pointKeyFace.p1 = cvPoint(x + pointFace.x, y + pointFace.y);
+        pointKeyFace.p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
         facePointCoordinates.p1 = pointFace;
         facePointCoordinates.p2 = cvPoint(pointFace.x + width / k, pointFace.y + height / k);
 
 
-        writeFacePoints(pointKeyFaсe, facePointCoordinates, type);
+        writeFacePoints(pointKeyFace, facePointCoordinates, type);
     }
 
     cvReleaseImage(&dst);
@@ -432,8 +431,6 @@ bool ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock
     return true;
 }
 
-
-//Детектирование лица (вызывается из main)
 bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock)
 {
     if (faceCascades == NULL){
@@ -449,7 +446,7 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 #endif //SHOW_IMAGE
 
     DescriptorDetection *descriptorDetection = new DescriptorDetection();
-    EigenDetector *eigenDetector_v2 = new EigenDetector();
+    EigenDetector *eigenDetector = new EigenDetector();
 
     gray_img = cvCreateImage(cvGetSize(image), 8, 1);
     cvCvtColor(image, gray_img, CV_BGR2GRAY);
@@ -483,10 +480,11 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
         if (drawEvidence(points, true)){
             defineRotate();
             face_img = imposeMask(points.p1);
-            face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
+            IplImage *temporaryImg = new IplImage(eigenDetector->MaskFace(face_img));
+            face_img = cvCloneImage(temporaryImg);
             IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
             cvResize(face_img, dest, 1);
-            eigenDetector_v2->recognize(models, &dataJson, dest);//Распознавание
+            eigenDetector->recognize(models, &dataJson, dest);//Распознавание
             dataJson.p1s.push_back(points.p1/*cvPoint(points.p1.x / inputImage->width, points.p1.y / inputImage->height)*/);
             dataJson.p2s.push_back(points.p2/*cvPoint(points.p2.x / inputImage->width, points.p2.y / inputImage->height)*/);
             cvReleaseImage(&dest);//-> to introduce to function
@@ -499,7 +497,7 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 #endif //SHOW_IMAGE
     // освобождаем ресурсы
     delete descriptorDetection;
-    delete eigenDetector_v2;
+    delete eigenDetector;
 
     cvClearMemStorage(strg);
     cvReleaseImage(&face_img);
@@ -512,7 +510,8 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 }
 
 //Sharing on 3 gistagrams
-void equalizeFace(IplImage *faceImg) {
+// [TBD] IF YOU UNCOMMENT THIS FUNCTION - DON'T FORGET TO CALL 'delete faceImg;' AT THE END OF IT'S USAGE!!!
+/*void equalizeFace(IplImage *faceImg) {
 
     Mat matFaceImg = Mat(faceImg);
     int w = matFaceImg.cols;
@@ -534,11 +533,12 @@ void equalizeFace(IplImage *faceImg) {
     hconcat(leftSide, midSide, leftSide);
     hconcat(leftSide, rightSide, leftSide);
 
-    faceImg = &IplImage(leftSide);
-}
+
+    faceImg = new IplImage(leftSide);       // [TBD] IF YOU UNCOMMENT THIS FUNCTION - DON'T FORGET TO CALL 'delete faceImg;' AT THE END OF IT'S USAGE!!!
+}*/ // [TBD] IF YOU UNCOMMENT THIS FUNCTION - DON'T FORGET TO CALL 'delete faceImg;' AT THE END OF IT'S USAGE!!!
 
 bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h){
-    EigenDetector *eigenDetector_v2 = new EigenDetector();
+    EigenDetector *eigenDetector = new EigenDetector();
     ImageCoordinats points;
 
     points.p1 = cvPoint(x, y);
@@ -565,7 +565,8 @@ bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath
     }
 
     face_img = imposeMask(points.p1);
-    face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(face_img));
+    IplImage *temporary = new IplImage(eigenDetector->MaskFace(face_img));
+    face_img = cvCloneImage(temporary);
 
     IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
     cvResize(face_img, dest, 1);
@@ -576,20 +577,23 @@ bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath
     catch (...)
     {
         FilePrintMessage(NULL, _FAIL("Failed to save image. Runtime error occured"));
+        delete temporary;
         return false;
     }
     FilePrintMessage(NULL, "+");
     cvReleaseImage(&dest);
 
+    delete temporary;
     return true;
 }
 
-void ViolaJonesDetection::cutFaceThread(void *params){
+void ViolaJonesDetection::cutFaceThread(void *params)
+{
     cutFaceThreadParams *psParams = (cutFaceThreadParams*)params;
 
     if (psParams->pThis->faceCascades == NULL){
         FilePrintMessage(NULL, _FAIL("Face cascade == NULL"));
-        return -1;
+        return;
     }
 
     psParams->pThis->image = cvCloneImage(psParams->inputImage);
@@ -619,7 +623,7 @@ void ViolaJonesDetection::cutFaceThread(void *params){
                 cvReleaseImage(&psParams->pThis->gray_img);
                 cvReleaseImage(&psParams->pThis->image);
                 delete psParams;
-                return -1;
+                return;
             }
         }
         else
@@ -635,7 +639,7 @@ void ViolaJonesDetection::cutFaceThread(void *params){
     cvReleaseImage(&psParams->pThis->image);
     delete psParams;
 
-    return 0;
+    return;
 }
 
 bool ViolaJonesDetection::cutTheFace(IplImage *inputImage, const char* destPath, int faceNumber){

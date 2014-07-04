@@ -10,10 +10,7 @@
 #include <functional>
 #include <cctype>
 #include <stack>
-/*
-#ifndef WIN32
 #define _stricmp strcasecmp
-#endif*/
 
 #ifdef _MSC_VER
 #define snprintf sprintf_s

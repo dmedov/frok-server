@@ -38,9 +38,9 @@ public:
     *
     * \code
     *
-    * if (!eigenDetector_v2->train((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str()))
+    * if (!eigenDetector->train((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str()))
     * {
-    * delete eigenDetector_v2;
+    * delete eigenDetector;
     * continue;
     * }
     *
@@ -65,7 +65,7 @@ public:
     *
     *    IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
     *        cvResize(face_img, dest, 1);
-    *        eigenDetector_v2->recognize(models, &dataJson, dest);//Распознавание
+    *        eigenDetector->recognize(models, &dataJson, dest);//Распознавание
     *        dataJson.p1s.push_back(points.p1);
     *        dataJson.p2s.push_back(points.p2);
     *
@@ -88,7 +88,7 @@ public:
     * \code
     *
     * psParams->pThis->face_img = psParams->pThis->imposeMask(points.p1);
-    * psParams->pThis->face_img = cvCloneImage(&(IplImage)eigenDetector_v2->MaskFace(psParams->pThis->face_img));
+    * psParams->pThis->face_img = cvCloneImage(&(IplImage)eigenDetector->MaskFace(psParams->pThis->face_img));
     *
     * \endcode
     */
@@ -144,7 +144,7 @@ private:
     * \endcode
     */
 
-    double getSimilarity(const Mat &image_mat, const Mat &reconstructedFace);
+    double getSimilarity(const Mat *image_mat, const Mat *reconstructedFace);
 
     /**
     * \brief This function finds similarity of two pictures by comparing matrix.
@@ -167,7 +167,7 @@ private:
     * \endcode
     */
 
-    double getSimilarity2(const Mat &projected_mat, const Mat &face_mat);
+    double getSimilarity2(const Mat *projected_mat, const Mat *face_mat);
 
     /**
     * \brief This function finds similarity of two pictures by getting L2 error.
@@ -189,7 +189,7 @@ private:
     * \endcode
     */
 
-    double getSimilarity3(const Mat &projected_mat, const Mat &face_mat);
+    double getSimilarity3(const Mat *projected_mat, const Mat *face_mat);
 };
 /** \} */
 #endif //EIGENDETECTOR_H

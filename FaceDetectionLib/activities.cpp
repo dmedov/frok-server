@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "LibInclude.h"
-#include "io.h"
 #include <ctime>
 
 FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
@@ -102,7 +101,7 @@ unsigned long recognizeFromModel(void *pContext)
     ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection(cascades);
     map <string, Ptr<FaceRecognizer>> currentModels;
 
-    for (UINT_PTR i = 0; i < psContext->arrFrinedsList.size(); i++)
+    for (unsigned long i = 0; i < psContext->arrFrinedsList.size(); i++)
     {
         map <string, Ptr<FaceRecognizer>>::iterator it;
         it = models.find(psContext->arrFrinedsList[i].ToString());
@@ -190,7 +189,7 @@ unsigned long recognizeFromModel(void *pContext)
 
 unsigned long generateAndTrainBase(void *pContext)
 {
-    double startTime = clock();
+    /*double startTime = clock();
 
     ContextForTrain *psContext = (ContextForTrain*)pContext;
     _finddata_t result;
@@ -269,22 +268,22 @@ unsigned long generateAndTrainBase(void *pContext)
             }
         }
 
-        EigenDetector *eigenDetector_v2 = new EigenDetector();
+        EigenDetector *eigenDetector = new EigenDetector();
 
         //train FaceRecognizer
         try
         {
-            if (!eigenDetector_v2->train((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str()))
+            if (!eigenDetector->train((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str()))
             {
                 FilePrintMessage(NULL, _FAIL("Some error has occured during Learn call."));
-                delete eigenDetector_v2;
+                delete eigenDetector;
                 continue;
             }
         }
         catch (...)
         {
             FilePrintMessage(NULL, _FAIL("Some error has occured during Learn call."));
-            delete eigenDetector_v2;
+            delete eigenDetector;
             continue;
         }
 
@@ -316,7 +315,7 @@ unsigned long generateAndTrainBase(void *pContext)
         models[psContext->arrIds[i].ToString()] = model;
         pthread_mutex_unlock(&faceDetectionCS);
 
-        delete eigenDetector_v2;
+        delete eigenDetector;
         uSuccCounter++;
     }
 
@@ -329,5 +328,6 @@ unsigned long generateAndTrainBase(void *pContext)
     }
 
     net.SendData(psContext->sock, "{ \"success\":\"train succeed\" }\n\0", strlen("{ \"success\":\"train succeed\" }\n\0"));
+    */
     return 0;
 }
