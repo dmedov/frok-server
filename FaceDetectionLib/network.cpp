@@ -1,414 +1,344 @@
-/*******************************************************************************
-*
-*       Copyright 2014 Motorola Solutions, Inc. All rights reserved.
-*       Copyright Motorola, Inc. 2010
-*
-*       The copyright notice above does not evidence any
-*       actual or intended publication of such source code.
-*       The code contains Motorola Confidential Proprietary Information.
-*
-*
- ******************************************************************************/
 #include "stdafx.h"
-
-// Include the internal headers
 #include "network.h"
 
-pthread_mutex_t gnd_network_cs;
+pthread_mutex_t network_cs;
 
-GNDNetwork::GNDNetwork()
+Network::Network(NetworkProtocolCallback callback, unsigned short localPort)
 {
     pthread_mutexattr_t mAttr;
     pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&gnd_network_cs, &mAttr);
+    pthread_mutex_init(&network_cs, &mAttr);
     pthread_mutexattr_destroy(&mAttr);
 
-    remotePortNumber = 0;
-    localPortNumber = 0;
+    threadSockListener = new CommonThread;
+    threadAcceptConnection = new CommonThread;
+    this->localPortNumber = localPort;
     localSock = INVALID_SOCKET;
-    localSockClosed = true;
-
-    CallbackEventSema = new sem_t;
-    SocketListenerStartedEventSema = new sem_t;
-
-    if (0 != sem_init(CallbackEventSema, 0, 0))
-    {
-        NETWORK_TRACE("Failed to init semaphore with error = %d", errno);
-    }
-
-    if (0 != sem_init(SocketListenerStartedEventSema, 0, 0))
-    {
-        NETWORK_TRACE("Failed to init semaphore with error = %d", errno);
-    }
-
-
-    char                hostname[512] = {0};
-    struct hostent     *host = NULL;
-
-    gethostname(hostname, sizeof(hostname));
-
-    if (NULL == (host = gethostbyname(hostname)))
-    {
-        ipv4_addr = NULL;
-        NETWORK_TRACE("Invalid host name!");
-    }
-    else
-    {
-        ipv4_addr = inet_ntoa(*(struct in_addr*)host->h_addr);
-    }
-
-    localSockClosed = false;
+    this->protocolCallback = callback;
 }
 
-GNDNetwork::~GNDNetwork()
+Network::~Network()
 {
-    sem_destroy(CallbackEventSema);
-    sem_destroy(SocketListenerStartedEventSema);
-    SocketListenerStartedEventSema = NULL;
-    CallbackEventSema = NULL;
-    if(AcceptConnectionThread != 0)
+    close(localSock);
+    threadSockListener->stopThread();
+    threadAcceptConnection->stopThread();
+    pthread_mutex_destroy(&network_cs);
+
+    delete threadSockListener;
+    delete threadAcceptConnection;
+}
+
+NetResult Network::StopNetworkServer()
+{
+    NetResult res = NET_SUCCESS;
+    bool failure = false;
+
+    NETWORK_TRACE(StopNetworkServer, "Calling socket shutdown. localSock = %i", localSock);
+    if(-1 == shutdown(localSock, 2))      // 2 = Both reception and transmission
     {
-        pthread_cancel(AcceptConnectionThread);
+        NETWORK_TRACE(StopNetworkServer, "Failed to shutdown local socket with error = %s", strerror(errno));
+        failure = true;
+        res = NET_SOCKET_ERROR;
     }
-    if(sockListenerThread != 0)
+    /*if(close(localSock) == SOCKET_ERROR)
     {
-        pthread_cancel(sockListenerThread);
-    }
-    pthread_mutex_destroy(&gnd_network_cs);
-}
-
-NetResult GNDNetwork::RegisterCallback(NetworkProtocolCallback callback)
-{
-    if(callback == NULL)
-    {
-        NETWORK_TRACE("NULL callback");
-        return NET_INVALID_PARAM;
-    }
-    protocolCallback = callback;
-    return NET_SUCCESS;
-}
-
-NetResult GNDNetwork::DeregisterCallback()
-{
-    protocolCallback = NULL;
-    return NET_SUCCESS;
-}
-
-void GNDNetwork::SetNetParams(unsigned short remotePort, unsigned short localPort)
-{
-    remotePortNumber = remotePort;
-    localPortNumber = localPort;
-    return;
-}
-
-NetResult GNDNetwork::StopNetworkServer()
-{
-    localSockClosed = true;
-
-    if(close(localSock) == SOCKET_ERROR)
-    {
-        NETWORK_TRACE("Failed to close local socket with error = %d", errno);
+        NETWORK_TRACE(StopNetworkServer, "Failed to close local socket with error = %s", strerror(errno));
         close(localSock);
-        return NET_SOCKET_ERROR;
-    }
+        failure = true;
+    }*/
 
-    NETWORK_TRACE("Local socket was succesfully closed. Network server is stopped");
-
-    if(AcceptConnectionThread != 0)
+    NETWORK_TRACE(StopNetworkServer, "Calling threadSockListener->stopThread");
+    if(!threadSockListener->stopThread())
     {
-        pthread_cancel(this->AcceptConnectionThread);
-        AcceptConnectionThread = 0;
+        failure = true;
+        res = NET_COMMON_THREAD_ERROR;
+    }
+    NETWORK_TRACE(StopNetworkServer, "Calling threadAcceptConnection->stopThread");
+    if(!threadAcceptConnection->stopThread())
+    {
+        failure = true;
+        res = NET_COMMON_THREAD_ERROR;
     }
 
-    if (sockListenerThread != 0)
+    if(failure == true)
     {
-        pthread_cancel(this->sockListenerThread);
-        sockListenerThread = 0;
+        return res;
     }
+
     return NET_SUCCESS;
 }
 
-NetResult GNDNetwork::StartNetworkServer()
+NetResult Network::StartNetworkServer()
 {
     sockaddr_in             server;
-    char                    hostname[512];
-    struct hostent         *host = NULL;
-
-
-    if(ipv4_addr == NULL)
-    {
-        // Getting ipv4 address
-        gethostname(hostname, sizeof(hostname));
-        host = gethostbyname(hostname);
-        ipv4_addr = inet_ntoa(*(struct in_addr*)host->h_addr);
-    }
-
     memset(&server, 0, sizeof(server));
+
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_family = AF_INET;
     server.sin_port = htons(localPortNumber);
 
-    if ((localSock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) < 0)
+    if ((localSock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
     {
-        NETWORK_TRACE("Failed to create socket with error = %i", errno);
-        close(localSock);
-        NETWORK_TRACE("Network server shutdown");
+        NETWORK_TRACE(StartNetworkServer, "socket failed on error = %s", strerror(errno));
         return NET_SOCKET_ERROR;
     }
-
-    NETWORK_TRACE("Socket creation succeed");
 
     int option = 1;
     if(0 != setsockopt(localSock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
     {
-        NETWORK_TRACE("Failed to setsockopt with error = %i", errno);
+        NETWORK_TRACE(StartNetworkServer, "setsockopt failed on error %s", strerror(errno));
         close(localSock);
         return NET_SOCKET_ERROR;
     }
 
-    int optval;
-    int optlen;
-    getsockopt(localSock, SOL_SOCKET,  SO_REUSEADDR, &optval, (socklen_t*)&optlen);
-    if(optval != 0)
-    {
-        NETWORK_TRACE("SO_REUSEADDR option is ON!");
-    }
+    int         optval;
+    socklen_t   optlen = sizeof(int);
 
-    if (bind(localSock, (struct sockaddr*)&server, sizeof(server)) != 0)
+    if(0 != getsockopt(localSock, SOL_SOCKET,  SO_REUSEADDR, &optval, &optlen))
     {
-        NETWORK_TRACE("Failed to bind socket with error = %i", errno);
+        NETWORK_TRACE(StartNetworkServer, "getsockopt failed on error %s", strerror(errno));
         close(localSock);
-        NETWORK_TRACE("Network server shutdown");
         return NET_SOCKET_ERROR;
     }
 
-    NETWORK_TRACE("Socket binding succeed");
-
-    if (listen(localSock, SOMAXCONN) != 0)
+    if(optval == 0)
     {
-        NETWORK_TRACE("Failed to establish socket listening with error = %i", errno);
+        NETWORK_TRACE(StartNetworkServer, "setsockopt failed to enabled SO_REUSEADDR option");
+        //return NET_SOCKET_ERROR;
+    }
+
+    if(0 != bind(localSock, (struct sockaddr*)&server, sizeof(server)))
+    {
+        NETWORK_TRACE(StartNetworkServer, "bind failed on error %s", strerror(errno));
         close(localSock);
-        NETWORK_TRACE("Network server shutdown");
-        return NET_UNSPECIFIED_ERROR;
+        return NET_SOCKET_ERROR;
     }
 
-    NETWORK_TRACE("Socket listening establishment succeed. Socket %i listens via port %i", localSock, localPortNumber);
-
-    pthread_attr_t tAttr;
-    memset(&tAttr, 0, sizeof(pthread_attr_t));
-
-    if (0 != pthread_attr_init(&tAttr))
+    if (0 != listen(localSock, SOMAXCONN))
     {
-        NETWORK_TRACE("Failed to init pthread attribute. errno = %i", errno);
+        NETWORK_TRACE(StartNetworkServer, "listen failed on error %s", strerror(errno));
+        close(localSock);
         return NET_UNSPECIFIED_ERROR;
     }
 
-    if (0 != pthread_attr_setdetachstate(&tAttr, PTHREAD_CREATE_DETACHED))
+    if(!threadAcceptConnection->startThread((void * (*)(void*))(Network::AcceptConnection), this, sizeof(Network*)))
     {
-        NETWORK_TRACE("Failed to set pthread attribute. errno = %i", errno);
-        return NET_UNSPECIFIED_ERROR;
+        NETWORK_TRACE(StartNetworkServer, "Failed to start AcceptConnection thread. See CommonThread logs for information");
+        return NET_COMMON_THREAD_ERROR;
     }
 
-    // Create thread, that would accept any incoming connection
-    pthread_create(&AcceptConnectionThread, &tAttr, (void * (*)(void*))(GNDNetwork::AcceptConnection), this);
+    NETWORK_TRACE(StartNetworkServer, "Succeed, socket = %d, port = %d", localSock, localPortNumber);
 
     return NET_SUCCESS;
 }
 
-void GNDNetwork::AcceptConnection(void* Param)
+void Network::AcceptConnection(void* param)
 {
-    GNDNetwork             *This = (GNDNetwork*) Param;
-    sockaddr                client;
-    unsigned                client_length = sizeof(client);
-    char                    flag = 1;
+    Network             *pThis = (Network*) param;
     SOCKET                  accepted_socket;
     StructSocketListenerData socketListenerData;
+    socketListenerData.pThis = pThis;
+    unsigned socketListenerDataLength = sizeof(Network*) + sizeof(SOCKET);
+
+    NETWORK_TRACE(AcceptConnection, "Accepting all incoming connections for socket %i", pThis->localSock);
 
     for(;;)
     {
-        NETWORK_TRACE("Accepting all incoming connections for socket %i", This->localSock);
-
-        if ((accepted_socket = accept(This->localSock, &client, &client_length)) == SOCKET_ERROR)
+        if ((accepted_socket = accept(pThis->localSock, NULL, NULL)) == SOCKET_ERROR)
         {
-            // accept returns SOCKET_ERROR if we will close socket.
-            // If we did it manually - localSockClosed flag is set.
-            // Otherwise continue accpeting connections
-            if(This->localSockClosed == true)
+            if(pThis->threadAcceptConnection->isStopThreadReceived())
             {
+                NETWORK_TRACE(AcceptConnection, "terminate thread sema received");
                 break;
             }
-
-            NETWORK_TRACE("Failed to accept socket with error = %d. Continue.", errno);
             continue;
         }
 
-        NETWORK_TRACE("Socket acception succeed: %u", accepted_socket);
- 
-        setsockopt(accepted_socket, IPPROTO_TCP, TCP_NODELAY, &flag, 1);
-        setsockopt(accepted_socket, SOL_SOCKET, SO_REUSEADDR, &flag, 1);
+        NETWORK_TRACE(AcceptConnection, "Incoming connection accepted. Accepted socket = %u", accepted_socket);
+
+        int flag = 1;   //TRUE
+        if(0 != setsockopt(accepted_socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)))
+        {
+            NETWORK_TRACE(AcceptConnection, "setsockopt (TCP_NODELAY) failed on error %s", strerror(errno));
+            continue;
+        }
+        if(0 != setsockopt(accepted_socket, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int)))
+        {
+            NETWORK_TRACE(AcceptConnection, "setsockopt (SO_REUSEADDR) failed on error %s", strerror(errno));
+            continue;
+        }
 
         socketListenerData.listenedSocket = accepted_socket;
-        socketListenerData.pThis = This;
 
-        pthread_attr_t tAttr;
-        memset(&tAttr, 0, sizeof(pthread_attr_t));
-
-        if (0 != pthread_attr_init(&tAttr))
+        if(!pThis->threadSockListener->startThread((void * (*)(void*))(Network::SocketListener), &socketListenerData, socketListenerDataLength))
         {
-            NETWORK_TRACE("Failed to init pthread attribute. errno = %i", errno);
-            return;
+            NETWORK_TRACE(AcceptConnection, "Failed to start SocketListener thread. See CommonThread logs for information");
+            continue;
         }
 
-        if (0 != pthread_attr_setdetachstate(&tAttr, PTHREAD_CREATE_DETACHED))
-        {
-            NETWORK_TRACE("Failed to set pthread attribute. errno = %i", errno);
-            return;
-        }
-
-        pthread_create(&This->sockListenerThread, &tAttr, (void * (*)(void*))(GNDNetwork::SocketListener), &socketListenerData);
-
-        sleep(1);   //Replace this with IPC. See network_gnd:windows code
         // Send NET_SERVER_CONNECTED message via callback
-        if(This->protocolCallback != NULL)
+        if(pThis->protocolCallback != NULL)
         {
-            This->protocolCallback(NET_SERVER_CONNECTED, sizeof(accepted_socket), &accepted_socket);
+            pThis->protocolCallback(accepted_socket, NET_SERVER_CONNECTED, 0, NULL);
         }
         else
         {
-            NETWORK_TRACE("No callback function!");
+            NETWORK_TRACE(AcceptConnection, "NULL callback. AcceptConnection shutdown");
+            close(pThis->localSock);
+            pThis->threadSockListener->stopThread();
             return;
         }
     }
 
-    close(This->localSock);
-    NETWORK_TRACE("Network server closed");
+    close(pThis->localSock);
+    NETWORK_TRACE(AcceptConnection, "AcceptConnection finished");
     return;
 }
 
-void GNDNetwork::SocketListener(void* Param)
+void Network::SocketListener(void* param)
 {
-    SocketListenerData     *sData = (SocketListenerData*)Param;
-    GNDNetwork             *This = sData->pThis;
-    char                    recvbuf[MAX_SOCKET_BUFF_SIZE];
-    int                     recvlen = 0;
-    SOCKET                  listenedSocket = sData->listenedSocket;
-    unsigned char*         *callbackData = NULL;
+    SocketListenerData     *psParam = (SocketListenerData*)param;
+    Network             *pThis = psParam->pThis;
 
-    while(This->localSockClosed == false)
+    ProtocolCallbacklData   sCallbackData;
+    memset(&sCallbackData, 0, sizeof(sCallbackData));
+
+    NETWORK_TRACE(SocketListener, "start listening to socket %i", sCallbackData.remoteSocket);
+
+    for(;;)
     {
-        memset(recvbuf, 0, sizeof(recvbuf));
-
-        NETWORK_TRACE("SocketListener: start listening to socket %i", listenedSocket);
-        if ((recvlen = recv(listenedSocket, recvbuf, sizeof(recvbuf), 0)) > 0)
+        if(pThis->threadSockListener->isStopThreadReceived())
         {
-            NETWORK_TRACE("SocketListener: received %d bytes from the socket %u", recvlen, listenedSocket);
+            NETWORK_TRACE(SocketListener, "terminate thread sema received");
+            break;
+        }
 
-            if(This->protocolCallback != NULL)
+        if( -1 == (sCallbackData.dataLength = recv(psParam->listenedSocket, sCallbackData.data, sizeof(sCallbackData.data), MSG_DONTWAIT)))
+        {
+            if((errno == EAGAIN) || (errno == EWOULDBLOCK))
             {
-                pthread_mutex_lock(&gnd_network_cs);
-                // Send NET_RECEIVED_REMOTE_DATA message via callback
-                This->protocolCallback(NET_RECEIVED_REMOTE_DATA, recvlen, recvbuf);
-                NETWORK_TRACE("SocketListener: the packet from the socket %u was successfully sent to the upper layer", listenedSocket);
-                if(callbackData != NULL)
-                {
-                    delete []callbackData;
-                    callbackData = NULL;
-                }
-                pthread_mutex_unlock(&gnd_network_cs);
+                // Valid errors - continue
+                continue;
             }
-            else
-            {
-                NETWORK_TRACE("SocketListener: NULL callback");
-            }
-            recvlen = 0;
+            // unspecified error occured
+            NETWORK_TRACE(SocketListener, "recv failed on error %s", strerror(errno));
+            NETWORK_TRACE(SocketListener, "SocketListener shutdown");
+            close(pThis->localSock);
+            pThis->threadAcceptConnection->stopThread();
+            return;
+        }
+
+        NETWORK_TRACE(SocketListener, "Received %d bytes from the socket %u", sCallbackData.dataLength, sCallbackData.remoteSocket);
+
+        if(pThis->protocolCallback != NULL)
+        {
+            pthread_mutex_lock(&network_cs);
+            pThis->protocolCallback(psParam->listenedSocket, NET_RECEIVED_REMOTE_DATA, sizeof(int) + sCallbackData.dataLength, &sCallbackData);
+            pthread_mutex_unlock(&network_cs);
+
+            NETWORK_TRACE(SocketListener, "The packet from the socket %u was successfully processed by upper level callback", sCallbackData.remoteSocket);
         }
         else
         {
-            if (recvlen == -1)
-            {
-                NETWORK_TRACE("Error has occured while listening to socket %u!", listenedSocket);
-                break;
-            }
-
-            NETWORK_TRACE("SocketListener: Receiving function failed for the socket %u", listenedSocket);
+            NETWORK_TRACE(SocketListener, "NULL callback. SocketListener shutdown");
+            close(pThis->localSock);
+            pThis->threadAcceptConnection->stopThread();
+            return;
         }
     }
 
-    if(This->protocolCallback != NULL)
+    if(pThis->protocolCallback != NULL)
     {
-        // Send NET_SERVER_DISCONNECTED message via callback
-        This->protocolCallback(NET_SERVER_DISCONNECTED, sizeof(SOCKET), &listenedSocket);
+        pThis->protocolCallback(psParam->listenedSocket, NET_SERVER_DISCONNECTED, 0, NULL);
     }
-    else
-    {
-        NETWORK_TRACE("SocketListener: NULL callback");
-        return;
-    }
-    NETWORK_TRACE("SocketListener shutdown");
+
+    NETWORK_TRACE(SocketListener, "SocketListener finished");
     return;
 }
 
-char* GNDNetwork::GetLocalIpAddr()
-{
-    return ipv4_addr;
-}
-
-NetResult GNDNetwork::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)
+NetResult Network::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)
 {
     int sendlen = 0;
 
     if(sock != INVALID_SOCKET)
     {
-        if(uBufferSize < 7)
+        if (-1 == (sendlen = send(sock, pBuffer, uBufferSize, 0)))
         {
+            NETWORK_TRACE(SendData, "Failed to send outgoing bytes to the remote peer %u with error %s", sock, strerror(errno));
             return NET_SOCKET_ERROR;
         }
-
-        if ((sendlen = send(sock, pBuffer, uBufferSize, 0)) == SOCKET_ERROR)
-        {
-            NETWORK_TRACE("Failed to send outgoing bytes to the remote peer %u with error %d", sock, errno);
-            return NET_SOCKET_ERROR;
-        }
-        NETWORK_TRACE("%d bytes were sent to the remote peer %u", sendlen, sock);
+        NETWORK_TRACE(SendData, "%d bytes were sent to the remote peer %u", sendlen, sock);
     }
     else
     {
-        NETWORK_TRACE("Invalid socket!");
+        NETWORK_TRACE(SendData, "Invalid socket");
         return NET_SOCKET_ERROR;
     }
 
     return NET_SUCCESS;
 }
 
-void GNDNetwork::StartSocketListener(SOCKET sock)
+int Network::EstablishConnetcion(uint32_t remoteIPv4addr, unsigned short remotePort)
 {
-    StructSocketListenerData socketListenerData;
+    sockaddr_in     sock_addr;
+    int connectSocket = INVALID_SOCKET;
 
-    socketListenerData.listenedSocket = sock;
-    socketListenerData.pThis = this;
-
-    pthread_attr_t tAttr;
-    memset(&tAttr, 0, sizeof(pthread_attr_t));
-
-    if (0 != pthread_attr_init(&tAttr))
+    if (remoteIPv4addr == 0)
     {
-        NETWORK_TRACE("Failed to init pthread attribute. errno = %i", errno);
-        return;
+        NETWORK_TRACE(EstablishConnetcion, "Invalid remoteIPv4addr");
+        return INVALID_SOCKET;
     }
 
-    if (0 != pthread_attr_setdetachstate(&tAttr, PTHREAD_CREATE_DETACHED))
+    if ((connectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
     {
-        NETWORK_TRACE("Failed to set pthread attribute. errno = %i", errno);
-        return;
+        NETWORK_TRACE(StartNetworkServer, "socket failed on error = %s", strerror(errno));
+        return INVALID_SOCKET;
     }
 
-    pthread_create(&this->sockListenerThread, &tAttr, (void * (*)(void*))(GNDNetwork::SocketListener), &socketListenerData);
+    int option = 1;
+    if(0 != setsockopt(connectSocket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
+    {
+        NETWORK_TRACE(StartNetworkServer, "setsockopt failed on error %s", strerror(errno));
+        close(connectSocket);
+        return INVALID_SOCKET;
+    }
 
-    sleep(1);   //[TBD] replace this with IPC. See network_gnd:windows code
-    return;
-}
+    int         optval;
+    socklen_t   optlen = sizeof(int);
+    if(0 != getsockopt(connectSocket, SOL_SOCKET,  SO_REUSEADDR, &optval, &optlen))
+    {
+        NETWORK_TRACE(StartNetworkServer, "getsockopt failed on error %s", strerror(errno));
+        close(connectSocket);
+        return INVALID_SOCKET;
+    }
 
-unsigned short GNDNetwork::GetRemotePortNumber()
-{
-    return remotePortNumber;
+    if(optval == 0)
+    {
+        NETWORK_TRACE(StartNetworkServer, "setsockopt failed to enabled SO_REUSEADDR option");
+        //return INVALID_SOCKET;
+    }
+
+    sock_addr.sin_addr.s_addr = remoteIPv4addr;
+    sock_addr.sin_family = AF_INET;
+    sock_addr.sin_port = htons(remotePort);
+
+    if (0 != connect(connectSocket, (struct sockaddr*)&sock_addr, sizeof(struct sockaddr)))
+    {
+        NETWORK_TRACE(EstablishConnetcion, "connect failed on error %s", strerror(errno));
+        return INVALID_SOCKET;
+    }
+
+    if(protocolCallback != NULL)
+    {
+        protocolCallback(connectSocket, NET_SERVER_CONNECTED, 0, NULL);
+    }
+    else
+    {
+        NETWORK_TRACE(EstablishConnetcion, "No callback. Terminating connection");
+        return INVALID_SOCKET;
+    }
+
+    NETWORK_TRACE(EstablishConnetcion, "Connection successfully established");
+
+    return connectSocket;
 }

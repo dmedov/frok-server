@@ -33,7 +33,7 @@ typedef struct StructImageCoordinats
 extern pthread_mutex_t fileCS;
 extern pthread_mutex_t faceDetectionCS;
 extern map < string, Ptr<FaceRecognizer> > models;
-extern GNDNetwork net;
+extern Network net;
 
 // don't forget '/' in the end of dir name. Example: good = "/home/workspace/" bad: "/home/workspace"
 int getFilesFromDir(const char *dir, vector<string> &files);

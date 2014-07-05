@@ -159,7 +159,7 @@ struct ContextForSaveFaces{
 *
 */
 
-unsigned long recognizeFromModel(void *pContext);
+void recognizeFromModel(void *pContext);
 
 /**
 * \brief Cutting faces and training database.
@@ -172,7 +172,7 @@ unsigned long recognizeFromModel(void *pContext);
 *
 */
 
-unsigned long generateAndTrainBase(void *pContext);
+void generateAndTrainBase(void *pContext);
 
 /**
 * \brief Getting faces from photo.
@@ -185,7 +185,7 @@ unsigned long generateAndTrainBase(void *pContext);
 *
 */
 
-unsigned long getFacesFromPhoto(void *pContext);
+void getFacesFromPhoto(void *pContext);
 
 /**
 * \brief Saving recognized on the picture face.
@@ -198,8 +198,7 @@ unsigned long getFacesFromPhoto(void *pContext);
 *
 */
 
-unsigned long saveFaceFromPhoto(void *pContext);
-
+void saveFaceFromPhoto(void *pContext);
 
 /** \} */
 #endif // ACTIVITIES_H

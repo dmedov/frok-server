@@ -5,7 +5,7 @@
 FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
 map <string, Ptr<FaceRecognizer>> models;
 
-unsigned long getFacesFromPhoto(void *pContext)
+void getFacesFromPhoto(void *pContext)
 {
     double startTime = clock();
     ContextForGetFaces *psContext = (ContextForGetFaces*)pContext;
@@ -19,7 +19,7 @@ unsigned long getFacesFromPhoto(void *pContext)
         FilePrintMessage(NULL, _FAIL("Failed to load image %s. Continue..."), photoName.c_str());
         net.SendData(psContext->sock, "{ \"error\":\"failed to load photo\" }\n\0", strlen("{ \"error\":\"failed to load photo\" }\n\0"));
         delete psContext;
-        return -1;
+        return;
     }
 
     ViolaJonesDetection detector(cascades);
@@ -30,7 +30,7 @@ unsigned long getFacesFromPhoto(void *pContext)
             FilePrintMessage(NULL, _FAIL("All Faces Detection FAILED"), photoName.c_str());
             net.SendData(psContext->sock, "{ \"error\":\"All Faces Detection FAILED\" }\n\0", strlen("{ \"error\":\"All Faces Detection FAILED\" }\n\0"));
             delete psContext;
-            return -1;
+            return;
         }
     }
     catch (...)
@@ -38,17 +38,17 @@ unsigned long getFacesFromPhoto(void *pContext)
         FilePrintMessage(NULL, _FAIL("All Faces Detection FAILED"), photoName.c_str());
         net.SendData(psContext->sock, "{ \"error\":\"All Faces Detection FAILED\" }\n\0", strlen("{ \"error\":\"All Faces Detection FAILED\" }\n\0"));
         delete psContext;
-        return -1;
+        return;
     }
 
     net.SendData(psContext->sock, "{ \"success\":\"get faces succeed\" }\n\0", strlen("{ \"success\":\"get faces succeed\" }\n\0"));
 
     FilePrintMessage(NULL, _SUCC("Get faces finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
     delete psContext;
-    return 0;
+    return;
 }
 
-unsigned long saveFaceFromPhoto(void *pContext)
+void saveFaceFromPhoto(void *pContext)
 {
     double startTime = clock();
     ContextForSaveFaces *psContext = (ContextForSaveFaces*)pContext;
@@ -62,9 +62,9 @@ unsigned long saveFaceFromPhoto(void *pContext)
         FilePrintMessage(NULL, _FAIL("Failed to load image %s. Continue..."), photoName.c_str());
         net.SendData(psContext->sock, "{ \"error\":\"failed to load photo\" }\n\0", strlen("{ \"error\":\"failed to load photo\" }\n\0"));
         delete psContext;
-        return -1;
+        return;
     }
-    //���������� �������� �����-����� �������� � cutFaceToBase
+
     ViolaJonesDetection detector(cascades);
 
     try
@@ -74,7 +74,7 @@ unsigned long saveFaceFromPhoto(void *pContext)
             FilePrintMessage(NULL, _FAIL("cut face FAILED"), photoName.c_str());
             net.SendData(psContext->sock, "{ \"error\":\"cut face FAILED\" }\n\0", strlen("{ \"error\":\"cut face FAILED\" }\n\0"));
             delete psContext;
-            return -1;
+            return;
         }
     }
     catch (...)
@@ -82,17 +82,17 @@ unsigned long saveFaceFromPhoto(void *pContext)
         FilePrintMessage(NULL, _FAIL("cut face FAILED"), photoName.c_str());
         net.SendData(psContext->sock, "{ \"error\":\"cut face FAILED\" }\n\0", strlen("{ \"error\":\"cut face FAILED\" }\n\0"));
         delete psContext;
-        return -1;
+        return;
     }
 
     net.SendData(psContext->sock, "{ \"success\":\"cut face succeed\" }\n\0", strlen("{ \"success\":\"cut face succeed\" }\n\0"));
 
     FilePrintMessage(NULL, _SUCC("Cut face finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
     delete psContext;
-    return 0;
+    return;
 }
 
-unsigned long recognizeFromModel(void *pContext)
+void recognizeFromModel(void *pContext)
 {
     double startTime = clock();
     ContextForRecognize *psContext = (ContextForRecognize*)pContext;
@@ -122,7 +122,7 @@ unsigned long recognizeFromModel(void *pContext)
         net.SendData(psContext->sock, "{ \"error\":\"training was not called\" }\n\0", strlen("{ \"error\":\"training was not called\" }\n\0"));
         delete violaJonesDetection;
         delete psContext;
-        return -1;
+        return;
     }
 
     try
@@ -135,7 +135,7 @@ unsigned long recognizeFromModel(void *pContext)
         net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
         delete violaJonesDetection;
         delete psContext;
-        return -1;
+        return;
     }
 
 
@@ -145,7 +145,7 @@ unsigned long recognizeFromModel(void *pContext)
         net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
         delete violaJonesDetection;
         delete psContext;
-        return -1;
+        return;
     }
 
     //storage = cvCreateMemStorage();                    // �������� ��������� ������
@@ -157,7 +157,7 @@ unsigned long recognizeFromModel(void *pContext)
             net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
             delete violaJonesDetection;
             delete psContext;
-            return -1;
+            return;
         }
     }
     catch (...)
@@ -166,7 +166,7 @@ unsigned long recognizeFromModel(void *pContext)
         net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
         delete violaJonesDetection;
         delete psContext;
-        return -1;
+        return;
     }
 
 #ifdef SHOW_IMAGE
@@ -184,11 +184,12 @@ unsigned long recognizeFromModel(void *pContext)
     cvDestroyAllWindows();
     delete violaJonesDetection;
     delete psContext;
-    return 0;
+    return;
 }
 
-unsigned long generateAndTrainBase(void *pContext)
+void generateAndTrainBase(void *pContext)
 {
+    pContext = pContext;
     /*double startTime = clock();
 
     ContextForTrain *psContext = (ContextForTrain*)pContext;
@@ -221,7 +222,7 @@ unsigned long generateAndTrainBase(void *pContext)
                 cutFaceThreadParams * param = new cutFaceThreadParams(img,
                     (((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(result.name)).c_str(),
                     &cascades[uNumOfThreads]);
-                threads.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)param->pThis->cutFaceThread, (LPVOID)param, 0, NULL));
+                threads.push_back(CreateThread(NULL, 0, (void*(*)(void*))param->pThis->cutFaceThread, (LPVOID)param, 0, NULL));
 
                 if (++uNumOfThreads == MAX_THREADS_AND_CASCADES_NUM)
                 {
@@ -329,5 +330,5 @@ unsigned long generateAndTrainBase(void *pContext)
 
     net.SendData(psContext->sock, "{ \"success\":\"train succeed\" }\n\0", strlen("{ \"success\":\"train succeed\" }\n\0"));
     */
-    return 0;
+    return;
 }

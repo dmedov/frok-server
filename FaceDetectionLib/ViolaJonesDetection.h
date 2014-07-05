@@ -192,7 +192,7 @@ public:
     *
     * \code
     *
-    * CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)param->pThis->cutFaceThread, (LPVOID)param, 0, NULL);
+    * CreateThread(NULL, 0, (void*(*)(void*))param->pThis->cutFaceThread, (LPVOID)param, 0, NULL);
     *
     * \endcode
     */
@@ -235,7 +235,7 @@ private:
     *    pointFace.p1 = pointFace;
     *    pointFace.p2 = cvPoint(pointFace.x + width / k, pointFace.y + height / k);
     *
-    *    writeFacePoints(pointKeyFañe, pointFace, type);
+    *    writeFacePoints(pointKeyFaï¿½e, pointFace, type);
     *
     * \endcode
     */

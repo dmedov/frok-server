@@ -1,13 +1,17 @@
 #include "stdafx.h"
-#include "LibInclude.h"
+#include "../FaceDetectionLib/LibInclude.h"
 // Add SHOW_IMAGE define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
+
+#define PORT 27015
 
 #define    NET_CMD_RECOGNIZE    "recognize"
 #define NET_CMD_TRAIN        "train"
 #define    NET_CMD_GET_FACES    "get_faces"
 #define NET_CMD_SAVE_FACE    "save_face"
 
-GNDNetwork net;
+void callback(SOCKET sock, unsigned evt, unsigned length, void *param);
+
+Network net(callback, PORT);
 
 void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
 {
@@ -75,8 +79,9 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
                 psContext->targetImg = objInputJson["photo_id"].ToString();
                 psContext->sock = sock;
 
+                CommonThread threadRecongnize;
+                threadRecongnize.startThread((void*(*)(void*))recognizeFromModel, psContext, sizeof(ContextForRecognize));
                 FilePrintMessage(NULL, _SUCC("Recognizing started..."));
-                CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recognizeFromModel, psContext, 0, NULL);
                 // Notice that psContext should be deleted in recognizeFromModel function!
             }
             else if (objInputJson["cmd"].ToString() == NET_CMD_GET_FACES)
@@ -102,7 +107,8 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
                 psContext->sock = sock;
 
                 FilePrintMessage(NULL, _SUCC("Getting faces started..."));
-                CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getFacesFromPhoto, psContext, 0, NULL);
+                CommonThread threadGetFaces;
+                threadGetFaces.startThread((void*(*)(void*))getFacesFromPhoto, psContext, sizeof(ContextForGetFaces));
                 // Notice that psContext should be deleted in recognizeFromModel function!
             }
             else if (objInputJson["cmd"].ToString() == NET_CMD_SAVE_FACE)
@@ -135,7 +141,8 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
                 psContext->sock = sock;
 
                 FilePrintMessage(NULL, _SUCC("Cut face started..."));
-                CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)saveFaceFromPhoto, psContext, 0, NULL);
+                CommonThread threadSaveFaces;
+                threadSaveFaces.startThread((void*(*)(void*))saveFaceFromPhoto, psContext, sizeof(ContextForSaveFaces));
                 // Notice that psContext should be deleted in recognizeFromModel function!
             }
             else if (objInputJson["cmd"].ToString() == NET_CMD_TRAIN)
@@ -153,7 +160,8 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
                 psContext->sock = sock;
 
                 FilePrintMessage(NULL, _SUCC("Training started..."));
-                CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)generateAndTrainBase, psContext, 0, NULL);
+                CommonThread threadTrain;
+                threadTrain.startThread((void*(*)(void*))generateAndTrainBase, (void*)psContext, sizeof(ContextForTrain));
                 // Notice that psContext should be deleted in recognizeFromModel function!
             }
             else
@@ -180,21 +188,12 @@ void usage()
     return;
 }
 
-int main(int argc, char *argv[]) 
+int main(void)
 {
     InitFaceDetectionLib();
-    if (argc != 2)
-    {
-        FilePrintMessage(NULL, _FAIL("Invalid input patemeters."));
-        usage();
-        DeinitFaceDetectionLib();
-        return -1;
-    }
-    
-    unsigned uPort = atoi(argv[1]);
 
-    FilePrintMessage(NULL, _SUCC("Starting network server with port = %d"), uPort);
-    if (NET_SUCCESS != net.StartNetworkServer(callback, uPort))
+    FilePrintMessage(NULL, _SUCC("Starting network server with port = %d"), PORT);
+    if (NET_SUCCESS != net.StartNetworkServer())
     {
         FilePrintMessage(NULL, _FAIL("Failed to start network. For additional info build project with NET_DEBUG_PRINT flag enabled"));
         DeinitFaceDetectionLib();
