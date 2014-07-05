@@ -5,7 +5,7 @@ SRCDIR = FaceDetectionLib
 
 # Target settings
 LANG := c++
-TARGET := FaceDetectionLib
+TARGET := libFaceDetectionLib.a
 TARGETTYPE := staticlib
 
 CFLAGS += -Wno-unknown-pragmas

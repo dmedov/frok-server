@@ -3,16 +3,11 @@
 
 # Toolchain and its settings
 export MAKE ?= make
-export AR ?= AR
+export AR ?= ar
 export CC ?= gcc
 export CPPC ?= g++ -std=c++11
 export RANLIB ?= ranlib
 export OPENCV ?= /opt/opencv-2.4.9
-#ifdef KWDB
-#export KW_DB ?= $(KWDB)
-#else
-#export KW_DB := ../klocwork
-#endif
 
 export CFG ?= release
 export TRM ?= /usr/bin/xterm -e
@@ -37,7 +32,7 @@ ifeq ($(CFG),release)
 LDFLAGS += -Wl,-O1
 CONFIG := build_release
 else
-CFLAGS += -g -DDBG -DDEBUG -DMBT_USE_TEST_INTERFACE -fPIC
+CFLAGS += -g -DDBG -DDEBUG -fPIC
 CONFIG := build_debug
 endif
 

@@ -12,19 +12,16 @@ TARGET := FaceDetectionApp
 TARGETTYPE := executable
 
 CFLAGS += -Wno-unknown-pragmas
-LIBS :=
-STATLIBS := $(BINOUTDIR)/FaceDetectionLib.a
+LIBS := -L/usr/lib/i386-linux-gnu -L$(BINOUTDIR) -lFaceDetectionLib -lrt -lpthread
 
 DEPENDENCIES := $(BINOUTDIR)/libFaceDetectionLib.a
 
-SRCDIRS :=  ../$(SRCDIR)/			
-HDRDIRS :=  ../$(SRCDIR)/			\
-	../FaceDetectionLib/			\
+SRCDIRS :=  ../$(SRCDIR)/
+
+HDRDIRS :=  ../$(SRCDIR)/	\
+	../FaceDetectionLib/	\
 	$(OPENCV_INCLUDES)
 
-
-	
-			
 make_dependencies:
 	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FaceDetectionLib.mk build
 include makefile.actions

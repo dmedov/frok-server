@@ -13,6 +13,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>

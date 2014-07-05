@@ -3,8 +3,7 @@
 ###########################################################
 include makefile.consts
 
-OPENCV_INCLUDES := 				\
-	$(OPENCV)/include/opencv/		\
+OPENCV_INCLUDES := $(OPENCV)/include/opencv/	\
 	$(OPENCV)/include/opencv2/		\
 	$(OPENCV)/modules/core/include/		\
 	$(OPENCV)/modules/imgproc/include/	\
@@ -31,4 +30,4 @@ OPENCV_INCLUDES := 				\
 	$(OPENCV)/modules/ts/include		\
 	$(OPENCV)/modules/videostab/include	\
 	$(OPENCV)/modules/viz/include		\
-	$(OPENCV)/modules/world/include		\
+	$(OPENCV)/modules/world/include

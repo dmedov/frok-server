@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "../FaceDetectionLib/LibInclude.h"
+#include "LibInclude.h"
 // Add SHOW_IMAGE define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
 
 #define PORT 27015
