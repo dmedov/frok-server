@@ -37,6 +37,7 @@ public:
     bool startThread(void *(*function) (void *), void *functionParams, unsigned functionParamsLength);
     bool isStopThreadReceived();
     bool stopThread();
+    bool waitForFinish(unsigned timeout_sec);
     commonThreadState getThreadState();
 private:
     static void startRoutine(void *param);

@@ -37,6 +37,8 @@ extern Network net;
 
 // don't forget '/' in the end of dir name. Example: good = "/home/workspace/" bad: "/home/workspace"
 int getFilesFromDir(const char *dir, vector<string> &files);
+int getSubdirsFromDir(const char *dir, vector<string> &subdirs);
+
 // Use colored prints - its cool
 void FilePrintMessage(char* file, const char* expr...);
 // Always call on your application start

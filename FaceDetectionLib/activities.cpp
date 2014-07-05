@@ -190,84 +190,60 @@ void recognizeFromModel(void *pContext)
 void generateAndTrainBase(void *pContext)
 {
     pContext = pContext;
-    /*double startTime = clock();
+    double startTime = clock();
 
     ContextForTrain *psContext = (ContextForTrain*)pContext;
-    _finddata_t result;
-    HANDLE *phEventTaskCompleted = new HANDLE[psContext->arrIds.size()];
-    std::vector <HANDLE> threads;
-    UINT_PTR uSuccCounter = 0;
 
-    for (UINT_PTR i = 0; i < psContext->arrIds.size(); i++)
+    __int64_t uSuccCounter = 0;
+
+    for (__int64_t i = 0; i < psContext->arrIds.size(); i++)
     {
-        memset(&result, 0, sizeof(result));
-        string photoName = ((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\photos\\*.jpg");
+        __int64_t uNumOfThreads = 0;
 
-        intptr_t firstHandle = _findfirst(photoName.c_str(), &result);
+        vector<string> photos = vector<string>();
+        getFilesFromDir(((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\photos\\").c_str(), photos);
 
-        UINT_PTR uNumOfThreads = 0;
+        vector<CommonThread *> threads;
 
-        if (firstHandle != -1)
+        for (unsigned int j = 0; j < photos.size(); j++)
         {
-            do
+            string photoName = ((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\photos\\").append(photos[j]);
+            IplImage *img = cvLoadImage(photoName.c_str());
+            if (img == NULL)
             {
-                photoName = ((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\photos\\").append(result.name);
-                IplImage *img = cvLoadImage(photoName.c_str());
-                if (img == NULL)
-                {
-                    FilePrintMessage(NULL, _WARN("Failed to load image %s. Continue..."), photoName.c_str());
-                    continue;
-                }
+                FilePrintMessage(NULL, _WARN("Failed to load image %s. Continue..."), photoName.c_str());
+                continue;
+            }
 
-                cutFaceThreadParams * param = new cutFaceThreadParams(img,
-                    (((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(result.name)).c_str(),
-                    &cascades[uNumOfThreads]);
-                threads.push_back(CreateThread(NULL, 0, (void*(*)(void*))param->pThis->cutFaceThread, (LPVOID)param, 0, NULL));
+            cutFaceThreadParams * param = new cutFaceThreadParams(img,
+                (((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(photos[j])).c_str(),
+                &cascades[uNumOfThreads]);
 
-                if (++uNumOfThreads == MAX_THREADS_AND_CASCADES_NUM)
-                {
-                    unsigned long res;
-                    if (WAIT_OBJECT_0 != (res = WaitForMultipleObjects((unsigned)threads.size(), &threads[0], TRUE, CUT_TIMEOUT)))
-                    {
-                        FilePrintMessage(NULL, _FAIL("Timeout has occured during waiting for cutting images finished"));
-                        for (UINT_PTR j = 0; j < threads.size(); j++)
-                        {
-                            TerminateThread(threads.at(j), -1);
-                        }
-                    }
+            CommonThread *threadCutFace = new CommonThread;
+            threadCutFace->startThread((void*(*)(void*))param->pThis->cutFaceThread, param, sizeof(cutFaceThreadParams));
+            threads.push_back( threadCutFace);
 
-                    for (UINT_PTR j = 0; j < threads.size(); j++)
-                    {
-                        CloseHandle(threads.at(j));
-                    }
-                    threads.clear();
-
-                    uNumOfThreads = 0;
-                }
-
-            } while (_findnext(firstHandle, &result) == 0);
-
-            if (uNumOfThreads != 0)
+            if (++uNumOfThreads == MAX_THREADS_AND_CASCADES_NUM)
             {
-                unsigned long res;
-                if (WAIT_OBJECT_0 != (res = WaitForMultipleObjects((unsigned)threads.size(), &threads[0], TRUE, CUT_TIMEOUT)))
+                for(vector<CommonThread*>::iterator it = threads.begin(); it != threads.end(); ++it)
                 {
-                    FilePrintMessage(NULL, _FAIL("Timeout has occured during waiting for cutting images finished"));
-                    for (UINT_PTR j = 0; j < threads.size(); j++)
-                    {
-                        TerminateThread(threads.at(j), -1);
-                    }
-                }
-
-                for (UINT_PTR j = 0; j < threads.size(); j++)
-                {
-                    CloseHandle(threads.at(j));
+                    ((CommonThread*)*it)->waitForFinish(CUT_TIMEOUT);
+                    ((CommonThread*)*it)->stopThread();
+                    delete *it;
                 }
                 threads.clear();
 
                 uNumOfThreads = 0;
             }
         }
+
+        for(vector<CommonThread*>::iterator it = threads.begin(); it != threads.end(); ++it)
+        {
+            ((CommonThread*)*it)->waitForFinish(CUT_TIMEOUT);
+            ((CommonThread*)*it)->stopThread();
+            delete *it;
+        }
+        threads.clear();
 
         EigenDetector *eigenDetector = new EigenDetector();
 
@@ -293,7 +269,7 @@ void generateAndTrainBase(void *pContext)
         try
         {
             string fileName = ((string)(ID_PATH)).append(psContext->arrIds[i].ToString()).append("//eigenface.yml");
-            if (_access(fileName.c_str(), 0) != -1)
+            if (access(fileName.c_str(), 0) != -1)
             {
                 model->load(fileName.c_str());
                 FilePrintMessage(NULL, _SUCC("Model base for user %s successfully loaded. Continue..."), psContext->arrIds[i].ToString().c_str());
@@ -325,10 +301,9 @@ void generateAndTrainBase(void *pContext)
     if (uSuccCounter == 0)
     {
         net.SendData(psContext->sock, "{ \"fail\":\"learning failed\" }\n\0", strlen("{ \"fail\":\"learning failed\" }\n\0"));
-        return -1;
+        return;
     }
 
     net.SendData(psContext->sock, "{ \"success\":\"train succeed\" }\n\0", strlen("{ \"success\":\"train succeed\" }\n\0"));
-    */
     return;
 }

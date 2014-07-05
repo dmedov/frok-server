@@ -144,6 +144,29 @@ bool CommonThread::stopThread()
     return true;
 }
 
+bool CommonThread::waitForFinish(unsigned timeout_sec)
+{
+    if((threadState == COMMON_THREAD_STOPPED) || (threadState == COMMON_THREAD_NOT_INITED))
+    {
+        CTHREAD_PRINT(stopThread, "already stopped");
+        return true;
+    }
+
+    timespec sTime;
+    memset(&sTime, 0, sizeof(timespec));
+
+    sTime.tv_sec = time(NULL);
+    sTime.tv_sec += timeout_sec;
+
+    int ret_code = 0;
+    if(0 != (ret_code = pthread_timedjoin_np(thread, NULL, &sTime)))
+    {
+        return false;
+    }
+
+    threadState = COMMON_THREAD_STOPPED;
+}
+
 void CommonThread::startRoutine(void *param)
 {
     CTHREAD_PRINT(startRoutine, "Thread routine started.");
