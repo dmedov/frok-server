@@ -1,6 +1,7 @@
 #ifndef LIB_INCLUDE_H
 #define LIB_INCLUDE_H
 
+#include "commonThread.h"
 #include "network.h"
 #include "common.h"
 #include "ViolaJonesDetection.h"

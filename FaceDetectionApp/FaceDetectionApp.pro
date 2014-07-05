@@ -12,7 +12,7 @@ OBJECTS_DIR = $$OBJECTS_DIR/$$TARGET
 DEFINES +=
 
 INCLUDEPATH +=                                          \
-    ../FaceDetectionLib/                                 \
+    ../../FaceDetectionLib/                             \
     /opt/opencv-2.4.9/include/opencv/                   \
     /opt/opencv-2.4.9/include/opencv2/                  \
     /opt/opencv-2.4.9/modules/core/include/             \

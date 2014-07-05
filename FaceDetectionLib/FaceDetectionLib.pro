@@ -54,7 +54,8 @@ HEADERS +=                  \
     DescriptorDetection.h   \
     common.h                \
     activities.h            \
-    EigenDetector.h
+    EigenDetector.h \
+    commonThread.h
 
 SOURCES +=                  \
     ViolaJonesDetection.cpp \
@@ -63,4 +64,5 @@ SOURCES +=                  \
     DescriptorDetection.cpp \
     common.cpp              \
     activities.cpp          \
-    EigenDetector.cpp
+    EigenDetector.cpp \
+    commonThread.cpp
