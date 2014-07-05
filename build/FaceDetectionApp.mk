@@ -12,7 +12,12 @@ TARGET := FaceDetectionApp
 TARGETTYPE := executable
 
 CFLAGS += -Wno-unknown-pragmas
-LIBS := -L/usr/lib/i386-linux-gnu -L$(BINOUTDIR) -lFaceDetectionLib -lrt -lpthread
+LIBS := -L$(BINOUTDIR)			\
+	-L/usr/lib/x86_64-linux-gnu	\
+	-L$(OPENCV)/install/lib		\
+	-lFaceDetectionLib -lrt -lpthread \
+	$(OPENCV_LIB)
+
 
 DEPENDENCIES := $(BINOUTDIR)/libFaceDetectionLib.a
 

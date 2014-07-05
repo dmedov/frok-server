@@ -67,19 +67,21 @@ void ViolaJonesDetection::writeFacePoints(const ImageCoordinats &pointKeyFace, c
     }
 }
 
-//Прорисовка линий на резулютирующем изображении
 bool ViolaJonesDetection::drawEvidence(const ImageCoordinats &pointFace, bool draw){
     const CvPoint p1 = pointFace.p1;
     const CvPoint p2 = pointFace.p2;
     int count = 0;
-    for (int i = 0; i < 8; i++)                                                            //проверяем координаты всех точек на -1;-1
-    if (facePoints[i].x >= 0 && facePoints[i].y >= 0){
-        count++;
+    for (int i = 0; i < 8; i++)
+    {
+        if (facePoints[i].x >= 0 && facePoints[i].y >= 0)
+        {
+            count++;
+        }
     }
 
     if (count >= 4){        //[TBD] Why 4?
         if (draw){
-            //cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));                            //рисуем желтый квадрат, если нашли более 1 части лица
+            //cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));
             int w = (p2.x - p1.x);
             int h = (p2.y - p1.y);
 #ifdef SHOW_IMAGE
@@ -450,7 +452,7 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 
     gray_img = cvCreateImage(cvGetSize(image), 8, 1);
     cvCvtColor(image, gray_img, CV_BGR2GRAY);
-    strg = cvCreateMemStorage(0);                                        //Создание хранилища памяти
+    strg = cvCreateMemStorage(0);
     CvSeq *faces = cvHaarDetectObjects(gray_img, faceCascades->face, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 
     for (int i = 0; i < (faces ? faces->total : 0); i++){
@@ -468,10 +470,10 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 
         cvSetImageROI(gray_img, cvRect(x, y, w, h));
         cvCopy(gray_img, face_img, NULL);
-        cvResetImageROI(gray_img);                                    //копируем лицо в отдельную картинку//-> to introduce to function
+        cvResetImageROI(gray_img);
 
         for (int j = 0; j < 8; j++)
-            facePoints[j] = cvPoint(-1, -1);                        //по умолчанию координаты всех точек равны -1; -1
+            facePoints[j] = cvPoint(-1, -1);
 
         normalizateHistFace();
 
@@ -484,7 +486,7 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
             face_img = cvCloneImage(temporaryImg);
             IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
             cvResize(face_img, dest, 1);
-            eigenDetector->recognize(models, &dataJson, dest);//Распознавание
+            eigenDetector->recognize(models, &dataJson, dest);
             dataJson.p1s.push_back(points.p1/*cvPoint(points.p1.x / inputImage->width, points.p1.y / inputImage->height)*/);
             dataJson.p2s.push_back(points.p2/*cvPoint(points.p2.x / inputImage->width, points.p2.y / inputImage->height)*/);
             cvReleaseImage(&dest);//-> to introduce to function
@@ -495,7 +497,6 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map <string, Pt
 #ifdef SHOW_IMAGE
     cvShowImage("image", imageResults);
 #endif //SHOW_IMAGE
-    // освобождаем ресурсы
     delete descriptorDetection;
     delete eigenDetector;
 
@@ -549,10 +550,10 @@ bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath
     face_img = cvCreateImage(cvSize(w, h), gray_img->depth, gray_img->nChannels);
     cvSetImageROI(gray_img, cvRect(x, y, w, h));
     cvCopy(gray_img, face_img, NULL);
-    cvResetImageROI(gray_img);                                    //копируем лицо в отдельную картинку
+    cvResetImageROI(gray_img);
 
     for (int j = 0; j < 8; j++)
-        facePoints[j] = cvPoint(-1, -1);                        //по умолчанию координаты всех точек равны -1; -1
+        facePoints[j] = cvPoint(-1, -1);
 
     allKeysFaceDetection(points.p1);
     normalizateHistFace();
@@ -604,7 +605,7 @@ void ViolaJonesDetection::cutFaceThread(void *params)
     //Ptr<CLAHE> clahe = createCLAHE(2, Size(8, 8));
     //clahe->apply(Mat(gray_img), Mat(gray_img));
 
-    psParams->pThis->strg = cvCreateMemStorage(0);                                        //Создание хранилища памяти
+    psParams->pThis->strg = cvCreateMemStorage(0);
     CvSeq *faces = cvHaarDetectObjects(psParams->pThis->gray_img, psParams->pThis->faceCascades->face, psParams->pThis->strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
     for (int i = 0; i < (faces ? faces->total : 0); i++){
         CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
@@ -619,7 +620,7 @@ void ViolaJonesDetection::cutFaceThread(void *params)
             {
                 FilePrintMessage(NULL, "-");
                 cvClearMemStorage(psParams->pThis->strg);
-                cvReleaseImage(&psParams->pThis->face_img);            // освобождаем ресурсы
+                cvReleaseImage(&psParams->pThis->face_img);
                 cvReleaseImage(&psParams->pThis->gray_img);
                 cvReleaseImage(&psParams->pThis->image);
                 delete psParams;
@@ -634,7 +635,7 @@ void ViolaJonesDetection::cutFaceThread(void *params)
     }
 
     cvClearMemStorage(psParams->pThis->strg);
-    cvReleaseImage(&psParams->pThis->face_img);            // освобождаем ресурсы
+    cvReleaseImage(&psParams->pThis->face_img);
     cvReleaseImage(&psParams->pThis->gray_img);
     cvReleaseImage(&psParams->pThis->image);
     delete psParams;
@@ -657,7 +658,7 @@ bool ViolaJonesDetection::cutTheFace(IplImage *inputImage, const char* destPath,
     //Ptr<CLAHE> clahe = createCLAHE(2, Size(8, 8));
     //clahe->apply(Mat(gray_img), Mat(gray_img));
 
-    strg = cvCreateMemStorage(0);                                        //Создание хранилища памяти
+    strg = cvCreateMemStorage(0);
     CvSeq *faces = cvHaarDetectObjects(gray_img, faceCascades->face, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 
     if (faces != NULL)
@@ -673,7 +674,7 @@ bool ViolaJonesDetection::cutTheFace(IplImage *inputImage, const char* destPath,
             {
                 FilePrintMessage(NULL, "-");
                 cvClearMemStorage(strg);
-                cvReleaseImage(&face_img);            // освобождаем ресурсы
+                cvReleaseImage(&face_img);
                 cvReleaseImage(&gray_img);
                 cvReleaseImage(&image);
                 return false;
@@ -690,15 +691,12 @@ bool ViolaJonesDetection::cutTheFace(IplImage *inputImage, const char* destPath,
     }
 
     cvClearMemStorage(strg);
-    cvReleaseImage(&face_img);            // освобождаем ресурсы
+    cvReleaseImage(&face_img);
     cvReleaseImage(&gray_img);
     cvReleaseImage(&image);
 
     return true;
 }
-
-//Сканирование по SIFT 
-
 //void ViolaJonesDetection::scanSIFT(Mat ffDescriptors, int faceNumber){
 
 //cerr << "Function not supported!" << endl;
