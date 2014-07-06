@@ -203,7 +203,7 @@ void Network::SocketListener(void* param)
     ProtocolCallbacklData   sCallbackData;
     memset(&sCallbackData, 0, sizeof(sCallbackData));
 
-    NETWORK_TRACE(SocketListener, "start listening to socket %i", sCallbackData.remoteSocket);
+    NETWORK_TRACE(SocketListener, "start listening to socket %i", psParam->listenedSocket);
 
     for(;;)
     {
@@ -228,7 +228,7 @@ void Network::SocketListener(void* param)
             return;
         }
 
-        NETWORK_TRACE(SocketListener, "Received %d bytes from the socket %u", sCallbackData.dataLength, sCallbackData.remoteSocket);
+        NETWORK_TRACE(SocketListener, "Received %d bytes from the socket %u", sCallbackData.dataLength, psParam->listenedSocket);
 
         if(pThis->protocolCallback != NULL)
         {
@@ -236,7 +236,7 @@ void Network::SocketListener(void* param)
             pThis->protocolCallback(psParam->listenedSocket, NET_RECEIVED_REMOTE_DATA, sizeof(int) + sCallbackData.dataLength, &sCallbackData);
             pthread_mutex_unlock(&network_cs);
 
-            NETWORK_TRACE(SocketListener, "The packet from the socket %u was successfully processed by upper level callback", sCallbackData.remoteSocket);
+            NETWORK_TRACE(SocketListener, "The packet from the socket %u was successfully processed by upper level callback", psParam->listenedSocket);
         }
         else
         {

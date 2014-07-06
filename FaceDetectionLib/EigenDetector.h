@@ -65,14 +65,14 @@ public:
     *
     *    IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
     *        cvResize(face_img, dest, 1);
-    *        eigenDetector->recognize(models, &dataJson, dest);//Распознавание
+    *        eigenDetector->recognize(models, &dataJson, dest);
     *        dataJson.p1s.push_back(points.p1);
     *        dataJson.p2s.push_back(points.p2);
     *
     * \endcode
     */
 
-    void recognize(const map <string, Ptr<FaceRecognizer>> &models, DataJson *psDataJson, IplImage* image);
+    void recognize(const map < string, Ptr<FaceRecognizer> > &models, DataJson *psDataJson, IplImage* image);
 
     /**
     * \brief Imposition mask.

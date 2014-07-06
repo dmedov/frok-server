@@ -3,7 +3,7 @@
 #include <ctime>
 
 FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
-map <string, Ptr<FaceRecognizer>> models;
+map < string, Ptr<FaceRecognizer> > models;
 
 void getFacesFromPhoto(void *pContext)
 {
@@ -99,11 +99,11 @@ void recognizeFromModel(void *pContext)
     //CvMemStorage* storage = NULL;
     IplImage *img = NULL;
     ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection(cascades);
-    map <string, Ptr<FaceRecognizer>> currentModels;
+    map < string, Ptr<FaceRecognizer> > currentModels;
 
     for (unsigned long i = 0; i < psContext->arrFrinedsList.size(); i++)
     {
-        map <string, Ptr<FaceRecognizer>>::iterator it;
+        map < string, Ptr<FaceRecognizer> >::iterator it;
         it = models.find(psContext->arrFrinedsList[i].ToString());
         if (it != models.end())
         {

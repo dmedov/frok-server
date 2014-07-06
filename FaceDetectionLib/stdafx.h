@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 #include <cstring>
 #include <semaphore.h>
-
+#include <errno.h>
 using namespace std;
 using namespace cv;
 #endif //FACEDETECTIONLIB_STDAFX_H

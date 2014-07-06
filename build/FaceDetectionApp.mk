@@ -14,7 +14,6 @@ TARGETTYPE := executable
 CFLAGS += -Wno-unknown-pragmas
 LIBS := -L$(BINOUTDIR)			\
 	-L/usr/lib/x86_64-linux-gnu	\
-	-L$(OPENCV)/install/lib		\
 	-lFaceDetectionLib -lrt -lpthread \
 	$(OPENCV_LIB)
 

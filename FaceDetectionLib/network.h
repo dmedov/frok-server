@@ -18,11 +18,11 @@
 
 #ifdef NETWORK_SYSTEM_DEBUG_PRINT_ENABLED
 #define NETWORK_TRACE(__function_name__, format, ...)   \
-    pthread_mutex_lock(&gnd_network_cs);                \
+    pthread_mutex_lock(&network_cs);                \
     printf("[GND_NETWORK->%s]: ", #__function_name__);  \
     printf(format, ##__VA_ARGS__);                      \
     printf("\n");                                       \
-    pthread_mutex_unlock(&gnd_network_cs)
+    pthread_mutex_unlock(&network_cs)
 #else
 #define NETWORK_TRACE(__function_name__, format, ...)
 #endif

@@ -29,15 +29,13 @@ extern FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
 * \brief Folder of id's.
 */
 
-//#define ID_PATH                "Z:\\HerFace\\Faces\\"
-#define ID_PATH                "Z:\\frok\\"
+#define ID_PATH                "/home/zda/faces/"
 
 /**
 * \brief Folder with downloading photos.
 */
 
-//#define TARGET_PATH            "Z:\\HerFace\\Faces\\"
-#define TARGET_PATH            "Z:\\frok\\1\\"
+#define TARGET_PATH            "/home/zda/faces/"
 
 #pragma pack(push, 1)
 

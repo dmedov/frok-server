@@ -17,10 +17,17 @@ LINK = $(AR) rsc $@ $(OBJ)
 LINK_STR := " AR            "
 else
 ifeq ($(TARGETTYPE),executable)
-LINK = $(C) $(LDFLAGS) -o $@ $(OBJ) $(LIBS) -s $(STATLIBS)
+LINK = $(C) $(LDFLAGS) -o $@ $(OBJ) $(LIBS)
 LINK_STR := " LD            "
+else
+ifeq ($(TARGETTYPE),shared)
+LINK = $(C) $(LDFLAGS) -shared -o $@ $(OBJ) $(LIBS)
+LINK_STR := " SO            "
 endif
 endif
+endif
+
+prebuild: | start_build directories
 
 start_build:
 	@echo $(BRIGHT)$(WHITE)" BUILD         "$(RESET) $(TARGET)
@@ -35,7 +42,6 @@ $(BINOUTDIR): | start_build
 
 directories: | start_build $(OUTDIRS) $(BINOUTDIR)
 
-prebuild: | start_build directories
 
 all: build
 

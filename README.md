@@ -41,10 +41,14 @@ Requirements:
 		sudo unzip opencv-2.4.9.zip -d /opt/
 	3.3. Make opencv from sources:
 		cd /opt/opencv-2.4.9/
-		mkdir install
-		sudo cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/opt/opencv-2.4.9/install ./
+		mkdir static
+		sudo cmake -D CMAKE_BUILD_TYPE=RELEASE -D BUILD_SHARED_LIBS=NO -D CMAKE_INSTALL_PREFIX=/opt/opencv-2.4.9/static -D WITH_QT=NO ./
 		sudo make
 		sudo make install
+    3.4. Set opencv paths
+        gedit ~/.bashrc
+        add 'export LD_LIBRARY_PATH=/opt/opencv-2.4.9/static/lib/:$LD_LIBRARY_PATH' to the end of file, save and exit
+        reboot
 
 Issues:
 	1. undefined reference to symbol 'pthread_mutexattr_settype@@GLIBC_2.2.5'
@@ -52,6 +56,11 @@ Issues:
 			change '-L/usr/lib/x86_64-linux-gnu' in *.mk files to your linux-gnu path
 			Use this command to see your linux-gnu path:
 				find /usr/lib | grep linux-gnu
+    2. When running from QtCreatod: error while oading shared libraries: libopencv_contrib.so ...
+        Solution:
+            Open Projects tab->build->Build Environment (on the bottom)
+            add environment variable:
+            name - LD_LIBRARY_PATH, value - /opt/opencv-2.4.9/install/lib/
 
 Build steps:        [TBD] more info + QtCreator info
 1. in terminal go to FaceDetection library

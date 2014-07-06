@@ -5,7 +5,7 @@
 export MAKE ?= make
 export AR ?= ar
 export CC ?= gcc
-export CPPC ?= g++ -std=c++11
+export CPPC ?= g++
 export RANLIB ?= ranlib
 export OPENCV ?= /opt/opencv-2.4.9
 
@@ -32,7 +32,7 @@ ifeq ($(CFG),release)
 LDFLAGS += -Wl,-O1
 CONFIG := build_release
 else
-CFLAGS += -g -DDBG -DDEBUG -fPIC
+CFLAGS += -g -fPIC
 CONFIG := build_debug
 endif
 

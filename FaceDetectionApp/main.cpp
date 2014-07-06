@@ -1,13 +1,13 @@
 #include "stdafx.h"
-#include "LibInclude.h"
+#include "../FaceDetectionLib/LibInclude.h"
 // Add SHOW_IMAGE define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
 
 #define PORT 27015
 
-#define    NET_CMD_RECOGNIZE    "recognize"
-#define NET_CMD_TRAIN        "train"
-#define    NET_CMD_GET_FACES    "get_faces"
-#define NET_CMD_SAVE_FACE    "save_face"
+#define     NET_CMD_RECOGNIZE    "recognize"
+#define     NET_CMD_TRAIN        "train"
+#define     NET_CMD_GET_FACES    "get_faces"
+#define     NET_CMD_SAVE_FACE    "save_face"
 
 void callback(SOCKET sock, unsigned evt, unsigned length, void *param);
 
@@ -40,11 +40,15 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
             json::Object objInputJson;
             try
             {
+                printf("2\n");
                 objInputJson = ((json::Value)json::Deserialize((string)((char*)param))).ToObject();
+                printf("2\n");
             }
             catch (...)
             {
+                printf("1\n");
                 FilePrintMessage(NULL, _FAIL("Failed to parse incoming JSON: %s"), (char*)param);
+                printf("1\n");
                 net.SendData(sock, "{ \"error\":\"bad command\" }\n\0", strlen("{ \"error\":\"bad command\" }\n\0"));
                 return;
             }
@@ -55,6 +59,8 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
                 net.SendData(sock, "{ \"error\":\"no cmd field\" }\n\0", strlen("{ \"error\":\"no cmd field\" }\n\0"));
                 return;
             }
+
+            printf("1\n");
 
             // Parse cmd
             if (objInputJson["cmd"].ToString() == NET_CMD_RECOGNIZE)
@@ -172,8 +178,7 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
             }
             break;
         }
-        default
-            :
+        default:
         {
             FilePrintMessage(NULL, _FAIL("Unknown event 0x%x"), evt);
             break;
@@ -200,9 +205,9 @@ int main(void)
         return -1;
     }
     FilePrintMessage(NULL, _SUCC("Network server started!"));
-    
-    //char train[] = "{\"cmd\":\"train\", \"ids\":[\"5\"]}\0";    // cut faces and train base
-    //callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
+
+    char train[] = "{\"cmd\":\"train\", \"ids\":[\"1\"]}\0";    // cut faces and train base
+    callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
 
     //char save_face[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_number\":\"0\"}\0";    // cut faces and train base
     //callback(1, NET_RECEIVED_REMOTE_DATA, strlen(save_face), save_face);

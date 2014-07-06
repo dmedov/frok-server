@@ -177,7 +177,7 @@ public:
     * \endcode
     */
 
-    bool faceDetect(IplImage *inputImage, const map <string, Ptr<FaceRecognizer>> &models, SOCKET outSock = INVALID_SOCKET);
+    bool faceDetect(IplImage *inputImage, const map < string, Ptr<FaceRecognizer> > &models, SOCKET outSock = INVALID_SOCKET);
 
     /**
     * \brief Selecting a face on the picture and saving the face.

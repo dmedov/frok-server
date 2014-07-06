@@ -171,6 +171,10 @@ int getSubdirsFromDir(const char *dir, vector<string> &subdirs)
 
     while (NULL != (file = readdir(dirStream)))
     {
+        if(!strcmp(file->d_name, ".") || !strcmp(file->d_name, ".."))
+        {
+            continue;
+        }
         char *fullname = new char[strlen(dir) + strlen(file->d_name) + 1];
         memset(fullname, 0, strlen(dir) + strlen(file->d_name) + 1);
         memcpy(fullname, dir, strlen(dir));

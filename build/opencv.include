@@ -3,89 +3,53 @@
 ###########################################################
 include makefile.consts
 
-OPENCV_LIB := 			\
--lopencv_calib3d		\
--lopencv_ml			\
--lopencv_calib3d	       	\
--lopencv_ml			\
--lopencv_calib3d		\
--lopencv_nonfree		\
--lopencv_contrib		\
--lopencv_nonfree		\
--lopencv_contrib	      	\
--lopencv_nonfree		\
--lopencv_contrib	     	\
--lopencv_objdetect		\
--lopencv_core              	\
--lopencv_objdetect		\
--lopencv_core	          	\
--lopencv_objdetect		\
--lopencv_core	        	\
--lopencv_ocl			\
--lopencv_features2d        	\
--lopencv_ocl			\
--lopencv_features2d	    	\
--lopencv_ocl			\
--lopencv_features2d	  	\
--lopencv_photo			\
--lopencv_flann             	\
--lopencv_photo			\
--lopencv_flann	         	\
--lopencv_photo			\
--lopencv_flann		       	\
--lopencv_stitching		\
--lopencv_gpu               	\
--lopencv_stitching		\
--lopencv_gpu	           	\
--lopencv_stitching		\
--lopencv_gpu	         	\
--lopencv_superres		\
--lopencv_highgui           	\
--lopencv_superres		\
--lopencv_highgui	       	\
--lopencv_superres		\
--lopencv_highgui	     	\
--lopencv_ts			\
--lopencv_imgproc           	\
--lopencv_video			\
--lopencv_imgproc		\
--lopencv_video			\
--lopencv_imgproc		\
--lopencv_video			\
--lopencv_legacy			\
--lopencv_videostab		\
--lopencv_legacy			\
--lopencv_videostab		\
--lopencv_legacy			\
--lopencv_videostab		\
--lopencv_ml
+OPENCV_LIB := -L$(OPENCV)/static/lib            \
+-L$(OPENCV)/static/share/OpenCV/3rdparty/lib    \
+-lopencv_contrib	\
+-lopencv_stitching  \
+-lopencv_nonfree    \
+-lopencv_superres   \
+-lopencv_ocl        \
+-lopencv_ts         \
+-lopencv_videostab  \
+-lopencv_gpu        \
+-lopencv_photo      \
+-lopencv_objdetect	\
+-lopencv_legacy     \
+-lopencv_video      \
+-lopencv_ml         \
+-lopencv_calib3d    \
+-lopencv_features2d \
+-lopencv_highgui    \
+-lIlmImf            \
+-llibjasper         \
+-llibtiff           \
+-llibjpeg           \
+-lopencv_imgproc    \
+-lopencv_flann      \
+-lopencv_core       \
+-lgthread-2.0       \
+-lfreetype          \
+-lglib-2.0          \
+-lgobject-2.0       \
+-lfontconfig        \
+-lpango-1.0         \
+-lcairo             \
+-lgdk_pixbuf-2.0    \
+-lpangocairo-1.0    \
+-lpangoft2-1.0      \
+-lgio-2.0           \
+-latk-1.0           \
+-lgdk-x11-2.0       \
+-lgtk-x11-2.0       \
+/usr/lib/x86_64-linux-gnu/libpng.so \
+-lrt                \
+-lpthread           \
+-lm                 \
+-ldl                \
+-lstdc++            \
+/usr/lib/x86_64-linux-gnu/libz.so
 
-OPENCV_INCLUDES := $(OPENCV)/install/include	\
-	$(OPENCV)/install/include/opencv/	\
-	$(OPENCV)/install/include/opencv2/	\
-	#$(OPENCV)/install/modules/core/include/		\
-	#$(OPENCV)/install/modules/imgproc/include/	\
-	#$(OPENCV)/install/modules/imgproc/include/	\
-	#$(OPENCV)/install/modules/video/include		\
-	#$(OPENCV)/install/modules/features2d/include	\
-	#$(OPENCV)/install/modules/flann/include		\
-	#$(OPENCV)/install/modules/androidcamera/include	\
-	#$(OPENCV)/install/modules/calib3d/include	\
-	#$(OPENCV)/install/modules/contrib/include	\
-	#$(OPENCV)/install/modules/dynamicuda/include	\
-	#$(OPENCV)/install/modules/gpu/include		\
-	#$(OPENCV)/install/modules/highgui/include	\
-	#$(OPENCV)/install/modules/java/include		\
-	#$(OPENCV)/install/modules/legacy/include	\
-	#$(OPENCV)/install/modules/ml/include		\
-	#$(OPENCV)/install/modules/nonfree/include	\
-	#$(OPENCV)/install/modules/objdetect/include	\
-	#$(OPENCV)/install/modules/ocl/include		\
-	#$(OPENCV)/install/modules/photo/include		\
-	#$(OPENCV)/install/modules/python/include	\
-	#$(OPENCV)/install/modules/stitching/include	\
-	#$(OPENCV)/install/modules/superres/include	\
-	#$(OPENCV)/install/modules/ts/include		\
-	#$(OPENCV)/install/modules/videostab/include	\
-	#$(OPENCV)/install/modules/viz/include		\
-	#$(OPENCV)/install/modules/world/include
+OPENCV_INCLUDES := $(OPENCV)/static/include	    \
+	$(OPENCV)/static/include/opencv/	        \
+	$(OPENCV)/satic/include/opencv2/

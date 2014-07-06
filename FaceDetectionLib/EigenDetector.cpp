@@ -185,7 +185,6 @@ double EigenDetector::getSimilarity2(const Mat *projected_mat, const Mat *face_m
     return prob;
 }
 
-// сравнение объектов по моментам их контуров 
 double testMatch(IplImage* image, IplImage* rec){
     assert(image != 0);
     assert(rec != 0);
@@ -193,7 +192,6 @@ double testMatch(IplImage* image, IplImage* rec){
     IplImage* binI = cvCreateImage(cvGetSize(image), 8, 1);
     IplImage* binT = cvCreateImage(cvGetSize(rec), 8, 1);
 
-    // получаем границы изображения и шаблона
     cvCanny(image, binI, 10, 200, 3);
     cvCanny(rec, binT, 10, 300, 3);
 
@@ -201,15 +199,12 @@ double testMatch(IplImage* image, IplImage* rec){
     Mat dif_mat = Mat(binT, true);
 
 
-    // для хранения контуров
     CvMemStorage* storage1 = cvCreateMemStorage(0);
     CvMemStorage* storage2 = cvCreateMemStorage(0);
     CvSeq* contoursI = 0, *contoursT = 0;
 
-    // находим контуры изображения
     int contoursCont = cvFindContours(binI, storage1, &contoursI, sizeof(CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
 
-    // находим контуры шаблона
     int contoursCont2 = cvFindContours(binT, storage2, &contoursT, sizeof(CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
 
 
@@ -217,7 +212,6 @@ double testMatch(IplImage* image, IplImage* rec){
     double perimT = 0;
 
     if (contoursT != 0){
-        // находим самый длинный контур
         for (CvSeq* seq0 = contoursT; seq0 != 0; seq0 = seq0->h_next){
             double perim = cvContourPerimeter(seq0);
             if (perim > perimT){
@@ -228,10 +222,8 @@ double testMatch(IplImage* image, IplImage* rec){
     }
 
     double matchM = 0;
-    // обходим контуры изображения
     int counter = 0;
     if (contoursI != 0 && contoursT != 0){
-        // поиск лучшего совпадения контуров по их моментам
         for (CvSeq* seq0 = contoursI; seq0 != 0; seq0 = seq0->h_next){
             double match0 = cvMatchShapes(seq0, seqT, CV_CONTOURS_MATCH_I3);
             if (match0 > matchM){
@@ -264,33 +256,24 @@ __int64_t calcImageHash(IplImage* src, bool show_results)
     res = cvCreateImage(cvSize(8, 8), src->depth, src->nChannels);
     bin = cvCreateImage(cvSize(8, 8), IPL_DEPTH_8U, 1);
 
-    // уменьшаем картинку
     cvResize(src, res);
 
-    // вычисляем среднее
     CvScalar average = cvAvg(res);
-    // получим бинарное изображение относительно среднего
-    // для этого воспользуемся пороговым преобразованием
     cvThreshold(res, bin, average.val[0], 255, CV_THRESH_BINARY);
 
-    // построим хэш
     __int64_t hash = 0;
 
     int i = 0;
-    // пробегаемся по всем пикселям изображения
     for (int y = 0; y < bin->height; y++) {
         uchar* ptr = (uchar*)(bin->imageData + y * bin->widthStep);
         for (int x = 0; x < bin->width; x++) {
-            // 1 канал
             if (ptr[x]){
-                // hash |= 1<<i;  // warning C4334: '<<' : result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)
                 hash |= (__int64_t)1 << i;
             }
             i++;
         }
     }
 
-    // освобождаем ресурсы
     cvReleaseImage(&res);
     cvReleaseImage(&bin);
 
@@ -312,7 +295,7 @@ __int64_t calcHammingDistance(__int64_t x, __int64_t y)
 }
 
 
-void EigenDetector::recognize(const map <string, Ptr<FaceRecognizer>> &models, DataJson *psDataJson, IplImage* image)
+void EigenDetector::recognize(const map < string, Ptr<FaceRecognizer> > &models, DataJson *psDataJson, IplImage* image)
 {
     if (psDataJson == NULL)
     {
@@ -323,7 +306,7 @@ void EigenDetector::recognize(const map <string, Ptr<FaceRecognizer>> &models, D
     string result_name = "-1";
 
 
-    for (map <string, Ptr<FaceRecognizer>>::const_iterator it = models.begin(); it != models.end(); ++it)
+    for (map < string, Ptr<FaceRecognizer> >::const_iterator it = models.begin(); it != models.end(); ++it)
     {
         Ptr<FaceRecognizer> model = (*it).second;
 
