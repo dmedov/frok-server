@@ -70,10 +70,11 @@ void ViolaJonesDetection::writeFacePoints(const ImageCoordinats &pointKeyFace, c
     }
 }
 
-bool ViolaJonesDetection::drawEvidence(const ImageCoordinats &pointFace, bool draw)
+bool ViolaJonesDetection::drawEvidence(const ImageCoordinats &pointFace)
 {
     const CvPoint p1 = pointFace.p1;
     const CvPoint p2 = pointFace.p2;
+
     int count = 0;
     for (int i = 0; i < 8; i++)
     {
@@ -84,30 +85,33 @@ bool ViolaJonesDetection::drawEvidence(const ImageCoordinats &pointFace, bool dr
     }
 
     if (count >= 4){        //[TBD] Why 4?
-        if (draw){
-            //cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));
-            int w = (p2.x - p1.x);
-            int h = (p2.y - p1.y);
-#ifdef SHOW_IMAGE
-            cvLine(imageResults, p1, cvPoint(p1.x + w / 4, p1.y), CV_RGB(128, 128, 255));
-            cvLine(imageResults, p1, cvPoint(p1.x, p1.y + h / 4), CV_RGB(128, 128, 255));
-            cvLine(imageResults, p2, cvPoint(p2.x - w / 4, p2.y), CV_RGB(128, 128, 255));
-            cvLine(imageResults, p2, cvPoint(p2.x, p2.y - h / 4), CV_RGB(128, 128, 255));
+        #ifdef SHOW_IMAGE
+        //cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));
 
-            cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w - w / 4, p1.y), CV_RGB(128, 128, 255));
-            cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w, p1.y + h / 4), CV_RGB(128, 128, 255));
-            cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w, p2.y - h / 4), CV_RGB(128, 128, 255));
-            cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w + w / 4, p2.y), CV_RGB(128, 128, 255));
+        int w = (p2.x - p1.x);
+        int h = (p2.y - p1.y);
 
-            cvRectangle(imageResults, facePoints[0], facePoints[4], CV_RGB(0, 255, 0));
-            cvRectangle(imageResults, facePoints[1], facePoints[5], CV_RGB(0, 0, 255));
-            cvRectangle(imageResults, facePoints[2], facePoints[6], CV_RGB(255, 100, 255));
-            cvRectangle(imageResults, facePoints[3], facePoints[7], CV_RGB(128, 0, 128));
-#endif //SHOW_IMAGE
-        }
+        cvLine(imageResults, p1, cvPoint(p1.x + w / 4, p1.y), CV_RGB(128, 128, 255));
+        cvLine(imageResults, p1, cvPoint(p1.x, p1.y + h / 4), CV_RGB(128, 128, 255));
+        cvLine(imageResults, p2, cvPoint(p2.x - w / 4, p2.y), CV_RGB(128, 128, 255));
+        cvLine(imageResults, p2, cvPoint(p2.x, p2.y - h / 4), CV_RGB(128, 128, 255));
+
+        cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w - w / 4, p1.y), CV_RGB(128, 128, 255));
+        cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w, p1.y + h / 4), CV_RGB(128, 128, 255));
+        cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w, p2.y - h / 4), CV_RGB(128, 128, 255));
+        cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w + w / 4, p2.y), CV_RGB(128, 128, 255));
+
+        cvRectangle(imageResults, facePoints[0], facePoints[4], CV_RGB(0, 255, 0));
+        cvRectangle(imageResults, facePoints[1], facePoints[5], CV_RGB(0, 0, 255));
+        cvRectangle(imageResults, facePoints[2], facePoints[6], CV_RGB(255, 100, 255));
+        cvRectangle(imageResults, facePoints[3], facePoints[7], CV_RGB(128, 0, 128));
+
+        #endif //SHOW_IMAGE
         return true;
     }
     return false;
+
+    return true;
 }
 
 int ViolaJonesDetection::defineRotate(){
@@ -475,7 +479,7 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map < string, P
 
         allKeysFaceDetection(points.p1);
 
-        if (drawEvidence(points, true)){
+        if (drawEvidence(points)){
             defineRotate();
             face_img = imposeMask(points.p1);
             IplImage *temporaryImg = new IplImage(eigenDetector->MaskFace(face_img));
@@ -554,7 +558,7 @@ bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath
     allKeysFaceDetection(points.p1);
     normalizateHistFace();
 
-    if (!drawEvidence(points, true)){
+    if (!drawEvidence(points)){
         return false;
     }
     if (defineRotate() != 0){

@@ -25,55 +25,67 @@ struct FaceCascades{
     /**
     * \brief Cascade to recognize a face.
     */
-    CvHaarClassifierCascade *face = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml", 0, 0, 0);
+    CvHaarClassifierCascade *face;
 
     /**
     * \brief Cascade to recognize the eyes on the face.
     */
 
-    CvHaarClassifierCascade *eyes = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml", 0, 0, 0);
+    CvHaarClassifierCascade *eyes;
 
     /**
     * \brief Cascade to recognize the right eye on the face if previuos cascade hasn't worked.
     */
 
-    CvHaarClassifierCascade *righteye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_righteye.xml", 0, 0, 0);
+    CvHaarClassifierCascade *righteye;
 
     /**
     * \brief Cascade to recognize the left eye on the face if cascade "eyes" hasn't worked.
     */
 
-    CvHaarClassifierCascade *lefteye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_lefteye.xml", 0, 0, 0);
+    CvHaarClassifierCascade *lefteye;
 
     /**
     * \brief Cascade to recognize the right eye on the face if cascade "eyes" and cascade "righteye" haven't worked.
     */
 
-    CvHaarClassifierCascade *righteye2 = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_righteye_2splits.xml", 0, 0, 0);
+    CvHaarClassifierCascade *righteye2;
 
     /**
     * \brief Cascade to recognize the left eye on the face if cascade "eyes" and cascade "lefteye" haven't worked.
     */
 
-    CvHaarClassifierCascade *lefteye2 = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_lefteye_2splits.xml", 0, 0, 0);
+    CvHaarClassifierCascade *lefteye2;
 
     /**
     * \brief Cascade to detect an open eyes only.
     */
 
-    CvHaarClassifierCascade *eye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye.xml", 0, 0, 0);
+    CvHaarClassifierCascade *eye;
 
     /**
     * \brief Cascade to detect a nose.
     */
 
-    CvHaarClassifierCascade *nose = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_nose.xml", 0, 0, 0);
+    CvHaarClassifierCascade *nose;
 
     /**
     * \brief Cascade to detect a mouth.
     */
 
-    CvHaarClassifierCascade *mouth = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_mouth.xml", 0, 0, 0);
+    CvHaarClassifierCascade *mouth;
+    FaceCascades()
+    {
+        face = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml", 0, 0, 0);
+        eyes = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml", 0, 0, 0);
+        righteye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_righteye.xml", 0, 0, 0);
+        lefteye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_lefteye.xml", 0, 0, 0);
+        righteye2 = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_righteye_2splits.xml", 0, 0, 0);
+        lefteye2 = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_lefteye_2splits.xml", 0, 0, 0);
+        eye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye.xml", 0, 0, 0);
+        nose = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_nose.xml", 0, 0, 0);
+        mouth = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_mouth.xml", 0, 0, 0);
+    }
 };
 
 /**
@@ -214,7 +226,7 @@ private:
     *
     */
 
-    bool drawEvidence(const ImageCoordinats &pointFace, bool draw);
+    bool drawEvidence(const ImageCoordinats &pointFace);
 
     /**
     * \brief Writing key points to the array.

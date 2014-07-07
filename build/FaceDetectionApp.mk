@@ -15,7 +15,7 @@ CFLAGS += -Wno-unknown-pragmas
 LIBS := -L$(BINOUTDIR)			\
 	-L/usr/lib/x86_64-linux-gnu	\
 	-lFaceDetectionLib -lrt -lpthread \
-	$(OPENCV_LIB)
+    $(OPENCV_LIB)
 
 
 DEPENDENCIES := $(BINOUTDIR)/libFaceDetectionLib.a

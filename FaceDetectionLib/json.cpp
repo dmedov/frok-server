@@ -1,7 +1,6 @@
 #include "json.h"
 #include <stdlib.h>
 #include <string>
-//#include <strings.h>
 #include <algorithm>
 #include <cstdlib>
 #include <cstdio>
@@ -33,13 +32,13 @@ namespace json
 static std::string Trim(const std::string& str)
 {
     std::string s = str;
-    
+
     // remove white space in front
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
-    
+
     // remove trailing white space
     s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
-    
+
     return s;
 }
 
@@ -58,10 +57,10 @@ static size_t GetQuotePos(const std::string& str, size_t start_pos = 0)
         }
         else if ((c == '\"') && !found_slash)
             return i;
-        
+
         found_slash = false;
     }
-    
+
     return std::string::npos;
 }
 
@@ -71,14 +70,14 @@ Value::Value(const Value& v) : mValueType(v.mValueType)
 {
     switch (mValueType)
     {
-        case StringVal        : mStringVal = v.mStringVal; break;
-        case IntVal            : mIntVal = v.mIntVal; mFloatVal = (float)v.mIntVal; mDoubleVal = (double)v.mIntVal; break;
-        case FloatVal        : mFloatVal = v.mFloatVal; mIntVal = (int)v.mFloatVal; mDoubleVal = (double)v.mDoubleVal; break;
-        case DoubleVal        : mDoubleVal = v.mDoubleVal; mIntVal = (int)v.mDoubleVal; mFloatVal = (float)v.mDoubleVal; break;
-        case BoolVal        : mBoolVal = v.mBoolVal; break;
-        case ObjectVal        : mObjectVal = v.mObjectVal; break;
-        case ArrayVal        : mArrayVal = v.mArrayVal; break;
-        default                : break;
+        case StringVal		: mStringVal = v.mStringVal; break;
+        case IntVal			: mIntVal = v.mIntVal; mFloatVal = (float)v.mIntVal; mDoubleVal = (double)v.mIntVal; break;
+        case FloatVal		: mFloatVal = v.mFloatVal; mIntVal = (int)v.mFloatVal; mDoubleVal = (double)v.mDoubleVal; break;
+        case DoubleVal		: mDoubleVal = v.mDoubleVal; mIntVal = (int)v.mDoubleVal; mFloatVal = (float)v.mDoubleVal; break;
+        case BoolVal		: mBoolVal = v.mBoolVal; break;
+        case ObjectVal		: mObjectVal = v.mObjectVal; break;
+        case ArrayVal		: mArrayVal = v.mArrayVal; break;
+        default				: break;
     }
 }
 
@@ -91,14 +90,14 @@ Value& Value::operator =(const Value& v)
 
     switch (mValueType)
     {
-        case StringVal        : mStringVal = v.mStringVal; break;
-        case IntVal            : mIntVal = v.mIntVal; mFloatVal = (float)v.mIntVal; mDoubleVal = (double)v.mIntVal; break;
-        case FloatVal        : mFloatVal = v.mFloatVal; mIntVal = (int)v.mFloatVal; mDoubleVal = (double)v.mDoubleVal; break;
-        case DoubleVal        : mDoubleVal = v.mDoubleVal; mIntVal = (int)v.mDoubleVal; mFloatVal = (float)v.mDoubleVal; break;
-        case BoolVal        : mBoolVal = v.mBoolVal; break;
-        case ObjectVal        : mObjectVal = v.mObjectVal; break;
-        case ArrayVal        : mArrayVal = v.mArrayVal; break;
-        default                : break;
+        case StringVal		: mStringVal = v.mStringVal; break;
+        case IntVal			: mIntVal = v.mIntVal; mFloatVal = (float)v.mIntVal; mDoubleVal = (double)v.mIntVal; break;
+        case FloatVal		: mFloatVal = v.mFloatVal; mIntVal = (int)v.mFloatVal; mDoubleVal = (double)v.mDoubleVal; break;
+        case DoubleVal		: mDoubleVal = v.mDoubleVal; mIntVal = (int)v.mDoubleVal; mFloatVal = (float)v.mDoubleVal; break;
+        case BoolVal		: mBoolVal = v.mBoolVal; break;
+        case ObjectVal		: mObjectVal = v.mObjectVal; break;
+        case ArrayVal		: mArrayVal = v.mArrayVal; break;
+        default				: break;
     }
 
     return *this;
@@ -344,7 +343,7 @@ int Object::HasKeys(const std::vector<std::string>& keys) const
         if (!HasKey(keys[i]))
             return (int)i;
     }
-    
+
     return -1;
 }
 
@@ -353,7 +352,7 @@ int Object::HasKeys(const char** keys, int key_count) const
     for (int i = 0; i < key_count; i++)
         if (!HasKey(keys[i]))
             return i;
-    
+
     return -1;
 }
 
@@ -375,14 +374,14 @@ std::string SerializeValue(const Value& v)
     char buff[BUFF_SZ];
     switch (v.GetType())
     {
-        case IntVal            : snprintf(buff, BUFF_SZ, "%d", (int)v); str = buff; break;
-        case FloatVal        : snprintf(buff, BUFF_SZ, "%f", (float)v); str = buff; break;
-        case DoubleVal        : snprintf(buff, BUFF_SZ, "%f", (double)v); str = buff; break;
-        case BoolVal        : str = v ? "true" : "false"; break;
-        case NULLVal        : str = "null"; break;
-        case ObjectVal        : str = Serialize(v); break;
-        case ArrayVal        : str = SerializeArray(v); break;
-        case StringVal        : str = std::string("\"") + (std::string)v + std::string("\""); break;
+        case IntVal			: snprintf(buff, BUFF_SZ, "%d", (int)v); str = buff; break;
+        case FloatVal		: snprintf(buff, BUFF_SZ, "%f", (float)v); str = buff; break;
+        case DoubleVal		: snprintf(buff, BUFF_SZ, "%f", (double)v); str = buff; break;
+        case BoolVal		: str = v ? "true" : "false"; break;
+        case NULLVal		: str = "null"; break;
+        case ObjectVal		: str = Serialize(v); break;
+        case ArrayVal		: str = SerializeArray(v); break;
+        case StringVal		: str = std::string("\"") + (std::string)v + std::string("\""); break;
     }
 
     return str;
@@ -413,12 +412,12 @@ std::string json::Serialize(const Value& v)
     std::string str;
 
     bool first = true;
-    
+
     if (v.GetType() == ObjectVal)
     {
         str = "{";
         Object obj = v.ToObject();
-        for (Object::ValueMap::const_iterator it = obj.begin(); it != obj.end(); ++it)
+        for (Object::ValueMap::const_iterator it = obj.begin(); it != obj.end(); it++)
         {
             if (!first)
                 str += std::string(",");
@@ -433,20 +432,20 @@ std::string json::Serialize(const Value& v)
     {
         str = "[";
         Array a = v.ToArray();
-        for (Array::ValueVector::const_iterator it = a.begin(); it != a.end(); ++it)
+        for (Array::ValueVector::const_iterator it = a.begin(); it != a.end(); it++)
         {
             if (!first)
                 str += std::string(",");
-            
+
             str += SerializeValue(*it);
             first = false;
         }
-        
+
         str += "]";
-            
+
     }
     //else error
-    
+
     return str;
 }
 
@@ -458,19 +457,19 @@ static Value DeserializeObj(const std::string& _str, std::stack<StackDepthType>&
 static Value DeserializeInternal(const std::string& _str, std::stack<StackDepthType>& depth_stack)
 {
     Value v;
-    
+
     std::string str = Trim(_str);
     if (str[0] == '{')
     {
         // Error: Began with a { but doesn't end with one
         if (str[str.length() - 1] != '}')
             return Value();
-        
+
         depth_stack.push(InObject);
         v = DeserializeObj(str, depth_stack);
         if ((v.GetType() == NULLVal) || (depth_stack.top() != InObject))
             return v;
-        
+
         depth_stack.pop();
     }
     else if (str[0] == '[')
@@ -478,12 +477,12 @@ static Value DeserializeInternal(const std::string& _str, std::stack<StackDepthT
         // Error: Began with a [ but doesn't end with one
         if (str[str.length() - 1] != ']')
             return Value();
-        
+
         depth_stack.push(InArray);
         v = DeserializeArray(str, depth_stack);
         if ((v.GetType() == NULLVal) || (depth_stack.top() != InArray))
             return v;
-        
+
         depth_stack.pop();
     }
     else
@@ -491,7 +490,7 @@ static Value DeserializeInternal(const std::string& _str, std::stack<StackDepthT
         // Will never get here unless _str is not valid JSON
         return Value();
     }
-    
+
     return v;
 }
 
@@ -500,7 +499,7 @@ static size_t GetEndOfArrayOrObj(const std::string& str, std::stack<StackDepthTy
     size_t i = 1;
     bool in_quote = false;
     size_t original_count = depth_stack.size();
-    
+
     for (; i < str.length(); i++)
     {
         if (str[i] == '\"')
@@ -523,7 +522,7 @@ static size_t GetEndOfArrayOrObj(const std::string& str, std::stack<StackDepthTy
                     // Example problem: {]}
                     return std::string::npos;
                 }
-                
+
                 size_t count = depth_stack.size();
                 depth_stack.pop();
                 if (count == original_count)
@@ -538,7 +537,7 @@ static size_t GetEndOfArrayOrObj(const std::string& str, std::stack<StackDepthTy
                     // Example problem: [}]
                     return std::string::npos;
                 }
-                    
+
                 size_t count = depth_stack.size();
                 depth_stack.pop();
                 if (count == original_count)
@@ -546,14 +545,14 @@ static size_t GetEndOfArrayOrObj(const std::string& str, std::stack<StackDepthTy
             }
         }
     }
-    
+
     return i;
 }
 
 static std::string UnescapeJSONString(const std::string& str)
 {
     std::string s = "";
-    
+
     for (unsigned i = 0; i < str.length(); i++)
     {
         char c = str[i];
@@ -562,32 +561,32 @@ static std::string UnescapeJSONString(const std::string& str)
             int skip_ahead = 1;
             unsigned int hex;
             std::string hex_str;
-            
+
             switch (str[i+1])
             {
-                case '"' :     s.push_back('\"'); break;
-                case '\\':     s.push_back('\\'); break;
-                case '/' :     s.push_back('/'); break;
-                case 't' :     s.push_back('\t'); break;
-                case 'n' :     s.push_back('\n'); break;
-                case 'r' :     s.push_back('\r'); break;
-                case 'b' :    s.push_back('\b'); break;
-                case 'f' :     s.push_back('\f'); break;
-                case 'u' :     skip_ahead = 5;
+                case '"' : 	s.push_back('\"'); break;
+                case '\\': 	s.push_back('\\'); break;
+                case '/' : 	s.push_back('/'); break;
+                case 't' : 	s.push_back('\t'); break;
+                case 'n' : 	s.push_back('\n'); break;
+                case 'r' : 	s.push_back('\r'); break;
+                case 'b' :	s.push_back('\b'); break;
+                case 'f' : 	s.push_back('\f'); break;
+                case 'u' : 	skip_ahead = 5;
                     hex_str = str.substr(i + 4, 2);
                     hex = (unsigned int)std::strtoul(hex_str.c_str(), NULL, 16);
                     s.push_back((char)hex);
                     break;
-                    
+
                 default: break;
             }
-            
+
             i += skip_ahead;
         }
         else
             s.push_back(c);
     }
-    
+
     return Trim(s);
 }
 
@@ -610,7 +609,7 @@ static Value DeserializeValue(std::string& str, bool* had_error, std::stack<Stac
             *had_error = true;
             return Value();
         }
-        
+
         std::string array_str = str.substr(0, i + 1);
         v = Value(DeserializeArray(array_str, depth_stack));
         str = str.substr(i + 1, str.length());
@@ -661,7 +660,7 @@ static Value DeserializeValue(std::string& str, bool* had_error, std::stack<Stac
                     *had_error = true;
                     return Value();
                 }
-                
+
                 depth_stack.pop();
             }
             else if (str[i] == '}')
@@ -671,7 +670,7 @@ static Value DeserializeValue(std::string& str, bool* had_error, std::stack<Stac
                     *had_error = true;
                     return Value();
                 }
-                
+
                 depth_stack.pop();
             }
             else if (str[i] == ',')
@@ -731,7 +730,7 @@ static Value DeserializeArray(std::string& str, std::stack<StackDepthType>& dept
                 Value v = DeserializeValue(str, &had_error, depth_stack);
                 if (had_error)
                     return Value();
-                
+
                 if (v.GetType() != NULLVal)
                     a.push_back(v);
 
@@ -741,7 +740,7 @@ static Value DeserializeArray(std::string& str, std::stack<StackDepthType>& dept
             bool terminate_parsing = false;
 
             if ((str[i] == ',') || (str[i] == ']'))
-                terminate_parsing = true;            // hit the end of a value, parse it in the next block
+                terminate_parsing = true;			// hit the end of a value, parse it in the next block
             else
             {
                 // keep grabbing chars to build up the value
@@ -755,7 +754,7 @@ static Value DeserializeArray(std::string& str, std::stack<StackDepthType>& dept
                 Value v = DeserializeValue(tmp, &had_error, depth_stack);
                 if (had_error)
                     return Value();
-                
+
                 if (v.GetType() != NULLVal)
                     a.push_back(v);
 
@@ -787,8 +786,8 @@ static Value DeserializeObj(const std::string& _str, std::stack<StackDepthType>&
         size_t colon_idx = str.find(':', end_quote_idx);
 
         if ((start_quote_idx == std::string::npos) || (end_quote_idx == std::string::npos) || (colon_idx == std::string::npos))
-            return Value();    // can't find key name
-        
+            return Value();	// can't find key name
+
         std::string key = str.substr(start_quote_idx + 1, end_quote_idx - start_quote_idx - 1);
         if (key.length() == 0)
             return Value();
@@ -808,4 +807,3 @@ Value json::Deserialize(const std::string &str)
     std::stack<StackDepthType> depth_stack;
     return DeserializeInternal(str, depth_stack);
 }
-

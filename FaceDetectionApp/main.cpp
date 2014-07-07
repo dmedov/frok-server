@@ -1,5 +1,7 @@
 #include "stdafx.h"
+
 #include "../FaceDetectionLib/LibInclude.h"
+
 // Add SHOW_IMAGE define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
 
 #define PORT 27015
@@ -40,15 +42,11 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
             json::Object objInputJson;
             try
             {
-                printf("2\n");
                 objInputJson = ((json::Value)json::Deserialize((string)((char*)param))).ToObject();
-                printf("2\n");
             }
             catch (...)
             {
-                printf("1\n");
                 FilePrintMessage(NULL, _FAIL("Failed to parse incoming JSON: %s"), (char*)param);
-                printf("1\n");
                 net.SendData(sock, "{ \"error\":\"bad command\" }\n\0", strlen("{ \"error\":\"bad command\" }\n\0"));
                 return;
             }
@@ -195,7 +193,16 @@ void usage()
 
 int main(void)
 {
-    InitFaceDetectionLib();
+   // InitFaceDetectionLib();
+
+    json::Object obj;
+    obj["int"] = 1;
+    obj["float"] = 1.1f;
+    obj["bool"] = true;
+    obj["string"] = "hi";
+
+    std::string str = json::Serialize(obj);
+    printf("%s\n", str.c_str());
 
     FilePrintMessage(NULL, _SUCC("Starting network server with port = %d"), PORT);
     if (NET_SUCCESS != net.StartNetworkServer())

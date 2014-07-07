@@ -18,13 +18,13 @@ export EXCLUDE ?= @echo
 ifdef CCFLAG
 CFLAGS := $(CCFLAG)
 else
-CFLAGS := -MMD -Wall -pipe
+CFLAGS := -MMD -Wall -pipe -Wall -Wno-unused-function -Wno-write-strings -Wno-unused-result -Wno-unknown-pragmas -W -fPIE
 endif
 
 ifdef LDFLAG
 LDFLAGS := $(LDFLAG)
 else
-LDFLAGS := 
+LDFLAGS :=
 endif
 
 # Configuration settings
@@ -32,7 +32,7 @@ ifeq ($(CFG),release)
 LDFLAGS += -Wl,-O1
 CONFIG := build_release
 else
-CFLAGS += -g -fPIC
+CFLAGS += -g -fPIC 
 CONFIG := build_debug
 endif
 

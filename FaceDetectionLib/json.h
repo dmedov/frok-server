@@ -1,7 +1,7 @@
 /*
                                 SuperEasyJSON
                     http://www.sourceforge.net/p/supereasyjson
-    
+
     The MIT License (MIT)
 
     Copyright (c) 2013 Jeff Weinstein (jeff.weinstein at gmail)
@@ -77,7 +77,7 @@ namespace json
             const Value& operator [](const std::string& key) const;
             Value& operator [](const char* key);
             const Value& operator [](const char* key) const;
-        
+
             ValueMap::const_iterator begin() const;
             ValueMap::const_iterator end() const;
             ValueMap::iterator begin();
@@ -153,21 +153,35 @@ namespace json
     {
         protected:
 
-            ValueType                        mValueType;
-            int                                mIntVal;
-            float                            mFloatVal;
-            double                             mDoubleVal;
-            std::string                        mStringVal;
-            Object                            mObjectVal;
-            Array                            mArrayVal;
-            bool                             mBoolVal;
+            ValueType                       mValueType;
+            int                             mIntVal;
+            float                           mFloatVal;
+            double                          mDoubleVal;
+            std::string                     mStringVal;
+            Object                          mObjectVal;
+            Array                           mArrayVal;
+            bool                            mBoolVal;
 
         public:
 
             Value()                     : mValueType(NULLVal), mIntVal(0), mFloatVal(0), mDoubleVal(0), mBoolVal(false) {}
             Value(int v)                : mValueType(IntVal), mIntVal(v), mFloatVal((float)v), mDoubleVal((double)v) {}
-            Value(float v)                : mValueType(FloatVal), mFloatVal(v), mIntVal((int)v), mDoubleVal((double)v) {}
-            Value(double v)                : mValueType(DoubleVal), mDoubleVal(v), mIntVal((int)v), mFloatVal((float)v) {}
+
+            Value(float v)
+            {
+                mValueType = FloatVal;
+                mFloatVal = v;
+                mIntVal = (int)v;
+                mDoubleVal = (double)v;
+            }
+            Value(double v)
+            {
+                mValueType = DoubleVal;
+                mDoubleVal = v;
+                mFloatVal = (float)v;
+                mIntVal = (int)v;
+
+            }
             Value(const std::string& v)    : mValueType(StringVal), mStringVal(v) {}
             Value(const char* v)        : mValueType(StringVal), mStringVal(v) {}
             Value(const Object& v)        : mValueType(ObjectVal), mObjectVal(v) {}
@@ -194,12 +208,12 @@ namespace json
             const Value& operator [](const std::string& key) const;
             Value& operator [](const char* key);
             const Value& operator [](const char* key) const;
-        
+
             bool         HasKey(const std::string& key) const;
             int         HasKeys(const std::vector<std::string>& keys) const;
             int         HasKeys(const char* keys[], int key_count) const;
 
-        
+
             // non-operator versions
             int         ToInt() const        {
                 if (!IsNumeric())
@@ -218,7 +232,7 @@ namespace json
             }
             bool         ToBool() const        {
                 if(!(mValueType == BoolVal))
-                    throw 0; 
+                    throw 0;
                 return mBoolVal;
             }
             std::string    ToString() const    {
@@ -237,7 +251,7 @@ namespace json
                     throw 0;
                 return mArrayVal;
             }
-            
+
             // Please note that as per C++ rules, implicitly casting a Value to a std::string won't work.
             // This is because it could use the int/float/double/bool operators as well. So to assign a
             // Value to a std::string you can either do:

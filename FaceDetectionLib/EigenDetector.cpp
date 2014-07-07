@@ -203,9 +203,9 @@ double testMatch(IplImage* image, IplImage* rec){
     CvMemStorage* storage2 = cvCreateMemStorage(0);
     CvSeq* contoursI = 0, *contoursT = 0;
 
-    int contoursCont = cvFindContours(binI, storage1, &contoursI, sizeof(CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+    //int contoursCont = cvFindContours(binI, storage1, &contoursI, sizeof(CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
 
-    int contoursCont2 = cvFindContours(binT, storage2, &contoursT, sizeof(CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+    //int contoursCont2 = cvFindContours(binT, storage2, &contoursT, sizeof(CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
 
 
     CvSeq* seqT = 0;
@@ -222,7 +222,7 @@ double testMatch(IplImage* image, IplImage* rec){
     }
 
     double matchM = 0;
-    int counter = 0;
+    //int counter = 0;
     if (contoursI != 0 && contoursT != 0){
         for (CvSeq* seq0 = contoursI; seq0 != 0; seq0 = seq0->h_next){
             double match0 = cvMatchShapes(seq0, seqT, CV_CONTOURS_MATCH_I3);
@@ -245,7 +245,7 @@ double testMatch(IplImage* image, IplImage* rec){
     return 0;
 }
 
-__int64_t calcImageHash(IplImage* src, bool show_results)
+__int64_t calcImageHash(IplImage* src)
 {
     if (!src){
         return 0;
@@ -328,8 +328,8 @@ void EigenDetector::recognize(const map < string, Ptr<FaceRecognizer> > &models,
 
 
 
-        __int64_t hashO = calcImageHash((IplImage*)reconstructedFace, true);
-        __int64_t hashI = calcImageHash((IplImage*)image_mat, false);
+        __int64_t hashO = calcImageHash((IplImage*)reconstructedFace);
+        __int64_t hashI = calcImageHash((IplImage*)image_mat);
         __int64_t dist = calcHammingDistance(hashO, hashI);//-> to introduce to function
 
 
