@@ -18,6 +18,7 @@ QMAKE_CFLAGS_DEBUG +=     -Werror -Wall -Wno-unused-function -Wno-write-strings 
 INCLUDEPATH +=                                          \
     /opt/opencv-2.4.9/install/include/opencv/           \
     /opt/opencv-2.4.9/install/include/opencv2/          \
+    /opt/opencv-2.4.9/install/include
 
 HEADERS +=                  \
     ViolaJonesDetection.h   \
@@ -28,7 +29,7 @@ HEADERS +=                  \
     DescriptorDetection.h   \
     common.h                \
     activities.h            \
-    EigenDetector.h \
+    EigenDetector.h         \
     commonThread.h
 
 SOURCES +=                  \

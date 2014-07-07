@@ -302,9 +302,77 @@ void ViolaJonesDetection::keysFaceDetectFromForeignImage(CvHaarClassifierCascade
     cvReleaseImage(&dst);
     cvRelease((void**)&objects);
 }
-void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
-    , CvPoint pointFace, int type){
+void ViolaJonesDetection::keysFaceDetect(CascadeClassifier* cscd, CvPoint pointFace, int type)
+{
+    if (!cscd){
+        FilePrintMessage(NULL, _FAIL("Empty cascade"));
+        return;
+    }
 
+    IplImage* dst = 0;
+    int k;
+    CvSize minSize, maxSize;
+    //CvSeq *objects;
+    vector<Rect> objects;
+
+
+    int width = face_img->width;
+    int height = face_img->height;
+    int depth = face_img->depth;
+    int nChannels = face_img->nChannels;
+
+    if (width < 200 || height < 200)    k = 5;
+    else k = 1;
+
+    width *= k;
+    height *= k;
+    dst = cvCreateImage(cvSize(width, height), depth, nChannels);
+    cvResize(face_img, dst, 1);
+
+    minSize = cvSize(width / 4, height / 4);
+    maxSize = cvSize(width / 2, height / 2);
+
+    double scale_factor = 1.2;
+
+    if (type == 0 || type == 3 || type == 4){
+        minSize = cvSize(width / 6, height / 7);            // [TBD] Why 6,7,3,4 - magic numbers
+        maxSize = cvSize(width / 3, height / 4);
+        scale_factor = 1.01;
+    }
+    else if (type == 1){
+        minSize = cvSize(width / 5, height / 6);
+        maxSize = cvSize((int)(width / 3.5), (int)(height / 3.5));
+    }
+    else if (type == 2){
+        minSize = cvSize(width / 5, height / 6);
+        scale_factor = 1.4;
+    }
+
+    cscd->detectMultiScale((Mat)dst, objects,scale_factor, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, minSize, maxSize);
+    //objects = cvHaarDetectObjects(dst, cscd, strg, scale_factor, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, minSize, maxSize);
+
+    for(vector<Rect>::iterator it = objects.begin(); it != objects.end(); ++it)
+    {
+        int x = cvRound(((Rect)(*it)).x) / k;
+        int y = cvRound(((Rect)(*it)).y) / k;
+        int w = cvRound(((Rect)(*it)).width) / k;
+        int h = cvRound(((Rect)(*it)).height) / k;
+
+        //CvPoint p1 = cvPoint(x + pointFace.x, y + pointFace.y), p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
+        ImageCoordinats pointKeyFace, facePointCoordinates;
+
+        pointKeyFace.p1 = cvPoint(x + pointFace.x, y + pointFace.y);
+        pointKeyFace.p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
+        facePointCoordinates.p1 = pointFace;
+        facePointCoordinates.p2 = cvPoint(pointFace.x + width / k, pointFace.y + height / k);
+
+
+        writeFacePoints(pointKeyFace, facePointCoordinates, type);
+    }
+
+    cvReleaseImage(&dst);
+    //cvRelease((void**)&objects);
+    /*
     if (!cscd){
         FilePrintMessage(NULL, _FAIL("Empty cascade"));
         return;
@@ -370,22 +438,22 @@ void ViolaJonesDetection::keysFaceDetect(CvHaarClassifierCascade* cscd
     }
 
     cvReleaseImage(&dst);
-    cvRelease((void**)&objects);
+    cvRelease((void**)&objects);*/
 }
 
 // [TBD] magic number 4 (int type) should be EnumType
 void ViolaJonesDetection::allKeysFaceDetection(CvPoint point){
     if(strg == NULL)
         strg = cvCreateMemStorage(0);
-    keysFaceDetect(faceCascades->eye, point, 4);
-    keysFaceDetect(faceCascades->righteye2, point, 4);
-    keysFaceDetect(faceCascades->righteye, point, 4);
-    keysFaceDetect(faceCascades->eye, point, 3);
-    keysFaceDetect(faceCascades->lefteye2, point, 3);
-    keysFaceDetect(faceCascades->lefteye, point, 3);
-    keysFaceDetect(faceCascades->eyes, point, 0);
-    keysFaceDetect(faceCascades->nose, point, 1);
-    keysFaceDetect(faceCascades->mouth, point, 2);
+    keysFaceDetect(&faceCascades->eye, point, 4);
+    keysFaceDetect(&faceCascades->righteye2, point, 4);
+    keysFaceDetect(&faceCascades->righteye, point, 4);
+    keysFaceDetect(&faceCascades->eye, point, 3);
+    keysFaceDetect(&faceCascades->lefteye2, point, 3);
+    keysFaceDetect(&faceCascades->lefteye, point, 3);
+    keysFaceDetect(&faceCascades->eyes, point, 0);
+    keysFaceDetect(&faceCascades->nose, point, 1);
+    keysFaceDetect(&faceCascades->mouth, point, 2);
 }
 
 void ViolaJonesDetection::normalizateHistFace(){
@@ -409,23 +477,28 @@ bool ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock
     gray_img = cvCreateImage(cvGetSize(image), 8, 1);
     cvCvtColor(image, gray_img, CV_BGR2GRAY);
     strg = cvCreateMemStorage(0);
-    CvSeq *faces = cvHaarDetectObjects(gray_img, faceCascades->face, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+    vector <Rect> faces;
+    faceCascades->face.detectMultiScale((Mat)gray_img, faces, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50), cvSize(gray_img->width, gray_img->height));
+    //CvSeq *faces = cvHaarDetectObjects(gray_img, faceCascades->face, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
 
-    for (int i = 0; i < (faces ? faces->total : 0); i++){
+    //for (int i = 0; i < (faces ? faces->total : 0); i++){
+    for(vector<Rect>::iterator it = faces.begin(); it != faces.end(); ++it)
+    {
+        //CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
 
-        CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
+        int x = cvRound(((Rect)(*it)).x);
+        int y = cvRound(((Rect)(*it)).y);
+        int w = cvRound(((Rect)(*it)).width);
+        int h = cvRound(((Rect)(*it)).height);
 
-        int x = cvRound(rect->x);            int y = cvRound(rect->y);
-        int w = cvRound(rect->width);        int h = cvRound(rect->height);
-
-        ostringstream coutData;
+        /*ostringstream coutData;
         if (i != 0)
         {
             coutData << ", ";
         }
         coutData << "{ \"x1\": \"" << x << "\", \"y1\": \"" << y << "\", \"x2\": \"" << x + w << "\", \"y2\": \"" << y + h << "\" }";
 
-        outJson.append(coutData.str());
+        outJson.append(coutData.str());*/
     }
     outJson.append(" ] }\n");
 
@@ -453,14 +526,18 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map < string, P
     gray_img = cvCreateImage(cvGetSize(image), 8, 1);
     cvCvtColor(image, gray_img, CV_BGR2GRAY);
     strg = cvCreateMemStorage(0);
-    CvSeq *faces = cvHaarDetectObjects(gray_img, faceCascades->face, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+    vector<Rect> faces;
+    faceCascades->face.detectMultiScale((Mat)gray_img, faces, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50), cvSize(gray_img->width, gray_img->height));
 
-    for (int i = 0; i < (faces ? faces->total : 0); i++){
-        CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
+    for(vector<Rect>::iterator it = faces.begin(); it != faces.end(); ++it)
+    {
+
+        int x = cvRound(((Rect)(*it)).x);
+        int y = cvRound(((Rect)(*it)).y);
+        int w = cvRound(((Rect)(*it)).width);
+        int h = cvRound(((Rect)(*it)).height);
+
         ImageCoordinats points;
-
-        int x = cvRound(rect->x);            int y = cvRound(rect->y);
-        int w = cvRound(rect->width);        int h = cvRound(rect->height);
 
         points.p1 = cvPoint(x, y);
         points.p2 = cvPoint(x + w, y + h);
@@ -606,15 +683,18 @@ void ViolaJonesDetection::cutFaceThread(void *params)
     //clahe->apply(Mat(gray_img), Mat(gray_img));
 
     psParams->pThis->strg = cvCreateMemStorage(0);
-    CvSeq *faces = cvHaarDetectObjects(psParams->pThis->gray_img, psParams->pThis->faceCascades->face, psParams->pThis->strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
-    for (int i = 0; i < (faces ? faces->total : 0); i++){
-        CvRect* rect = (CvRect*)cvGetSeqElem(faces, i);
+    vector<Rect> faces;
+    psParams->pThis->faceCascades->face.detectMultiScale((Mat)psParams->pThis->gray_img, faces, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50), cvSize(psParams->pThis->gray_img->width, psParams->pThis->gray_img->height));
 
+    for(vector<Rect>::iterator it = faces.begin(); it != faces.end(); ++it)
+    {
 
-        int x = cvRound(rect->x);            int y = cvRound(rect->y);
-        int w = cvRound(rect->width);        int h = cvRound(rect->height);
+        int x = cvRound(((Rect)(*it)).x);
+        int y = cvRound(((Rect)(*it)).y);
+        int w = cvRound(((Rect)(*it)).width);
+        int h = cvRound(((Rect)(*it)).height);
 
-        if (faces->total == 1)
+        if (faces.size() == 1)
         {
             if (!psParams->pThis->cutFaceToBase(psParams->pThis->gray_img, psParams->destPath, x, y, w, h))
             {
@@ -659,30 +739,25 @@ bool ViolaJonesDetection::cutTheFace(IplImage *inputImage, const char* destPath,
     //clahe->apply(Mat(gray_img), Mat(gray_img));
 
     strg = cvCreateMemStorage(0);
-    CvSeq *faces = cvHaarDetectObjects(gray_img, faceCascades->face, strg, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50));
+    vector<Rect> faces;
+    faceCascades->face.detectMultiScale((Mat)gray_img, faces, 1.1, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(40, 50), cvSize(gray_img->width, gray_img->height));
 
-    if (faces != NULL)
+    if(!faces.empty())
     {
-        CvRect* rect = (CvRect*)cvGetSeqElem(faces, faceNumber);
 
-        int x = cvRound(rect->x);            int y = cvRound(rect->y);
-        int w = cvRound(rect->width);        int h = cvRound(rect->height);
+        int x = cvRound(faces[faceNumber].x);
+        int y = cvRound(faces[faceNumber].y);
+        int w = cvRound(faces[faceNumber].width);
+        int h = cvRound(faces[faceNumber].height);
 
-        if (faces->total == 1)
-        {
-            if (!cutFaceToBase(gray_img, destPath, x, y, w, h))
-            {
-                FilePrintMessage(NULL, "-");
-                cvClearMemStorage(strg);
-                cvReleaseImage(&face_img);
-                cvReleaseImage(&gray_img);
-                cvReleaseImage(&image);
-                return false;
-            }
-        }
-        else
+        if (!cutFaceToBase(gray_img, destPath, x, y, w, h))
         {
             FilePrintMessage(NULL, "-");
+            cvClearMemStorage(strg);
+            cvReleaseImage(&face_img);
+            cvReleaseImage(&gray_img);
+            cvReleaseImage(&image);
+            return false;
         }
     }
     else

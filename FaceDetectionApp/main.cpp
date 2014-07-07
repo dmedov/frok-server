@@ -191,16 +191,7 @@ void usage()
 
 int main(void)
 {
-   // InitFaceDetectionLib();
-
-    json::Object obj;
-    obj["int"] = 1;
-    obj["float"] = 1.1f;
-    obj["bool"] = true;
-    obj["string"] = "hi";
-
-    std::string str = json::Serialize(obj);
-    printf("%s\n", str.c_str());
+    InitFaceDetectionLib();
 
     FilePrintMessage(NULL, _SUCC("Starting network server with port = %d"), PORT);
     if (NET_SUCCESS != net.StartNetworkServer())

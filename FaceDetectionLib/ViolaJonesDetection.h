@@ -20,59 +20,15 @@
 *
 */
 
-struct FaceCascades{
-
-    /**
-    * \brief Cascade to recognize a face.
-    */
+/*struct FaceCascades{
     CvHaarClassifierCascade *face;
-
-    /**
-    * \brief Cascade to recognize the eyes on the face.
-    */
-
     CvHaarClassifierCascade *eyes;
-
-    /**
-    * \brief Cascade to recognize the right eye on the face if previuos cascade hasn't worked.
-    */
-
     CvHaarClassifierCascade *righteye;
-
-    /**
-    * \brief Cascade to recognize the left eye on the face if cascade "eyes" hasn't worked.
-    */
-
     CvHaarClassifierCascade *lefteye;
-
-    /**
-    * \brief Cascade to recognize the right eye on the face if cascade "eyes" and cascade "righteye" haven't worked.
-    */
-
     CvHaarClassifierCascade *righteye2;
-
-    /**
-    * \brief Cascade to recognize the left eye on the face if cascade "eyes" and cascade "lefteye" haven't worked.
-    */
-
     CvHaarClassifierCascade *lefteye2;
-
-    /**
-    * \brief Cascade to detect an open eyes only.
-    */
-
     CvHaarClassifierCascade *eye;
-
-    /**
-    * \brief Cascade to detect a nose.
-    */
-
     CvHaarClassifierCascade *nose;
-
-    /**
-    * \brief Cascade to detect a mouth.
-    */
-
     CvHaarClassifierCascade *mouth;
     FaceCascades()
     {
@@ -86,6 +42,17 @@ struct FaceCascades{
         nose = (CvHaarClassifierCascade*)cvLoad("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_nose.xml", 0, 0, 0);
         mouth = (CvHaarClassifierCascade*)cvLoad("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_mouth.xml", 0, 0, 0);
     }
+};*/
+struct FaceCascades{
+    CascadeClassifier face;
+    CascadeClassifier eyes;
+    CascadeClassifier righteye;
+    CascadeClassifier lefteye;
+    CascadeClassifier righteye2;
+    CascadeClassifier lefteye2;
+    CascadeClassifier eye;
+    CascadeClassifier nose;
+    CascadeClassifier mouth;
 };
 
 /**
@@ -275,7 +242,7 @@ private:
     * \endcode
     */
 
-    void keysFaceDetect(CvHaarClassifierCascade* cscd, CvPoint pointFace, int type);
+    void keysFaceDetect(CascadeClassifier* cscd, CvPoint pointFace, int type);
 
     /**
     * \brief Finding all key points on the face.

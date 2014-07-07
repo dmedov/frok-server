@@ -19,7 +19,7 @@ void EigenDetector::loadBaseFace(const char* facesPath, vector<Mat> * images, ve
         IplImage *dist = NULL;
         try
         {
-            dist = cvLoadImage(files[i].c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+            dist = cvLoadImage(((string)facesPath).append(files[i]).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
         }
         catch (...)
         {
