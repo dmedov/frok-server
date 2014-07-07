@@ -10,7 +10,7 @@ void getFacesFromPhoto(void *pContext)
     double startTime = clock();
     ContextForGetFaces *psContext = (ContextForGetFaces*)pContext;
 
-    string photoName = ((string)ID_PATH).append(psContext->userId).append("\\photos\\").append(psContext->photoName).append(".jpg");
+    string photoName = ((string)ID_PATH).append(psContext->userId).append("/photos/").append(psContext->photoName).append(".jpg");
 
     IplImage *img = cvLoadImage(photoName.c_str());
 
@@ -53,7 +53,7 @@ void saveFaceFromPhoto(void *pContext)
     double startTime = clock();
     ContextForSaveFaces *psContext = (ContextForSaveFaces*)pContext;
 
-    string photoName = ((string)ID_PATH).append(psContext->userId).append("\\photos\\").append(psContext->photoName).append(".jpg");
+    string photoName = ((string)ID_PATH).append(psContext->userId).append("/photos/").append(psContext->photoName).append(".jpg");
 
     IplImage *img = cvLoadImage(photoName.c_str());
 
@@ -69,7 +69,7 @@ void saveFaceFromPhoto(void *pContext)
 
     try
     {
-        if (!detector.cutTheFace(img, ((string)ID_PATH).append(psContext->userId).append("\\faces\\").append(psContext->photoName).append(".jpg").c_str(), psContext->faceNumber))
+        if (!detector.cutTheFace(img, ((string)ID_PATH).append(psContext->userId).append("/faces/").append(psContext->photoName).append(".jpg").c_str(), psContext->faceNumber))
         {
             FilePrintMessage(NULL, _FAIL("cut face FAILED"), photoName.c_str());
             net.SendData(psContext->sock, "{ \"error\":\"cut face FAILED\" }\n\0", strlen("{ \"error\":\"cut face FAILED\" }\n\0"));
@@ -201,13 +201,13 @@ void generateAndTrainBase(void *pContext)
         __int64_t uNumOfThreads = 0;
 
         vector<string> photos = vector<string>();
-        getFilesFromDir(((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\photos\\").c_str(), photos);
+        getFilesFromDir(((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("/photos/").c_str(), photos);
 
         vector<CommonThread *> threads;
 
         for (unsigned int j = 0; j < photos.size(); j++)
         {
-            string photoName = ((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\photos\\").append(photos[j]);
+            string photoName = ((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("/photos/").append(photos[j]);
             IplImage *img = cvLoadImage(photoName.c_str());
             if (img == NULL)
             {
@@ -216,7 +216,7 @@ void generateAndTrainBase(void *pContext)
             }
 
             cutFaceThreadParams * param = new cutFaceThreadParams(img,
-                (((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("\\faces\\").append(photos[j])).c_str(),
+                (((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("/faces/").append(photos[j])).c_str(),
                 &cascades[uNumOfThreads]);
 
             CommonThread *threadCutFace = new CommonThread;

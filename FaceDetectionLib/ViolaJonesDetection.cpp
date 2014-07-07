@@ -707,7 +707,7 @@ char name[512];
 long done;
 IplImage *base_face = 0, *gray_face = 0;
 
-sprintf(name, "%s\\*.jpg", currentUserPath);
+sprintf(name, "%s/*.jpg", currentUserPath);
 
 memset(&result, 0, sizeof(result));
 done = _findfirst(name, &result);
@@ -719,7 +719,7 @@ int res = 0;
 while (res == 0)
 {
 cout << result.name;
-sprintf(name, "%s\\faces\\%s", currentUserPath, result.name);
+sprintf(name, "%s/faces/%s", currentUserPath, result.name);
 base_face = cvLoadImage(name);
 
 if (!base_face) {

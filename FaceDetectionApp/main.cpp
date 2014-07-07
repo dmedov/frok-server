@@ -58,8 +58,6 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
                 return;
             }
 
-            printf("1\n");
-
             // Parse cmd
             if (objInputJson["cmd"].ToString() == NET_CMD_RECOGNIZE)
             {

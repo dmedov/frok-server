@@ -38,7 +38,7 @@ void EigenDetector::loadBaseFace(const char* facesPath, vector<Mat> * images, ve
 
 bool EigenDetector::train(const char* idPath){
 
-    string facesPath = ((string)idPath).append("\\faces\\");
+    string facesPath = ((string)idPath).append("/faces/");
 
     vector<Mat> images;
     vector<int> labels;
@@ -65,11 +65,11 @@ bool EigenDetector::train(const char* idPath){
 
     try
     {
-        model->save(((string)idPath).append("\\eigenface.yml").c_str());
+        model->save(((string)idPath).append("/eigenface.yml").c_str());
     }
     catch (...)
     {
-        FilePrintMessage(NULL, _FAIL("Failed to save %s"), (((string)idPath).append("\\eigenface.yml")).c_str());
+        FilePrintMessage(NULL, _FAIL("Failed to save %s"), (((string)idPath).append("/eigenface.yml")).c_str());
         return false;
     }
 

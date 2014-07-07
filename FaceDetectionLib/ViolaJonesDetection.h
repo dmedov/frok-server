@@ -76,15 +76,15 @@ struct FaceCascades{
     CvHaarClassifierCascade *mouth;
     FaceCascades()
     {
-        face = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml", 0, 0, 0);
-        eyes = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml", 0, 0, 0);
-        righteye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_righteye.xml", 0, 0, 0);
-        lefteye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_lefteye.xml", 0, 0, 0);
-        righteye2 = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_righteye_2splits.xml", 0, 0, 0);
-        lefteye2 = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_lefteye_2splits.xml", 0, 0, 0);
-        eye = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye.xml", 0, 0, 0);
-        nose = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_nose.xml", 0, 0, 0);
-        mouth = (CvHaarClassifierCascade*)cvLoad("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_mcs_mouth.xml", 0, 0, 0);
+        face = (CvHaarClassifierCascade*)cvLoad("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml", 0, 0, 0);
+        eyes = (CvHaarClassifierCascade*)cvLoad("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye_tree_eyeglasses.xml", 0, 0, 0);
+        righteye = (CvHaarClassifierCascade*)cvLoad("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_righteye.xml", 0, 0, 0);
+        lefteye = (CvHaarClassifierCascade*)cvLoad("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_lefteye.xml", 0, 0, 0);
+        righteye2 = (CvHaarClassifierCascade*)cvLoad("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_righteye_2splits.xml", 0, 0, 0);
+        lefteye2 = (CvHaarClassifierCascade*)cvLoad("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_lefteye_2splits.xml", 0, 0, 0);
+        eye = (CvHaarClassifierCascade*)cvLoad("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye.xml", 0, 0, 0);
+        nose = (CvHaarClassifierCascade*)cvLoad("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_nose.xml", 0, 0, 0);
+        mouth = (CvHaarClassifierCascade*)cvLoad("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_mouth.xml", 0, 0, 0);
     }
 };
 
