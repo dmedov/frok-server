@@ -46,17 +46,24 @@
 struct FaceCascades{
     CascadeClassifier *face;
     CascadeClassifier *eyes;
-    /*CascadeClassifier righteye;
-    CascadeClassifier lefteye;
-    CascadeClassifier righteye2;
-    CascadeClassifier lefteye2;
-    CascadeClassifier eye;
-    CascadeClassifier nose;
-    CascadeClassifier mouth;*/
+    CascadeClassifier *righteye;
+    CascadeClassifier *lefteye;
+    CascadeClassifier *righteye2;
+    CascadeClassifier *lefteye2;
+    CascadeClassifier *eye;
+    CascadeClassifier *nose;
+    CascadeClassifier *mouth;
     FaceCascades()
     {
         face = new CascadeClassifier;
         eyes = new CascadeClassifier;
+        righteye = new CascadeClassifier;
+        lefteye = new CascadeClassifier;
+        righteye2 = new CascadeClassifier;
+        lefteye2 = new CascadeClassifier;
+        eye = new CascadeClassifier;
+        mouth = new CascadeClassifier;
+        nose = new CascadeClassifier;
     }
     ~FaceCascades()
     {

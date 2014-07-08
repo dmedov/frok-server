@@ -200,18 +200,15 @@ int main(void)
     FilePrintMessage(NULL, _SUCC("Network server started!"));
 
     /*char train[] = "{\"cmd\":\"train\", \"ids\":[\"1\"]}\0";    // cut faces and train base
-    callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);*/
+    callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(train), train);*/
 
     //char save_face[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_number\":\"0\"}\0";    // cut faces and train base
-    //callback(1, NET_RECEIVED_REMOTE_DATA, strlen(save_face), save_face);
+    //callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(save_face), save_face);
 
     char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"1\"}\0";    // recognize name = 1.jpg
-    callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
+    callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(recognize), recognize);
     
-    //getchar();
-
-    net.EstablishConnetcion(0, PORT);
-    net.StopNetworkServer();
+    getchar();
 
     DeinitFaceDetectionLib();
 

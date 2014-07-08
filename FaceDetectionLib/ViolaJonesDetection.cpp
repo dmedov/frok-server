@@ -447,14 +447,14 @@ void ViolaJonesDetection::allKeysFaceDetection(CvPoint point){
     if(strg == NULL)
         strg = cvCreateMemStorage(0);
     keysFaceDetect(faceCascades->eyes, point, 0);
-    /*keysFaceDetect(&faceCascades->eye, point, 4);
-    keysFaceDetect(&faceCascades->righteye2, point, 4);
-    keysFaceDetect(&faceCascades->righteye, point, 4);
-    keysFaceDetect(&faceCascades->eye, point, 3);
-    keysFaceDetect(&faceCascades->lefteye2, point, 3);
-    keysFaceDetect(&faceCascades->lefteye, point, 3);    
-    keysFaceDetect(&faceCascades->nose, point, 1);
-    keysFaceDetect(&faceCascades->mouth, point, 2);*/
+    keysFaceDetect(faceCascades->eye, point, 4);
+    keysFaceDetect(faceCascades->righteye2, point, 4);
+    keysFaceDetect(faceCascades->righteye, point, 4);
+    keysFaceDetect(faceCascades->eye, point, 3);
+    keysFaceDetect(faceCascades->lefteye2, point, 3);
+    keysFaceDetect(faceCascades->lefteye, point, 3);
+    keysFaceDetect(faceCascades->nose, point, 1);
+    keysFaceDetect(faceCascades->mouth, point, 2);
 }
 
 void ViolaJonesDetection::normalizateHistFace(){

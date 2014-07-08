@@ -178,9 +178,9 @@ void CommonThread::startRoutine(void *param)
 
     sem_post(&psParams->threadStartedSema);
 
-    CTHREAD_PRINT(startRoutine, "User function started.");
+    CTHREAD_PRINT(startRoutine, "User function started. threadParams = %p", threadParams);
     function(threadParams);
-    CTHREAD_PRINT(startRoutine, "User function finished.");
+    CTHREAD_PRINT(startRoutine, "User function finished.threadParams = %p", threadParams);
 
     delete []threadParams;
     CTHREAD_PRINT(startRoutine, "Thread routine finished.");
