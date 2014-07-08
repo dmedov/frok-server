@@ -31,7 +31,6 @@ bool CommonThread::startThread(void *(*function) (void *), void *functionParams,
         return false;
     }
     pthread_attr_t tAttr;
-    memset(&tAttr, 0, sizeof(pthread_attr_t));
 
     if (0 != pthread_attr_init(&tAttr))
     {

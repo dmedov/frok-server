@@ -71,7 +71,6 @@ NetResult Network::StopNetworkServer()
 NetResult Network::StartNetworkServer()
 {
     sockaddr_in             server;
-    memset(&server, 0, sizeof(server));
 
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_family = AF_INET;
@@ -82,6 +81,8 @@ NetResult Network::StartNetworkServer()
         NETWORK_TRACE(StartNetworkServer, "socket failed on error = %s", strerror(errno));
         return NET_SOCKET_ERROR;
     }
+
+    //[TBD] think about SO_KEEPALIVE option
 
     int option = 1;
     if(0 != setsockopt(localSock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
@@ -179,7 +180,7 @@ void Network::AcceptConnection(void* param)
         // Send NET_SERVER_CONNECTED message via callback
         if(pThis->protocolCallback != NULL)
         {
-            pThis->protocolCallback(accepted_socket, NET_SERVER_CONNECTED, 0, NULL);
+            pThis->protocolCallback(NET_SERVER_CONNECTED, accepted_socket, 0, NULL);
         }
         else
         {
@@ -201,7 +202,6 @@ void Network::SocketListener(void* param)
     Network             *pThis = psParam->pThis;
 
     ProtocolCallbacklData   sCallbackData;
-    memset(&sCallbackData, 0, sizeof(sCallbackData));
 
     NETWORK_TRACE(SocketListener, "start listening to socket %i", psParam->listenedSocket);
 
@@ -249,7 +249,7 @@ void Network::SocketListener(void* param)
 
     if(pThis->protocolCallback != NULL)
     {
-        pThis->protocolCallback(psParam->listenedSocket, NET_SERVER_DISCONNECTED, 0, NULL);
+        pThis->protocolCallback(NET_SERVER_DISCONNECTED, psParam->listenedSocket, 0, NULL);
     }
 
     NETWORK_TRACE(SocketListener, "SocketListener finished");
@@ -280,6 +280,11 @@ NetResult Network::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSi
 
 int Network::EstablishConnetcion(uint32_t remoteIPv4addr, unsigned short remotePort)
 {
+    UNREFERENCED_PARAMETER(remoteIPv4addr);
+    UNREFERENCED_PARAMETER(remotePort);
+    NETWORK_TRACE(EstablishConnetcion, "Workaround is coming...");
+    return INVALID_SOCKET;
+#ifdef TBD
     sockaddr_in     sock_addr;
     int connectSocket = INVALID_SOCKET;
 
@@ -330,7 +335,7 @@ int Network::EstablishConnetcion(uint32_t remoteIPv4addr, unsigned short remoteP
 
     if(protocolCallback != NULL)
     {
-        protocolCallback(connectSocket, NET_SERVER_CONNECTED, 0, NULL);
+        protocolCallback(NET_SERVER_CONNECTED, connectSocket, 0, NULL);
     }
     else
     {
@@ -341,4 +346,5 @@ int Network::EstablishConnetcion(uint32_t remoteIPv4addr, unsigned short remoteP
     NETWORK_TRACE(EstablishConnetcion, "Connection successfully established");
 
     return connectSocket;
+#endif //TBD
 }

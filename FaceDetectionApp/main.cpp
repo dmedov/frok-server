@@ -11,11 +11,11 @@
 #define     NET_CMD_GET_FACES    "get_faces"
 #define     NET_CMD_SAVE_FACE    "save_face"
 
-void callback(SOCKET sock, unsigned evt, unsigned length, void *param);
+void callback(unsigned evt, SOCKET sock, unsigned length, void *param);
 
 Network net(callback, PORT);
 
-void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
+void callback(unsigned evt, SOCKET sock, unsigned length, void *param)
 {
     if (sock == INVALID_SOCKET)
     {
@@ -76,7 +76,6 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
                 }
 
                 ContextForRecognize *psContext = new ContextForRecognize;
-                memset(psContext, 0, sizeof(ContextForRecognize));
                 psContext->arrFrinedsList = objInputJson["friends"].ToArray();
                 psContext->targetImg = objInputJson["photo_id"].ToString();
                 psContext->sock = sock;
@@ -103,7 +102,6 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
                 }
 
                 ContextForGetFaces *psContext = new ContextForGetFaces;
-                memset(psContext, 0, sizeof(ContextForGetFaces));
                 psContext->userId = objInputJson["user_id"].ToString();
                 psContext->photoName = objInputJson["photo_id"].ToString();
                 psContext->sock = sock;
@@ -157,7 +155,6 @@ void callback(SOCKET sock, unsigned evt, unsigned length, void *param)
                 }
 
                 ContextForTrain *psContext = new ContextForTrain;
-                memset(psContext, 0, sizeof(ContextForTrain));
                 psContext->arrIds = objInputJson["ids"].ToArray();
                 psContext->sock = sock;
 
@@ -202,14 +199,14 @@ int main(void)
     }
     FilePrintMessage(NULL, _SUCC("Network server started!"));
 
-    char train[] = "{\"cmd\":\"train\", \"ids\":[\"1\"]}\0";    // cut faces and train base
-    callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);
+    /*char train[] = "{\"cmd\":\"train\", \"ids\":[\"1\"]}\0";    // cut faces and train base
+    callback(1, NET_RECEIVED_REMOTE_DATA, strlen(train), train);*/
 
     //char save_face[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_number\":\"0\"}\0";    // cut faces and train base
     //callback(1, NET_RECEIVED_REMOTE_DATA, strlen(save_face), save_face);
 
-    //char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"5\", \"1\", \"99\"], \"photo_id\": \"1\"}\0";    // recognize name = 1.jpg
-    //callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
+    char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"1\"}\0";    // recognize name = 1.jpg
+    callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
     
     //getchar();
 

@@ -58,7 +58,7 @@ typedef enum EnumNetEvent
     //...
 } EnumNetEvent;
 
-typedef void(*NetworkProtocolCallback)(SOCKET sock, unsigned Event, unsigned length, void *param);
+typedef void(*NetworkProtocolCallback)(unsigned Event, SOCKET sock, unsigned length, void *param);
 
 #pragma pack (push, 1)
 
