@@ -44,15 +44,25 @@
     }
 };*/
 struct FaceCascades{
-    CascadeClassifier face;
-    CascadeClassifier eyes;
-    CascadeClassifier righteye;
+    CascadeClassifier *face;
+    CascadeClassifier *eyes;
+    /*CascadeClassifier righteye;
     CascadeClassifier lefteye;
     CascadeClassifier righteye2;
     CascadeClassifier lefteye2;
     CascadeClassifier eye;
     CascadeClassifier nose;
-    CascadeClassifier mouth;
+    CascadeClassifier mouth;*/
+    FaceCascades()
+    {
+        face = new CascadeClassifier;
+        eyes = new CascadeClassifier;
+    }
+    ~FaceCascades()
+    {
+        /*delete face;
+        delete eyes;*/
+    }
 };
 
 /**

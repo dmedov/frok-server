@@ -21,9 +21,9 @@
 * \brief Max amount of cut threads.
 */
 
-#define MAX_THREADS_AND_CASCADES_NUM        (5)
+#define MAX_THREADS_AND_CASCADES_NUM        (1)
 
-extern FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
+extern FaceCascades *cascades;
 
 /**
 * \brief Folder of id's.

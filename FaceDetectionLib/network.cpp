@@ -121,7 +121,7 @@ NetResult Network::StartNetworkServer()
         return NET_UNSPECIFIED_ERROR;
     }
 
-    if(!threadAcceptConnection->startThread((void * (*)(void*))(Network::AcceptConnection), this, sizeof(Network*)))
+    if(!threadAcceptConnection->startThread((void * (*)(void*))(Network::AcceptConnection), this, sizeof(Network)))
     {
         NETWORK_TRACE(StartNetworkServer, "Failed to start AcceptConnection thread. See CommonThread logs for information");
         return NET_COMMON_THREAD_ERROR;
@@ -138,7 +138,7 @@ void Network::AcceptConnection(void* param)
     SOCKET                  accepted_socket;
     StructSocketListenerData socketListenerData;
     socketListenerData.pThis = pThis;
-    unsigned socketListenerDataLength = sizeof(Network*) + sizeof(SOCKET);
+    unsigned socketListenerDataLength = sizeof(Network) + sizeof(SOCKET);
 
     NETWORK_TRACE(AcceptConnection, "Accepting all incoming connections for socket %i", pThis->localSock);
 

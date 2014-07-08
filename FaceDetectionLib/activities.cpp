@@ -2,7 +2,7 @@
 #include "LibInclude.h"
 #include <ctime>
 
-FaceCascades cascades[MAX_THREADS_AND_CASCADES_NUM];
+FaceCascades *cascades;
 map < string, Ptr<FaceRecognizer> > models;
 
 void getFacesFromPhoto(void *pContext)

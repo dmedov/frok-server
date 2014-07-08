@@ -211,9 +211,13 @@ int main(void)
     //char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"5\", \"1\", \"99\"], \"photo_id\": \"1\"}\0";    // recognize name = 1.jpg
     //callback(1, NET_RECEIVED_REMOTE_DATA, strlen(recognize), recognize);
     
-    getchar();
+    //getchar();
+
+    net.EstablishConnetcion(0, PORT);
+    net.StopNetworkServer();
 
     DeinitFaceDetectionLib();
 
+    printf("success\n");
     return 0;
 }
