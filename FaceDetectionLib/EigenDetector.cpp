@@ -251,10 +251,8 @@ __int64_t calcImageHash(IplImage* src)
         return 0;
     }
 
-    IplImage *res = 0, *bin = 0;
-
-    res = cvCreateImage(cvSize(8, 8), src->depth, src->nChannels);
-    bin = cvCreateImage(cvSize(8, 8), IPL_DEPTH_8U, 1);
+    IplImage *res = cvCreateImage(cvSize(8, 8), src->depth, src->nChannels);
+    IplImage *bin = cvCreateImage(cvSize(8, 8), IPL_DEPTH_8U, 1);
 
     cvResize(src, res);
 
@@ -305,14 +303,59 @@ void EigenDetector::recognize(const map < string, Ptr<FaceRecognizer> > &models,
     double oldProb = 0;        // probability
     string result_name = "-1";
 
-
     for (map < string, Ptr<FaceRecognizer> >::const_iterator it = models.begin(); it != models.end(); ++it)
     {
         Ptr<FaceRecognizer> model = (*it).second;
 
         double prob = 0;
 
-        Mat *image_mat = new Mat(image, true);
+        Mat imageMat = cvarrToMat(image, true);
+        // Get some required data from the FaceRecognizer model.
+        Mat eigenvectors = model->get<Mat>("eigenvectors");
+        Mat averageFaceRow = model->get<Mat>("mean");
+        // Project the input image onto the eigenspace.
+        Mat projection = subspaceProject(eigenvectors, averageFaceRow, imageMat.reshape(1, 1));
+        // Generate the reconstructed face back from the eigenspace.
+        Mat reconstructionRow = subspaceReconstruct(eigenvectors, averageFaceRow, projection);
+        // Make it a rectangular shaped image instead of a single row.
+        Mat reconstructionMat = reconstructionRow.reshape(1, image->height);
+        // Convert the floating-point pixels to regular 8-bit uchar.
+        Mat reconstructedFace(reconstructionMat.size(), CV_8U);
+        reconstructionMat.convertTo(reconstructedFace, CV_8U);
+
+        IplImage imageMatImg = (IplImage)imageMat;
+        IplImage reconstructedFaceImg = (IplImage)reconstructedFace;
+
+        __int64_t hashI = calcImageHash(&imageMatImg);
+        __int64_t hashO = calcImageHash(&reconstructedFaceImg);
+        __int64_t dist = calcHammingDistance(hashO, hashI);//-> to introduce to function
+
+
+        if (dist <= 18)
+        {
+            double prob1 = getSimilarity(&reconstructedFace, &imageMat);
+            double prob2 = getSimilarity2(&reconstructedFace, &imageMat);
+            double prob3 = 1 - getSimilarity3(&reconstructedFace, &imageMat);
+
+            double prob_res1 = pow(prob1*prob2*prob3, 1. / 3);
+
+            double prob_res2 = max(prob3, prob2); //prob_res2 = max(prob_res2, prob1);
+            double prob_res3 = min(prob3, prob2); //prob_res3 = min(prob_res3, prob1);
+
+            prob = abs(prob_res1 - abs(prob_res2 - prob_res3))/1.5;
+
+
+            FilePrintMessage(NULL, _RES("id = %s probability \t= \t%lf \t(%lf | %lf | %lf)"), (*it).first.c_str(), prob, prob1,prob2, prob3);
+            //cout << (*it).first << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
+
+            if (prob > oldProb)
+            {
+                oldProb = prob;
+                result_name = (*it).first;
+            }
+        }
+
+        /*Mat *image_mat = new Mat(image, true);
         // Get some required data from the FaceRecognizer model.
         Mat eigenvectors = model->get<Mat>("eigenvectors");
         Mat averageFaceRow = model->get<Mat>("mean");
@@ -323,13 +366,48 @@ void EigenDetector::recognize(const map < string, Ptr<FaceRecognizer> > &models,
         // Make it a rectangular shaped image instead of a single row.
         Mat reconstructionMat = reconstructionRow.reshape(1, image->height);
         // Convert the floating-point pixels to regular 8-bit uchar.
+
         Mat *reconstructedFace = new Mat(reconstructionMat.size(), CV_8U);
-        reconstructionMat.convertTo(*reconstructedFace, CV_8U, 1, 0);//-> to introduce to function
+        //reconstructionMat.convertTo(*reconstructedFace, CV_8U, 1, 0);//-> to introduce to function
+        reconstructionMat.convertTo(*reconstructedFace, CV_8U);
 
+        int nChannels = reconstructedFace->channels();
+        int depth;
 
+        switch (reconstructedFace->depth())
+        {
+        case CV_8U:
+        case CV_8S:
+        {
+            depth = 8;
+            break;
+        }
+        case CV_16U:
+        case CV_16S:
+        {
+            depth = 16;
+            break;
+        }
+        case CV_32S:
+        case CV_32F:
+        {
+            depth = 32;
+            break;
+        }
+        case CV_64F:
+        {
+            depth = 64;
+            break;
+        }
+        default:
+        {
+            depth = 0;
+            break;
+        }
+        }
 
-        __int64_t hashO = calcImageHash((IplImage*)reconstructedFace);
-        __int64_t hashI = calcImageHash((IplImage*)image_mat);
+        __int64_t hashO = calcImageHash((IplImage*)reconstructedFace, depth, nChannels);
+        __int64_t hashI = calcImageHash((IplImage*)image_mat, depth, nChannels);
         __int64_t dist = calcHammingDistance(hashO, hashI);//-> to introduce to function
 
 
@@ -357,7 +435,7 @@ void EigenDetector::recognize(const map < string, Ptr<FaceRecognizer> > &models,
             }
         }
         delete reconstructedFace;
-        delete image_mat;
+        delete image_mat;*/
     }
 
     char *pcResultName = new char[result_name.length()];

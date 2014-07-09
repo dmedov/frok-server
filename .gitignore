@@ -1,7 +1,8 @@
 #binary files etc..
-build_debug
-build_release
+build_*
 bin
 obj
-
-/README.md~
+#temporary files
+*.*~
+*~
+*.bak

@@ -190,6 +190,19 @@ int main(void)
 {
     InitFaceDetectionLib();
 
+    /*IplImage *img = cvLoadImage(((string)TARGET_PATH).append("1.jpg").c_str());
+
+    FilePrintMessage(NULL, _SUCC("img depth = %d"), img->depth);
+
+    Mat imgMat = cvarrToMat(img, true);
+
+    FilePrintMessage(NULL, _SUCC("imgMat depth = %d"), imgMat.depth());
+
+    IplImage imgMatimg = (IplImage)imgMat;
+
+    FilePrintMessage(NULL, _SUCC("imgMatimg depth = %d"), imgMatimg.depth);*/
+
+
     FilePrintMessage(NULL, _SUCC("Starting network server with port = %d"), PORT);
     if (NET_SUCCESS != net.StartNetworkServer())
     {
