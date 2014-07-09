@@ -97,12 +97,12 @@ Mat EigenDetector::MaskFace(IplImage *img) {
 
 double EigenDetector::getSimilarity(const Mat *image_mat, const Mat *reconstructedFace)
 {
-    IplImage *blr_img = cvCloneImage((IplImage*)image_mat);
-    IplImage *blr_rec = cvCloneImage((IplImage*)reconstructedFace);
-    cvErode(blr_img, blr_img, 0, 0);
-    cvErode(blr_rec, blr_rec, 0, 0);
+    IplImage blr_img = (IplImage)(*image_mat);
+    IplImage blr_rec =  (IplImage)(*reconstructedFace);;
+    cvErode(&blr_img, &blr_img, 0, 0);
+    cvErode(&blr_rec, &blr_rec, 0, 0);
 
-    Mat dif = abs(Mat(blr_img) - Mat(blr_rec));
+    Mat dif = abs(cvarrToMat(&blr_img, true) - cvarrToMat(&blr_rec, true));
 
     int koef = 0;
     double err = 0;
@@ -149,8 +149,10 @@ double EigenDetector::getSimilarity2(const Mat *projected_mat, const Mat *face_m
     IplImage *projectedStorage = cvCreateImage(imagesSize, IPL_DEPTH_32F, 1);
     IplImage *faceSorage = cvCreateImage(imagesSize, IPL_DEPTH_32F, 1);
 
-    cvCornerMinEigenVal((IplImage*)projected_mat, projectedStorage, 20, 7);
-    cvCornerMinEigenVal((IplImage*)face_mat, faceSorage, 20, 7);
+    IplImage workaround1 = (IplImage)(*projected_mat);
+    cvCornerMinEigenVal(&workaround1, projectedStorage, 20, 7);
+    IplImage workaround2 = (IplImage)(*face_mat);
+    cvCornerMinEigenVal(&workaround2, faceSorage, 20, 7);
 
     Mat *dif_mat = new Mat(abs(Mat(projectedStorage) - Mat(faceSorage)));
     //imshow("ri", projected_mat);
@@ -164,9 +166,10 @@ double EigenDetector::getSimilarity2(const Mat *projected_mat, const Mat *face_m
     //IplImage *dif_img = &(IplImage)dif_mat;
 
     double err = 0;
+    IplImage workaround3 = (IplImage)(*dif_mat);
     for (int y = 0; y < dif_mat->rows; ++y){
         for (int x = 0; x < dif_mat->cols; ++x){
-            err += cvGet2D((IplImage*)dif_mat, y, x).val[0];
+            err += cvGet2D(&workaround3, y, x).val[0];
         }
     }
 
@@ -329,7 +332,6 @@ void EigenDetector::recognize(const map < string, Ptr<FaceRecognizer> > &models,
         __int64_t hashI = calcImageHash(&imageMatImg);
         __int64_t hashO = calcImageHash(&reconstructedFaceImg);
         __int64_t dist = calcHammingDistance(hashO, hashI);//-> to introduce to function
-
 
         if (dist <= 18)
         {
