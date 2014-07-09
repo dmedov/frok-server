@@ -1,0 +1,73 @@
+ifeq ($(LANG),c)
+SRCEXT := c
+C := $(CC)
+C_STR := " CC            "
+else
+SRCEXT := cpp
+C := $(CPPC)
+C_STR := " CXX           "
+endif
+
+SRC := $(foreach DIR,$(SRCDIRS),$(wildcard $(DIR)/*.$(SRCEXT)))
+OBJ := $(addprefix $(OBJOUTDIR)/$(TARGET)/,$(subst ../,__/,$(SRC:.$(SRCEXT)=.o)))
+OUTDIRS := $(foreach DIR,$(SRCDIRS), $(OBJOUTDIR)/$(TARGET)/$(subst ../,__/,$(DIR)))
+
+ifeq ($(TARGETTYPE),staticlib)
+LINK = $(AR) rsc $@ $(OBJ)
+LINK_STR := " AR            "
+else
+ifeq ($(TARGETTYPE),executable)
+LINK = $(C) $(LDFLAGS) -o $@ $(OBJ) $(LIBS)
+LINK_STR := " LD            "
+else
+ifeq ($(TARGETTYPE),shared)
+LINK = $(C) $(LDFLAGS) -shared -o $@ $(OBJ) $(LIBS)
+LINK_STR := " SO            "
+endif
+endif
+endif
+
+prebuild: | start_build directories
+
+start_build:
+	@echo $(BRIGHT)$(WHITE)" BUILD         "$(RESET) $(TARGET)
+
+$(OUTDIRS): | start_build
+	@echo $(CYAN)" MD            "$(RESET) $(@)
+	$(SILENT)mkdir -p $(@)
+
+$(BINOUTDIR): | start_build
+	@echo $(CYAN)" MD            "$(RESET) $(BINOUTDIR)
+	$(SILENT)mkdir -p $(BINOUTDIR)
+
+directories: | start_build $(OUTDIRS) $(BINOUTDIR)
+
+
+all: build
+
+build: prebuild $(BINOUTDIR)/$(TARGET)
+	@echo $(BRIGHT)$(GREEN)" BUILD IS DONE "$(RESET) $(PWD)/$(BINOUTDIR)/$(TARGET)
+
+$(DEPENDENCIES): make_dependencies
+
+$(BINOUTDIR)/$(TARGET): $(DEPENDENCIES) $(OBJ) | directories
+	@echo $(YELLOW)$(LINK_STR)$(RESET) $(@F)
+	$(SILENT)$(LINK)
+
+-include $(OBJ:%.o=%.d)
+$(OBJ): | directories
+	@echo $(RED)$(C_STR)$(RESET) $(@F)
+	$(SILENT)$(C) $(CFLAGS) $(foreach header,$(HDRDIRS),-I$(header)) -c $(subst .o,.$(SRCEXT), $(subst __/,../,$(subst $(OBJOUTDIR)/$(TARGET)/,,$@))) -o $@
+
+clean:
+	@echo $(BRIGHT)$(WHITE)" CLEAN         "$(RESET) $(TARGET)
+	$(SILENT)$(RM) -f $(BINOUTDIR)/$(TARGET) $(OBJ) $(OBJ:%.o=%.d)
+	@echo $(BRIGHT)$(GREEN)" CLEAN IS DONE "$(RESET) $(PWD)/$(BINOUTDIR)/$(TARGET)
+
+rebuild: clean build
+
+run: build
+	@-if [ "$(TARGETTYPE)" = "executable" ]; then $(TRM) $(BINOUTDIR)/$(TARGET); fi;
+
+debug: build
+	@-if [ "$(TARGETTYPE)" = "executable" ]; then $(DBG) $(BINOUTDIR)/$(TARGET); fi;

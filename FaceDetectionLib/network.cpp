@@ -1,318 +1,350 @@
 #include "stdafx.h"
-
-// Include the internal headers
 #include "network.h"
 
-CRITICAL_SECTION Network::network_cs;
-HANDLE Network::socketListenerStartedEvent;
+pthread_mutex_t network_cs;
 
-Network::Network()
+Network::Network(NetworkProtocolCallback callback, unsigned short localPort)
 {
-    NETWORK_TRACE("Network", "Object created");
-	sockListenerThread          = NULL;
-	acceptConnectionThread      = NULL;
-    socketListenerStartedEvent  = NULL;
-	callback					= NULL;
-    localPort					= 0;
-	localSock                   = INVALID_SOCKET;
-    isLocalSockClosed           = false;
+    pthread_mutexattr_t mAttr;
+    pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&network_cs, &mAttr);
+    pthread_mutexattr_destroy(&mAttr);
 
-    InitializeCriticalSection(&network_cs);
+    threadSockListener = new CommonThread;
+    threadAcceptConnection = new CommonThread;
+    this->localPortNumber = localPort;
+    localSock = INVALID_SOCKET;
+    this->protocolCallback = callback;
 }
 
 Network::~Network()
 {
-    DeleteCriticalSection(&network_cs);
-    NETWORK_TRACE("~Network", "Object deleted");
+    close(localSock);
+    threadSockListener->stopThread();
+    threadAcceptConnection->stopThread();
+    pthread_mutex_destroy(&network_cs);
+
+    delete threadSockListener;
+    delete threadAcceptConnection;
 }
 
 NetResult Network::StopNetworkServer()
 {
-    EnterCriticalSection(&network_cs);
+    NetResult res = NET_SUCCESS;
+    bool failure = false;
 
-    // Both acceptConnectionThread and sockListenerThread will be terminated after closesocket(this->localSock);
-    // First is terminated because of error in listening to local socket function. Seond is terminated because
-    // of closing listened socket in acceptConnectionThread exit scenario.
-    if(localSock != INVALID_SOCKET)
+    NETWORK_TRACE(StopNetworkServer, "Calling socket shutdown. localSock = %i", localSock);
+    if(-1 == shutdown(localSock, 2))      // 2 = Both reception and transmission
     {
-        isLocalSockClosed = true;
-        closesocket(localSock);
-
-        if(acceptConnectionThread != NULL)
-        {
-            if(WAIT_OBJECT_0 != WaitForSingleObject(acceptConnectionThread, TERMINATE_NET_THREAD_TIMEOUT))
-            {
-                NETWORK_TRACE("StopNetworkServer", "Failed to terminate acceptConnectionThread. Continue...");
-            }
-
-            CloseHandle(acceptConnectionThread);
-            acceptConnectionThread = NULL;
-        }
-
-        if(sockListenerThread != NULL)
-        {
-            if(WAIT_OBJECT_0 != WaitForSingleObject(sockListenerThread, TERMINATE_NET_THREAD_TIMEOUT))
-            {
-                NETWORK_TRACE("StopNetworkServer", "Failed to terminate sockListenerThread. Continue...");
-            }
-            CloseHandle(sockListenerThread);
-            sockListenerThread = NULL;
-        }
+        NETWORK_TRACE(StopNetworkServer, "Failed to shutdown local socket with error = %s", strerror(errno));
+        failure = true;
+        res = NET_SOCKET_ERROR;
     }
-    else
+    /*if(close(localSock) == SOCKET_ERROR)
     {
-        if(acceptConnectionThread != NULL)
-        {
-            NETWORK_TRACE("StopNetworkServer", "acceptConnectionThread should have been closed!");
-            CloseHandle(acceptConnectionThread);
-            acceptConnectionThread = NULL;
-        }
+        NETWORK_TRACE(StopNetworkServer, "Failed to close local socket with error = %s", strerror(errno));
+        close(localSock);
+        failure = true;
+    }*/
 
-        if(sockListenerThread != NULL)
-        {
-            NETWORK_TRACE("StopNetworkServer", "sockListenerThread should have been closed!");
-            CloseHandle(sockListenerThread);
-            sockListenerThread = NULL;
-        }
-    }
-	
-	if(socketListenerStartedEvent != NULL)
+    NETWORK_TRACE(StopNetworkServer, "Calling threadSockListener->stopThread");
+    if(!threadSockListener->stopThread())
     {
-        CloseHandle(socketListenerStartedEvent);
-        socketListenerStartedEvent = NULL;
+        failure = true;
+        res = NET_COMMON_THREAD_ERROR;
+    }
+    NETWORK_TRACE(StopNetworkServer, "Calling threadAcceptConnection->stopThread");
+    if(!threadAcceptConnection->stopThread())
+    {
+        failure = true;
+        res = NET_COMMON_THREAD_ERROR;
     }
 
-    NETWORK_TRACE("StopNetworkServer", "Local socket was succesfully closed. Network server is stopped");
-
-    LeaveCriticalSection(&network_cs);
+    if(failure == true)
+    {
+        return res;
+    }
 
     return NET_SUCCESS;
 }
 
-NetResult Network::StartNetworkServer(NetworkProtocolCallback callback, unsigned short localPortNumber)
+NetResult Network::StartNetworkServer()
 {
-    WSADATA                 wsaData;
-    char                    flag = 1;
+    sockaddr_in             server;
 
-    struct addrinfo        *localAddrInfo = NULL;
-    struct addrinfo         hints;
-    char                    port[6];
+    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_family = AF_INET;
+    server.sin_port = htons(localPortNumber);
 
-    // Initialize local variables
-    this->localPort             = localPortNumber;
-    isLocalSockClosed           = false;      // Reset flag
-    socketListenerStartedEvent  = CreateEvent(NULL, FALSE, FALSE, NULL);
-
-    this->callback = callback;
-
-    //Initialize DLL for winsock
-    if (WSAStartup(MAKEWORD(2,2), &wsaData))
+    if ((localSock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
     {
-        NETWORK_TRACE("StartNetworkServer", "Failed to initialize DLL for winsock");
+        NETWORK_TRACE(StartNetworkServer, "socket failed on error = %s", strerror(errno));
         return NET_SOCKET_ERROR;
     }
 
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_PASSIVE;
-    _itoa_s(localPortNumber, port, sizeof(port), 10);
+    //[TBD] think about SO_KEEPALIVE option
 
-	struct hostent         *host = NULL;
-	char                    hostname[512];
-    // Getting ipv4 address
-    gethostname(hostname, sizeof(hostname));
-    host = gethostbyname(hostname);
-    char* localIPv4Addr = inet_ntoa(*(struct in_addr*)host->h_addr);
-    
-    // getting addrinfo for socket() function
-    getaddrinfo(localIPv4Addr, port, &hints, &localAddrInfo);
-
-    if ((localSock = socket(localAddrInfo->ai_family, localAddrInfo->ai_socktype, localAddrInfo->ai_protocol)) == INVALID_SOCKET)
+    int option = 1;
+    if(0 != setsockopt(localSock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
     {
-        NETWORK_TRACE("StartNetworkServer", "Failed to create socket with error = %d", WSAGetLastError());
-        closesocket(localSock);
+        NETWORK_TRACE(StartNetworkServer, "setsockopt failed on error %s", strerror(errno));
+        close(localSock);
         return NET_SOCKET_ERROR;
     }
 
-    NETWORK_TRACE("StartNetworkServer", "Socket creation succeed");
+    int         optval;
+    socklen_t   optlen = sizeof(int);
 
-    setsockopt(localSock, SOL_SOCKET, SO_REUSEADDR, &flag, 1);
-
-    if (bind(localSock, localAddrInfo->ai_addr, (int)localAddrInfo->ai_addrlen) == SOCKET_ERROR)
+    if(0 != getsockopt(localSock, SOL_SOCKET,  SO_REUSEADDR, &optval, &optlen))
     {
-        NETWORK_TRACE("StartNetworkServer", "Failed to bind socket with error = %d", WSAGetLastError());
-        closesocket(localSock);
+        NETWORK_TRACE(StartNetworkServer, "getsockopt failed on error %s", strerror(errno));
+        close(localSock);
         return NET_SOCKET_ERROR;
     }
 
-    NETWORK_TRACE("StartNetworkServer", "Socket binding succeed");
- 
-    if (listen(localSock, SOMAXCONN) == SOCKET_ERROR)
+    if(optval == 0)
     {
-        NETWORK_TRACE("StartNetworkServer", "Failed to establish socket listening with error = %d", WSAGetLastError());
-        closesocket(localSock);
+        NETWORK_TRACE(StartNetworkServer, "setsockopt failed to enabled SO_REUSEADDR option");
+        //return NET_SOCKET_ERROR;
+    }
+
+    if(0 != bind(localSock, (struct sockaddr*)&server, sizeof(server)))
+    {
+        NETWORK_TRACE(StartNetworkServer, "bind failed on error %s", strerror(errno));
+        close(localSock);
         return NET_SOCKET_ERROR;
     }
 
-    NETWORK_TRACE("StartNetworkServer", "Socket listening establishment succeed");
+    if (0 != listen(localSock, SOMAXCONN))
+    {
+        NETWORK_TRACE(StartNetworkServer, "listen failed on error %s", strerror(errno));
+        close(localSock);
+        return NET_UNSPECIFIED_ERROR;
+    }
 
-    // Create thread, that would accept any incoming connection
-    acceptConnectionThread = CreateThread(NULL, 0, &Network::AcceptConnection,  (void*) this, 0, NULL);
+    if(!threadAcceptConnection->startThread((void * (*)(void*))(Network::AcceptConnection), this, sizeof(Network)))
+    {
+        NETWORK_TRACE(StartNetworkServer, "Failed to start AcceptConnection thread. See CommonThread logs for information");
+        return NET_COMMON_THREAD_ERROR;
+    }
+
+    NETWORK_TRACE(StartNetworkServer, "Succeed, socket = %d, port = %d", localSock, localPortNumber);
 
     return NET_SUCCESS;
 }
 
-DWORD WINAPI Network::AcceptConnection(void* param)
+void Network::AcceptConnection(void* param)
 {
-    Network					*This = (Network*) param;
-    sockaddr                client;
-    int                     clientLength = sizeof(client);
-    char                    flag = 1;
-    SOCKET                  acceptedSocket;
-    SOCKET                  storedSocket = INVALID_SOCKET;
-    SocketListenerData      socketListenerData;
+    Network             *pThis = (Network*) param;
+    SOCKET                  accepted_socket;
+    StructSocketListenerData socketListenerData;
+    socketListenerData.pThis = pThis;
+    unsigned socketListenerDataLength = sizeof(Network) + sizeof(SOCKET);
+
+    NETWORK_TRACE(AcceptConnection, "Accepting all incoming connections for socket %i", pThis->localSock);
 
     for(;;)
     {
-        if ((acceptedSocket = accept(This->localSock, &client, &clientLength)) == SOCKET_ERROR)
+        if ((accepted_socket = accept(pThis->localSock, NULL, NULL)) == SOCKET_ERROR)
         {
-            // accept returns SOCKET_ERROR if we will close socket. 
-            // If we did it manually - isLocalSockClosed flag is set.
-            // Otherwise continue accpeting connections
-
-            if(This->isLocalSockClosed == true)
+            if(pThis->threadAcceptConnection->isStopThreadReceived())
             {
-                // Terminating sockListenerThread
-                if(storedSocket != INVALID_SOCKET)
-                    closesocket(storedSocket);
+                NETWORK_TRACE(AcceptConnection, "terminate thread sema received");
                 break;
             }
-
-            NETWORK_TRACE("AcceptConnection", "Failed to accept socket with error = %d. Continue...", WSAGetLastError());
             continue;
         }
 
-        if(storedSocket != INVALID_SOCKET)
+        NETWORK_TRACE(AcceptConnection, "Incoming connection accepted. Accepted socket = %u", accepted_socket);
+
+        int flag = 1;   //TRUE
+        if(0 != setsockopt(accepted_socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)))
         {
-            closesocket(storedSocket);
+            NETWORK_TRACE(AcceptConnection, "setsockopt (TCP_NODELAY) failed on error %s", strerror(errno));
+            continue;
+        }
+        if(0 != setsockopt(accepted_socket, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int)))
+        {
+            NETWORK_TRACE(AcceptConnection, "setsockopt (SO_REUSEADDR) failed on error %s", strerror(errno));
+            continue;
         }
 
-        storedSocket = acceptedSocket;
+        socketListenerData.listenedSocket = accepted_socket;
 
-        NETWORK_TRACE("AcceptConnection", "Socket acception succeed: %u", acceptedSocket);
- 
-        setsockopt(acceptedSocket, IPPROTO_TCP, TCP_NODELAY, &flag, 1);
-        setsockopt(acceptedSocket, SOL_SOCKET, SO_REUSEADDR, &flag, 1);
-
-        socketListenerData.pThis = This;
-        socketListenerData.listenedSocket = acceptedSocket;
-
-        This->sockListenerThread = CreateThread(NULL, 0, &Network::SocketListener, &socketListenerData, 0, NULL);
-
-        if(WAIT_OBJECT_0 != WaitForSingleObject(socketListenerStartedEvent, START_THREAD_TIMEOUT))
+        if(!pThis->threadSockListener->startThread((void * (*)(void*))(Network::SocketListener), &socketListenerData, socketListenerDataLength))
         {
-            if(acceptedSocket != INVALID_SOCKET)
-            {
-                closesocket(acceptedSocket);
-            }
-            NETWORK_TRACE("AcceptConnection", "Timeout during waiting for socketListenerStartedEvent");
-            return NET_UNSPECIFIED_ERROR;
+            NETWORK_TRACE(AcceptConnection, "Failed to start SocketListener thread. See CommonThread logs for information");
+            continue;
         }
 
         // Send NET_SERVER_CONNECTED message via callback
-        if(This->callback != NULL)
+        if(pThis->protocolCallback != NULL)
         {
-            This->callback(acceptedSocket, NET_SERVER_CONNECTED, 0, NULL);
+            pThis->protocolCallback(NET_SERVER_CONNECTED, accepted_socket, 0, NULL);
         }
         else
         {
-            if(acceptedSocket != INVALID_SOCKET)
-            {
-                closesocket(acceptedSocket);
-            }
-            NETWORK_TRACE("AcceptConnection", "No callback function!");
-            return NET_NO_CALLBACK;
+            NETWORK_TRACE(AcceptConnection, "NULL callback. AcceptConnection shutdown");
+            close(pThis->localSock);
+            pThis->threadSockListener->stopThread();
+            return;
         }
     }
 
-    NETWORK_TRACE("AcceptConnection", "Network server closed");
-    return NET_SUCCESS;
+    close(pThis->localSock);
+    NETWORK_TRACE(AcceptConnection, "AcceptConnection finished");
+    return;
 }
 
-DWORD WINAPI Network::SocketListener(void* param)
+void Network::SocketListener(void* param)
 {
-    SocketListenerData     *sData = (SocketListenerData*)param;
-    Network					*This = NULL;
-    char                    recvbuf[MAX_SOCKET_BUFF_SIZE];
-    int                     recvlen = 0;
-    SOCKET                  listenedSocket;
-    BYTE                   *callbackData = NULL;
+    SocketListenerData     *psParam = (SocketListenerData*)param;
+    Network             *pThis = psParam->pThis;
 
-    listenedSocket = sData->listenedSocket;
-    This = sData->pThis;
+    ProtocolCallbacklData   sCallbackData;
 
-    SetEvent(socketListenerStartedEvent);       // Syncronized read finished
+    NETWORK_TRACE(SocketListener, "start listening to socket %i", psParam->listenedSocket);
 
-    if(This->callback == NULL)
+    for(;;)
     {
-        return NET_NO_CALLBACK;
-    }
-
-    while(This->isLocalSockClosed == false)
-    {
-        memset(recvbuf, 0, sizeof(recvbuf));
-
-        if ((recvlen = recv(listenedSocket, recvbuf, sizeof(recvbuf), 0)) > 0)
+        if(pThis->threadSockListener->isStopThreadReceived())
         {
-            NETWORK_TRACE("SocketListener", "received %d bytes from the socket %u", recvlen, listenedSocket);
+            NETWORK_TRACE(SocketListener, "terminate thread sema received");
+            break;
+        }
 
-            EnterCriticalSection(&network_cs);
-		
-            // Send NET_received_REMOTE_DATA message via callback
-            This->callback(listenedSocket, NET_RECEIVED_REMOTE_DATA, recvlen, recvbuf);
-            NETWORK_TRACE("SocketListener", "the packet from the socket %u was successfully sent to the upper layer", listenedSocket);
+        if( -1 == (sCallbackData.dataLength = recv(psParam->listenedSocket, sCallbackData.data, sizeof(sCallbackData.data), MSG_DONTWAIT)))
+        {
+            if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+            {
+                // Valid errors - continue
+                continue;
+            }
+            // unspecified error occured
+            NETWORK_TRACE(SocketListener, "recv failed on error %s", strerror(errno));
+            NETWORK_TRACE(SocketListener, "SocketListener shutdown");
+            close(pThis->localSock);
+            pThis->threadAcceptConnection->stopThread();
+            return;
+        }
 
-            LeaveCriticalSection(&network_cs);
+        NETWORK_TRACE(SocketListener, "Received %d bytes from the socket %u", sCallbackData.dataLength, psParam->listenedSocket);
 
-            recvlen = 0;
+        if(pThis->protocolCallback != NULL)
+        {
+            pthread_mutex_lock(&network_cs);
+            pThis->protocolCallback(psParam->listenedSocket, NET_RECEIVED_REMOTE_DATA, sizeof(int) + sCallbackData.dataLength, &sCallbackData);
+            pthread_mutex_unlock(&network_cs);
+
+            NETWORK_TRACE(SocketListener, "The packet from the socket %u was successfully processed by upper level callback", psParam->listenedSocket);
         }
         else
         {
-            if (recvlen == -1)
-            {
-                NETWORK_TRACE("SocketListener", "Error has occured while listening to socket %u!", listenedSocket);
-                break;
-            }
-
-            NETWORK_TRACE("SocketListener", "Receiving function failed for the socket %u with error = %d", listenedSocket, WSAGetLastError());
+            NETWORK_TRACE(SocketListener, "NULL callback. SocketListener shutdown");
+            close(pThis->localSock);
+            pThis->threadAcceptConnection->stopThread();
+            return;
         }
     }
-        // Send NET_SERVER_DISCONNECTED message via callback
-    This->callback(listenedSocket, NET_SERVER_DISCONNECTED, 0, NULL);
 
-    NETWORK_TRACE("SocketListener", "shutdown");
-    return NET_SUCCESS;
+    if(pThis->protocolCallback != NULL)
+    {
+        pThis->protocolCallback(NET_SERVER_DISCONNECTED, psParam->listenedSocket, 0, NULL);
+    }
+
+    NETWORK_TRACE(SocketListener, "SocketListener finished");
+    return;
 }
 
-NetResult Network::SendData(SOCKET sock, const char* buffer, unsigned bufferSize)
+NetResult Network::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)
 {
+    int sendlen = 0;
+
     if(sock != INVALID_SOCKET)
     {
-	    int sendlen = 0;
-        if ((sendlen = send(sock, buffer, bufferSize, 0)) == SOCKET_ERROR)
+        if (-1 == (sendlen = send(sock, pBuffer, uBufferSize, 0)))
         {
-            NETWORK_TRACE("SendData", "Failed to send outgoing bytes to the remote peer %u with error %d", sock, WSAGetLastError());
+            NETWORK_TRACE(SendData, "Failed to send outgoing bytes to the remote peer %u with error %s", sock, strerror(errno));
             return NET_SOCKET_ERROR;
         }
-        NETWORK_TRACE("SendData", "%d bytes were sent to the remote peer %u", sendlen, sock);
+        NETWORK_TRACE(SendData, "%d bytes were sent to the remote peer %u", sendlen, sock);
     }
     else
     {
-        NETWORK_TRACE("SendData", "Failed to send data: invalid socket!");
+        NETWORK_TRACE(SendData, "Invalid socket");
         return NET_SOCKET_ERROR;
     }
 
     return NET_SUCCESS;
+}
+
+int Network::EstablishConnetcion(uint32_t remoteIPv4addr, unsigned short remotePort)
+{
+    UNREFERENCED_PARAMETER(remoteIPv4addr);
+    UNREFERENCED_PARAMETER(remotePort);
+    NETWORK_TRACE(EstablishConnetcion, "Workaround is coming...");
+    return INVALID_SOCKET;
+#ifdef TBD
+    sockaddr_in     sock_addr;
+    int connectSocket = INVALID_SOCKET;
+
+    if (remoteIPv4addr == 0)
+    {
+        NETWORK_TRACE(EstablishConnetcion, "Invalid remoteIPv4addr");
+        return INVALID_SOCKET;
+    }
+
+    if ((connectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
+    {
+        NETWORK_TRACE(StartNetworkServer, "socket failed on error = %s", strerror(errno));
+        return INVALID_SOCKET;
+    }
+
+    int option = 1;
+    if(0 != setsockopt(connectSocket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
+    {
+        NETWORK_TRACE(StartNetworkServer, "setsockopt failed on error %s", strerror(errno));
+        close(connectSocket);
+        return INVALID_SOCKET;
+    }
+
+    int         optval;
+    socklen_t   optlen = sizeof(int);
+    if(0 != getsockopt(connectSocket, SOL_SOCKET,  SO_REUSEADDR, &optval, &optlen))
+    {
+        NETWORK_TRACE(StartNetworkServer, "getsockopt failed on error %s", strerror(errno));
+        close(connectSocket);
+        return INVALID_SOCKET;
+    }
+
+    if(optval == 0)
+    {
+        NETWORK_TRACE(StartNetworkServer, "setsockopt failed to enabled SO_REUSEADDR option");
+        //return INVALID_SOCKET;
+    }
+
+    sock_addr.sin_addr.s_addr = remoteIPv4addr;
+    sock_addr.sin_family = AF_INET;
+    sock_addr.sin_port = htons(remotePort);
+
+    if (0 != connect(connectSocket, (struct sockaddr*)&sock_addr, sizeof(struct sockaddr)))
+    {
+        NETWORK_TRACE(EstablishConnetcion, "connect failed on error %s", strerror(errno));
+        return INVALID_SOCKET;
+    }
+
+    if(protocolCallback != NULL)
+    {
+        protocolCallback(NET_SERVER_CONNECTED, connectSocket, 0, NULL);
+    }
+    else
+    {
+        NETWORK_TRACE(EstablishConnetcion, "No callback. Terminating connection");
+        return INVALID_SOCKET;
+    }
+
+    NETWORK_TRACE(EstablishConnetcion, "Connection successfully established");
+
+    return connectSocket;
+#endif //TBD
 }
