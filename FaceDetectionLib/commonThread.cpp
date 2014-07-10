@@ -38,7 +38,7 @@ bool CommonThread::startThread(void *(*function) (void *), void *functionParams,
         return false;
     }
 
-    if (0 != pthread_attr_setdetachstate(&tAttr, PTHREAD_CREATE_JOINABLE))
+    if (0 != pthread_attr_setdetachstate(&tAttr, PTHREAD_CREATE_DETACHED))
     {
         CTHREAD_PRINT(startThread, "pthread_attr_setdetachstate failed on error %s", strerror(errno));
         return false;

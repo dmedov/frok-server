@@ -14,6 +14,10 @@
 
 ViolaJonesDetection::ViolaJonesDetection(FaceCascades *cascade)
 {
+    image = NULL;
+    imageResults = NULL;
+    face_img = NULL;
+    gray_img = NULL;
     assert(cascade != NULL);
     this->faceCascades = cascade;
 }
@@ -87,25 +91,26 @@ bool ViolaJonesDetection::drawEvidence(const ImageCoordinats &pointFace)
     if (count >= 4){        //[TBD] Why 4?
         #ifdef SHOW_IMAGE
         //cvRectangle(imageResults, p1, p2, CV_RGB(255, 255, 0));
+        if(imageResults != NULL)
+        {
+            int w = (p2.x - p1.x);
+            int h = (p2.y - p1.y);
 
-        int w = (p2.x - p1.x);
-        int h = (p2.y - p1.y);
+            cvLine(imageResults, p1, cvPoint(p1.x + w / 4, p1.y), CV_RGB(128, 128, 255));
+            cvLine(imageResults, p1, cvPoint(p1.x, p1.y + h / 4), CV_RGB(128, 128, 255));
+            cvLine(imageResults, p2, cvPoint(p2.x - w / 4, p2.y), CV_RGB(128, 128, 255));
+            cvLine(imageResults, p2, cvPoint(p2.x, p2.y - h / 4), CV_RGB(128, 128, 255));
 
-        cvLine(imageResults, p1, cvPoint(p1.x + w / 4, p1.y), CV_RGB(128, 128, 255));
-        cvLine(imageResults, p1, cvPoint(p1.x, p1.y + h / 4), CV_RGB(128, 128, 255));
-        cvLine(imageResults, p2, cvPoint(p2.x - w / 4, p2.y), CV_RGB(128, 128, 255));
-        cvLine(imageResults, p2, cvPoint(p2.x, p2.y - h / 4), CV_RGB(128, 128, 255));
+            cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w - w / 4, p1.y), CV_RGB(128, 128, 255));
+            cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w, p1.y + h / 4), CV_RGB(128, 128, 255));
+            cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w, p2.y - h / 4), CV_RGB(128, 128, 255));
+            cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w + w / 4, p2.y), CV_RGB(128, 128, 255));
 
-        cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w - w / 4, p1.y), CV_RGB(128, 128, 255));
-        cvLine(imageResults, cvPoint(p1.x + w, p1.y), cvPoint(p1.x + w, p1.y + h / 4), CV_RGB(128, 128, 255));
-        cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w, p2.y - h / 4), CV_RGB(128, 128, 255));
-        cvLine(imageResults, cvPoint(p2.x - w, p2.y), cvPoint(p2.x - w + w / 4, p2.y), CV_RGB(128, 128, 255));
-
-        cvRectangle(imageResults, facePoints[0], facePoints[4], CV_RGB(0, 255, 0));
-        cvRectangle(imageResults, facePoints[1], facePoints[5], CV_RGB(0, 0, 255));
-        cvRectangle(imageResults, facePoints[2], facePoints[6], CV_RGB(255, 100, 255));
-        cvRectangle(imageResults, facePoints[3], facePoints[7], CV_RGB(128, 0, 128));
-
+            cvRectangle(imageResults, facePoints[0], facePoints[4], CV_RGB(0, 255, 0));
+            cvRectangle(imageResults, facePoints[1], facePoints[5], CV_RGB(0, 0, 255));
+            cvRectangle(imageResults, facePoints[2], facePoints[6], CV_RGB(255, 100, 255));
+            cvRectangle(imageResults, facePoints[3], facePoints[7], CV_RGB(128, 0, 128));
+        }
         #endif //SHOW_IMAGE
         return true;
     }
@@ -372,74 +377,6 @@ void ViolaJonesDetection::keysFaceDetect(CascadeClassifier* cscd, CvPoint pointF
 
     cvReleaseImage(&dst);
     objects.clear();
-    //cvRelease((void**)&objects);
-    /*
-    if (!cscd){
-        FilePrintMessage(NULL, _FAIL("Empty cascade"));
-        return;
-    }
-
-    IplImage* dst = 0;
-    int k;
-    CvSize minSize, maxSize;
-    CvSeq *objects;
-
-
-    int width = face_img->width;
-    int height = face_img->height;
-    int depth = face_img->depth;
-    int nChannels = face_img->nChannels;
-
-    if (width < 200 || height < 200)    k = 5;
-    else k = 1;
-
-    width *= k;
-    height *= k;
-    dst = cvCreateImage(cvSize(width, height), depth, nChannels);
-    cvResize(face_img, dst, 1);
-
-    minSize = cvSize(width / 4, height / 4);
-    maxSize = cvSize(width / 2, height / 2);
-
-    double scale_factor = 1.2;
-
-    if (type == 0 || type == 3 || type == 4){
-        minSize = cvSize(width / 6, height / 7);            // [TBD] Why 6,7,3,4 - magic numbers
-        maxSize = cvSize(width / 3, height / 4);
-        scale_factor = 1.01;
-    }
-    else if (type == 1){
-        minSize = cvSize(width / 5, height / 6);
-        maxSize = cvSize((int)(width / 3.5), (int)(height / 3.5));
-    }
-    else if (type == 2){
-        minSize = cvSize(width / 5, height / 6);
-        scale_factor = 1.4;
-    }
-
-    objects = cvHaarDetectObjects(dst, cscd, strg, scale_factor, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, minSize, maxSize);
-
-    for (int i = 0; i < (objects ? objects->total : 0); i++){
-        CvRect* r = (CvRect*)cvGetSeqElem(objects, i);
-        int x = cvRound(r->x) / k;
-        int y = cvRound(r->y) / k;
-        int w = cvRound(r->width) / k;
-        int h = cvRound(r->height) / k;
-
-        //CvPoint p1 = cvPoint(x + pointFace.x, y + pointFace.y), p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
-        ImageCoordinats pointKeyFace, facePointCoordinates;
-
-        pointKeyFace.p1 = cvPoint(x + pointFace.x, y + pointFace.y);
-        pointKeyFace.p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
-        facePointCoordinates.p1 = pointFace;
-        facePointCoordinates.p2 = cvPoint(pointFace.x + width / k, pointFace.y + height / k);
-
-
-        writeFacePoints(pointKeyFace, facePointCoordinates, type);
-    }
-
-    cvReleaseImage(&dst);
-    cvRelease((void**)&objects);*/
 }
 
 // [TBD] magic number 4 (int type) should be EnumType
@@ -613,8 +550,8 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map < string, P
     hconcat(leftSide, rightSide, leftSide);
 
 
-    faceImg = new IplImage(leftSide);       // [TBD] IF YOU UNCOMMENT THIS FUNCTION - DON'T FORGET TO CALL 'delete faceImg;' AT THE END OF IT'S USAGE!!!
-}*/ // [TBD] IF YOU UNCOMMENT THIS FUNCTION - DON'T FORGET TO CALL 'delete faceImg;' AT THE END OF IT'S USAGE!!!
+    faceImg = new IplImage(leftSide);
+}*/ // [TBD] IF YOU UNCOMMENT THIS FUNCTION - DON'T FORGET TO CALL 'delete faceImg;' AFTER IT'S USAGE!!!
 
 bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h){
     EigenDetector *eigenDetector = new EigenDetector();
