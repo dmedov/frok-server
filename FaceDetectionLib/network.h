@@ -112,6 +112,6 @@ typedef struct StructSocketListenerData
     SOCKET      listenedSocket;
 } SocketListenerData;
 
-#pragma push (pop)
+#pragma pack (pop)
 
 #endif // NETWORK_H

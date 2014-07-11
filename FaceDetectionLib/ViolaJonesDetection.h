@@ -27,6 +27,14 @@ struct FaceCascades{
     {
         delete face;
         delete eyes;
+        delete righteye;
+        delete lefteye;
+        delete righteye2;
+        delete lefteye2;
+        delete eye;
+        delete mouth;
+        delete nose;
+        printf("~FaceCascades\n");
     }
 };
 

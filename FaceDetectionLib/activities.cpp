@@ -130,7 +130,7 @@ void recognizeFromModel(void *pContext)
     }
     catch (...)
     {
-        FilePrintMessage(NULL, _FAIL("Failed to load image %s"), (((string)(TARGET_PATH)).append(psContext->targetImg)).c_str());
+        FilePrintMessage(NULL, _FAIL("Failed to load image %s"), ((string)(TARGET_PATH)).append(psContext->targetImg).append(".jpg").c_str());
         net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
         delete violaJonesDetection;
         return;
