@@ -211,7 +211,6 @@ void generateAndTrainBase(void *pContext)
             cutFaceThreadParams * param = new cutFaceThreadParams(img,
                 (((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("/faces/").append(photos[j])).c_str(),
                 &cascades[uNumOfThreads]);
-
             CommonThread *threadCutFace = new CommonThread;
             threadCutFace->startThread((void*(*)(void*))param->pThis->cutFaceThread, param, sizeof(cutFaceThreadParams));
             threads.push_back( threadCutFace);

@@ -4,7 +4,7 @@
 #include "string.h"
 #include "json.h"
 
-#define CUT_TIMEOUT            (600000)
+#define CUT_TIMEOUT            (600)
 #define MAX_THREADS_AND_CASCADES_NUM        (1)
 #define ID_PATH                "/home/zda/faces/"
 #define TARGET_PATH            "/home/zda/faces/"

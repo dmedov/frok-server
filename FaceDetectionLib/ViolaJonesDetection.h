@@ -1,6 +1,8 @@
 #ifndef VIOLAJONESDETECTION_H
 #define VIOLAJONESDETECTION_H
 
+#pragma pack(push, 1)
+
 struct FaceCascades{
     CascadeClassifier *face;
     CascadeClassifier *eyes;
@@ -88,5 +90,5 @@ struct cutFaceThreadParams
         delete pThis;
     }
 };
-
+#pragma pack(pop)
 #endif //VIOLAJONESDETECTION_H

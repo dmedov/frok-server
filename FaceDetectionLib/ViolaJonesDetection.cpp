@@ -641,7 +641,6 @@ void ViolaJonesDetection::cutFaceThread(void *params)
                 cvReleaseImage(&psParams->pThis->face_img);
                 cvReleaseImage(&psParams->pThis->gray_img);
                 cvReleaseImage(&psParams->pThis->image);
-                delete psParams;
                 return;
             }
         }
@@ -656,7 +655,6 @@ void ViolaJonesDetection::cutFaceThread(void *params)
     cvReleaseImage(&psParams->pThis->face_img);
     cvReleaseImage(&psParams->pThis->gray_img);
     cvReleaseImage(&psParams->pThis->image);
-    delete psParams;
 
     return;
 }
