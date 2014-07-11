@@ -1,5 +1,4 @@
 #include "stdafx.h"
-
 #include "../FaceDetectionLib/LibInclude.h"
 
 // Add SHOW_IMAGE define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
@@ -80,8 +79,8 @@ void callback(unsigned evt, SOCKET sock, unsigned length, void *param)
                 psContext->targetImg = objInputJson["photo_id"].ToString();
                 psContext->sock = sock;
 
-                CommonThread threadRecongnize;
-                threadRecongnize.startThread((void*(*)(void*))recognizeFromModel, psContext, sizeof(ContextForRecognize));
+                CommonThread *threadRecongnize = new CommonThread;
+                threadRecongnize->startThread((void*(*)(void*))recognizeFromModel, psContext, sizeof(ContextForRecognize));
                 FilePrintMessage(NULL, _SUCC("Recognizing started..."));
                 // Notice that psContext should be deleted in recognizeFromModel function!
             }
@@ -107,8 +106,8 @@ void callback(unsigned evt, SOCKET sock, unsigned length, void *param)
                 psContext->sock = sock;
 
                 FilePrintMessage(NULL, _SUCC("Getting faces started..."));
-                CommonThread threadGetFaces;
-                threadGetFaces.startThread((void*(*)(void*))getFacesFromPhoto, psContext, sizeof(ContextForGetFaces));
+                CommonThread *threadGetFaces = new CommonThread;
+                threadGetFaces->startThread((void*(*)(void*))getFacesFromPhoto, psContext, sizeof(ContextForGetFaces));
                 // Notice that psContext should be deleted in recognizeFromModel function!
             }
             else if (objInputJson["cmd"].ToString() == NET_CMD_SAVE_FACE)
@@ -141,8 +140,8 @@ void callback(unsigned evt, SOCKET sock, unsigned length, void *param)
                 psContext->sock = sock;
 
                 FilePrintMessage(NULL, _SUCC("Cut face started..."));
-                CommonThread threadSaveFaces;
-                threadSaveFaces.startThread((void*(*)(void*))saveFaceFromPhoto, psContext, sizeof(ContextForSaveFaces));
+                CommonThread *threadSaveFaces = new CommonThread;
+                threadSaveFaces->startThread((void*(*)(void*))saveFaceFromPhoto, psContext, sizeof(ContextForSaveFaces));
                 // Notice that psContext should be deleted in recognizeFromModel function!
             }
             else if (objInputJson["cmd"].ToString() == NET_CMD_TRAIN)
@@ -159,8 +158,9 @@ void callback(unsigned evt, SOCKET sock, unsigned length, void *param)
                 psContext->sock = sock;
 
                 FilePrintMessage(NULL, _SUCC("Training started..."));
-                CommonThread threadTrain;
-                threadTrain.startThread((void*(*)(void*))generateAndTrainBase, (void*)psContext, sizeof(ContextForTrain));
+                CommonThread *threadTrain = new CommonThread;
+                threadTrain->startThread((void*(*)(void*))generateAndTrainBase, (void*)psContext, sizeof(ContextForTrain));
+
                 // Notice that psContext should be deleted in recognizeFromModel function!
             }
             else
@@ -190,19 +190,6 @@ int main(void)
 {
     InitFaceDetectionLib();
 
-    /*IplImage *img = cvLoadImage(((string)TARGET_PATH).append("1.jpg").c_str());
-
-    FilePrintMessage(NULL, _SUCC("img depth = %d"), img->depth);
-
-    Mat imgMat = cvarrToMat(img, true);
-
-    FilePrintMessage(NULL, _SUCC("imgMat depth = %d"), imgMat.depth());
-
-    IplImage imgMatimg = (IplImage)imgMat;
-
-    FilePrintMessage(NULL, _SUCC("imgMatimg depth = %d"), imgMatimg.depth);*/
-
-
     FilePrintMessage(NULL, _SUCC("Starting network server with port = %d"), PORT);
     if (NET_SUCCESS != net.StartNetworkServer())
     {
@@ -212,15 +199,15 @@ int main(void)
     }
     FilePrintMessage(NULL, _SUCC("Network server started!"));
 
-    /*char train[] = "{\"cmd\":\"train\", \"ids\":[\"1\"]}\0";    // cut faces and train base
-    callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(train), train);*/
+    char train[] = "{\"cmd\":\"train\", \"ids\":[\"1\"]}\0";    // cut faces and train base
+    callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(train), train);
 
     //char save_face[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_number\":\"0\"}\0";    // cut faces and train base
     //callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(save_face), save_face);
 
-    char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"1\"}\0";    // recognize name = 1.jpg
-    callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(recognize), recognize);
-    
+    //char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"2\"}\0";    // recognize name = 1.jpg
+    //callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(recognize), recognize);
+
     getchar();
 
     DeinitFaceDetectionLib();

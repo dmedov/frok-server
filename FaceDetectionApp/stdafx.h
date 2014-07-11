@@ -1,3 +1,5 @@
+#ifndef FACEDETECTIONAPP_STDAFX_H
+#define FACEDETECTIONAPP_STDAFX_H
 #include <cv.h>
 #include <highgui.h>
 
@@ -23,5 +25,7 @@
 #include <sys/stat.h>
 #include <cstring>
 #include <semaphore.h>
+#include "errno.h"
 using namespace std;
 using namespace cv;
+#endif //FACEDETECTIONAPP_STDAFX_H

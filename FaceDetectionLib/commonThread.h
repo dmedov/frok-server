@@ -27,8 +27,8 @@ class CommonThread
 {
 private:
     commonThreadState   threadState;
-    pthread_t           thread;
-    sem_t               threadStoppedSema;
+    pthread_t          *thread;
+    sem_t              *threadStoppedSema;
 
 public:
     CommonThread();
@@ -46,10 +46,22 @@ private:
 typedef struct SructStartRoutineParam
 {
     CommonThread   *pThis;
-    sem_t           threadStartedSema;
+    sem_t          *threadStartedSema;
     unsigned        paramsLength;
     void           *params;
     void         *(*function) (void *);
+    SructStartRoutineParam()
+    {
+        threadStartedSema = new sem_t;
+        if(0 != sem_init(threadStartedSema, 0, 0))
+        {
+            CTHREAD_PRINT(SructStartRoutineParam, "sem_init failed on error %s", strerror(errno));
+        }
+    }
+    ~SructStartRoutineParam()
+    {
+        delete threadStartedSema;
+    }
 } startRoutineParams;
 
 #pragma pack (pop)
