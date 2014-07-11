@@ -1,6 +1,9 @@
 #ifndef COMMONTHREAD_H
 #define COMMONTHREAD_H
 
+// Include dependencies
+#include <semaphore.h>
+
 #ifdef COMMON_THREAD_PRINT_ENABLED
 #define CTHREAD_PRINT(__function_name__, format, ...)           \
     printf("[COMMON_THREAD] [%s]: ", #__function_name__);       \

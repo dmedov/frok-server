@@ -1,14 +1,11 @@
-#include "json.h"
-#include <stdlib.h>
-#include <string>
 #include <algorithm>
-#include <cstdlib>
-#include <cstdio>
 #include <climits>
-#include <string.h>
-#include <functional>
-#include <cctype>
 #include <stack>
+#include <cstdio>
+#include <strings.h>
+
+#include "json.h"
+
 #define _stricmp strcasecmp
 
 #ifdef _MSC_VER

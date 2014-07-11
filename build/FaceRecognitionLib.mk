@@ -1,14 +1,14 @@
 ###########################################################
-# mk for project FaceDetectionApp
+# mk for project FaceRecognitionLib
 ###########################################################
 
 include makefile.consts
 include opencv.include
-SRCDIR = FaceDetectionLib
+SRCDIR = FaceRecognitionLib
 
 # Target settings
 LANG := c++
-TARGET := libFaceDetectionLib.a
+TARGET := libFaceRecognitionLib.a
 TARGETTYPE := staticlib
 
 LIBS := -L$(BINOUTDIR)			\

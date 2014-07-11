@@ -30,7 +30,8 @@ HEADERS +=                  \
     common.h                \
     activities.h            \
     EigenDetector.h         \
-    commonThread.h
+    commonThread.h \
+    FaceDetection.h
 
 SOURCES +=                  \
     ViolaJonesDetection.cpp \
@@ -40,5 +41,6 @@ SOURCES +=                  \
     common.cpp              \
     activities.cpp          \
     EigenDetector.cpp \
-    commonThread.cpp
+    commonThread.cpp \
+    FaceDetection.cpp
     /opt/opencv-2.4.9/include/opencv2/                  \

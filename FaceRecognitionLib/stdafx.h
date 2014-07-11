@@ -1,5 +1,6 @@
-#ifndef FACEDETECTIONAPP_STDAFX_H
-#define FACEDETECTIONAPP_STDAFX_H
+#ifndef FACEDETECTIONLIB_STDAFX_H
+#define FACEDETECTIONLIB_STDAFX_H
+
 #include <cv.h>
 #include <highgui.h>
 
@@ -12,6 +13,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -20,12 +22,12 @@
 #include <vector>
 #include <string>
 #include <stdio.h>
-#include <iostream>
+#include <iostream> 
 #include <dirent.h>
 #include <sys/stat.h>
 #include <cstring>
 #include <semaphore.h>
-#include "errno.h"
+#include <errno.h>
 using namespace std;
 using namespace cv;
-#endif //FACEDETECTIONAPP_STDAFX_H
+#endif //FACEDETECTIONLIB_STDAFX_H

@@ -28,10 +28,11 @@
 #ifndef JSON_H
 #define JSON_H
 
-#include <vector>
+// include dependencies
+#include <assert.h>
 #include <map>
 #include <string>
-#include <assert.h>
+#include <vector>
 
 namespace json
 {

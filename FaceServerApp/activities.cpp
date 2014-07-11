@@ -1,4 +1,4 @@
-#include "stdafx.h"
+/*#include "stdafx.h"
 #include "LibInclude.h"
 #include <ctime>
 
@@ -114,7 +114,6 @@ void recognizeFromModel(void *pContext)
             FilePrintMessage(NULL, _WARN("No model found for user %s"), psContext->arrFrinedsList[i].ToString().c_str());
         }
     }
-
 
     if (currentModels.empty())
     {
@@ -299,3 +298,4 @@ void generateAndTrainBase(void *pContext)
     net.SendData(psContext->sock, "{ \"success\":\"train succeed\" }\n\0", strlen("{ \"success\":\"train succeed\" }\n\0"));
     return;
 }
+*/

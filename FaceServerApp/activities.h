@@ -1,4 +1,4 @@
-#ifndef ACTIVITIES_H
+/*#ifndef ACTIVITIES_H
 #define ACTIVITIES_H
 
 #include "string.h"
@@ -6,10 +6,7 @@
 
 #define CUT_TIMEOUT            (600)
 #define MAX_THREADS_AND_CASCADES_NUM        (1)
-#define ID_PATH                "/home/zda/faces/"
-#define TARGET_PATH            "/home/zda/faces/"
 
-extern FaceCascades *cascades;
 
 #pragma pack(push, 1)
 
@@ -49,3 +46,5 @@ void getFacesFromPhoto(void *pContext);
 void saveFaceFromPhoto(void *pContext);
 
 #endif // ACTIVITIES_H
+*/
+

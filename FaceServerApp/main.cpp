@@ -1,16 +1,15 @@
 #include "stdafx.h"
-#include "../FaceDetectionLib/LibInclude.h"
+
+#include "FaceServer.h"
 
 // Add SHOW_IMAGE define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
-
-#define PORT 27015
 
 #define     NET_CMD_RECOGNIZE    "recognize"
 #define     NET_CMD_TRAIN        "train"
 #define     NET_CMD_GET_FACES    "get_faces"
 #define     NET_CMD_SAVE_FACE    "save_face"
 
-void callback(unsigned evt, SOCKET sock, unsigned length, void *param);
+/*void callback(unsigned evt, SOCKET sock, unsigned length, void *param);
 
 Network net(callback, PORT);
 
@@ -178,7 +177,7 @@ void callback(unsigned evt, SOCKET sock, unsigned length, void *param)
         }
     }
     return;
-}
+}*/
 
 void usage()
 {
@@ -188,7 +187,8 @@ void usage()
 
 int main(void)
 {
-    InitFaceDetectionLib();
+    FaceServer server;
+    /*InitFaceDetectionLib();
 
     FilePrintMessage(NULL, _SUCC("Starting network server with port = %d"), PORT);
     if (NET_SUCCESS != net.StartNetworkServer())
@@ -212,6 +212,6 @@ int main(void)
 
     DeinitFaceDetectionLib();
 
-    printf("success\n");
+    printf("success\n");*/
     return 0;
 }
