@@ -8,7 +8,7 @@
 
 // Network defaults
 #define MAX_SOCKET_BUFF_SIZE            (163840)
-
+#define MAX_CLIENTS_NUMBER              (16)
 // Network defines
 #define SOCKET                          int
 #define SOCKET_ERROR                    (-1)
@@ -61,7 +61,7 @@ private:
     // Local socket
     SOCKET                  localSock;
     // Socket Listener's thread.
-    CommonThread           *threadSockListener;
+    CommonThread          **threadClientListener;
     // Accept incoming connection thread.
     CommonThread           *threadAcceptConnection;
     // Callback function for TSNetwork
@@ -95,8 +95,10 @@ typedef struct StructAcceptConnectionData
 
 typedef struct StructSocketListenerData
 {
-    Network *pThis;
-    SOCKET      listenedSocket;
+
+    SOCKET          listenedSocket;
+    CommonThread   *thread;
+    Network        *pThis;
 } SocketListenerData;
 
 #pragma pack (pop)

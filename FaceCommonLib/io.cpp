@@ -55,7 +55,7 @@ int getFilesFromDir(const char *dir, std::vector<std::string> &files)
 {
     if(dir == NULL)
     {
-        FilePrintMessage(NULL, _FAIL("Invalid parameter dit == NULL in getFilesFromDir\n"));
+        FilePrintMessage(NULL, _FAIL("Invalid parameter dir == NULL in getFilesFromDir\n"));
         return -1;
     }
 
@@ -99,7 +99,7 @@ int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs)
 {
     if(dir == NULL)
     {
-        FilePrintMessage(NULL, _FAIL("Invalid parameter dit == NULL in getFilesFromDir\n"));
+        FilePrintMessage(NULL, _FAIL("Invalid parameter dir == NULL in getFilesFromDir\n"));
         return -1;
     }
 

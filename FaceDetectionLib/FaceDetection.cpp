@@ -12,3 +12,53 @@ for(unsigned i = 0; i < MAX_THREADS_AND_CASCADES_NUM; i++)
     cascades[i].nose->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_nose.xml");
     cascades[i].mouth->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_mouth.xml");
 }
+
+
+/*std::vector<std::string> users = std::vector<std::string>();
+getSubdirsFromDir(ID_PATH, users);
+
+if(users.empty())
+{
+    FilePrintMessage(NULL, _WARN("No trained users found in %s folder"), ID_PATH);
+    return;
+}
+
+for (unsigned int i = 0; i < users.size(); i++)
+{
+    Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
+    try
+    {
+        string fileName = ((string)ID_PATH).append(users[i]).append("/eigenface.yml");
+        if (access(fileName.c_str(), 0) != -1)
+        {
+            model->load(fileName.c_str());
+            FilePrintMessage(NULL, _SUCC("Model base for user %s successfully loaded. Continue..."), users[i].c_str());
+        }
+        else
+        {
+            FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), users[i].c_str());
+            continue;
+        }
+
+    }
+    catch (...)
+    {
+        FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), users[i].c_str());
+        continue;
+    }
+    models[users[i]] = model;
+}*/
+
+
+/*delete []cascades;
+for (int i = 0; i < MAX_THREADS_AND_CASCADES_NUM; i++)
+{
+    cvReleaseHaarClassifierCascade(&cascades[i].face->oldCascade);
+    cvReleaseHaarClassifierCascade(&cascades[i].eyes->oldCascade);
+    cvReleaseHaarClassifierCascade(&cascades[i].nose->oldCascade);
+    cvReleaseHaarClassifierCascade(&cascades[i].mouth->oldCascade);
+    cvReleaseHaarClassifierCascade(&cascades[i].eye->oldCascade);
+    cvReleaseHaarClassifierCascade(&cascades[i].righteye2->oldCascade);
+    cvReleaseHaarClassifierCascade(&cascades[i].lefteye2->oldCascade);
+}*/
+

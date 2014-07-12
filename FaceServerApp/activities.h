@@ -10,33 +10,7 @@
 
 #pragma pack(push, 1)
 
-struct ContextForRecognize
-{
-    SOCKET sock;
-    std::string targetImg;
-    json::Array arrFrinedsList;
-};
 
-struct ContextForTrain
-{
-    SOCKET sock;
-    json::Array arrIds;
-};
-
-struct ContextForGetFaces
-{
-    SOCKET sock;
-    std::string userId;
-    std::string photoName;
-};
-
-struct ContextForSaveFaces
-{
-    SOCKET sock;
-    std::string userId;
-    std::string photoName;
-    int faceNumber;
-};
 
 #pragma pack(pop)
 

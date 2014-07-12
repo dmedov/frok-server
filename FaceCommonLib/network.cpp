@@ -22,7 +22,11 @@ Network::Network(NetworkCallback callback, unsigned short localPort)
 	pthread_mutex_init(&network_trace_cs, &mAttr);
     pthread_mutexattr_destroy(&mAttr);
 
-    threadSockListener = new CommonThread;
+    threadClientListener = new CommonThread* [MAX_CLIENTS_NUMBER];
+    for(unsigned char i = 0; i < MAX_CLIENTS_NUMBER; i++)
+    {
+        threadClientListener[i] = new CommonThread;
+    }
     threadAcceptConnection = new CommonThread;
     this->localPortNumber = localPort;
     localSock = INVALID_SOCKET;
@@ -32,53 +36,45 @@ Network::Network(NetworkCallback callback, unsigned short localPort)
 Network::~Network()
 {
     shutdown(localSock, 2);
-    threadSockListener->stopThread();
+    for(unsigned char i = 0; i < MAX_CLIENTS_NUMBER; i++)
+    {
+        threadClientListener[i]->stopThread();
+        delete threadClientListener[i];
+    }
+    delete []threadClientListener;
     threadAcceptConnection->stopThread();
+    delete threadAcceptConnection;
+
     pthread_mutex_destroy(&network_cs);
 	pthread_mutex_destroy(&network_trace_cs);
-
-    delete threadSockListener;
-    delete threadAcceptConnection;
 }
 
 NetResult Network::StopNetworkServer()
 {
     NetResult res = NET_SUCCESS;
-    bool failure = false;
 
     NETWORK_TRACE(StopNetworkServer, "Calling socket shutdown. localSock = %i", localSock);
     if(-1 == shutdown(localSock, 2))      // 2 = Both reception and transmission
     {
         NETWORK_TRACE(StopNetworkServer, "Failed to shutdown local socket with error = %s", strerror(errno));
-        failure = true;
         res = NET_SOCKET_ERROR;
     }
-    /*if(close(localSock) == SOCKET_ERROR)
-    {
-        NETWORK_TRACE(StopNetworkServer, "Failed to close local socket with error = %s", strerror(errno));
-        shutdown(localSock, 2);
-        failure = true;
-    }*/
 
     NETWORK_TRACE(StopNetworkServer, "Calling threadSockListener->stopThread");
-    if(!threadSockListener->stopThread())
+    for(unsigned char i = 0; i < MAX_CLIENTS_NUMBER; i++)
     {
-        failure = true;
-        res = NET_COMMON_THREAD_ERROR;
+        if(!threadClientListener[i]->stopThread())
+        {
+            res = NET_COMMON_THREAD_ERROR;
+        }
     }
     NETWORK_TRACE(StopNetworkServer, "Calling threadAcceptConnection->stopThread");
     if(!threadAcceptConnection->stopThread())
     {
-        failure = true;
         res = NET_COMMON_THREAD_ERROR;
     }
 
-    if(failure == true)
-    {
-        return res;
-    }
-
-    return NET_SUCCESS;
+    return res;
 }
 
 NetResult Network::StartNetworkServer()
@@ -165,10 +161,26 @@ NetResult Network::StartNetworkClient(uint32_t repoteIp, unsigned short repotePo
     sData.listenedSocket = localSock;
     sData.pThis = this;
 
-    if(!threadSockListener->startThread((void * (*)(void*))(Network::SocketListener), &sData, sizeof(SOCKET) + sizeof(Network)))
+    unsigned char i = 0;
+    for(i = 0; i < MAX_CLIENTS_NUMBER; i++)
     {
-        NETWORK_TRACE(AcceptConnection, "Failed to start SocketListener thread. See CommonThread logs for information");
-        return NET_COMMON_THREAD_ERROR;
+        if((threadClientListener[i]->getThreadState() != COMMON_THREAD_INITIATED) && (threadClientListener[i]->getThreadState() != COMMON_THREAD_STARTED))
+        {
+            threadClientListener[i]->stopThread();
+            sData.thread = threadClientListener[i];
+            if(!threadClientListener[i]->startThread((void * (*)(void*))(Network::SocketListener), &sData, sizeof(SOCKET) + sizeof(Network) + sizeof(CommonThread*)))
+            {
+                NETWORK_TRACE(StartNetworkClient, "Failed to start SocketListener thread. See CommonThread logs for information");
+                continue;
+            }
+            break;
+        }
+    }
+
+    if(i == MAX_CLIENTS_NUMBER)
+    {
+        NETWORK_TRACE(StartNetworkClient, "MAX_CLIENTS_NUMBER reached. Terminate any connection...");
+        return NET_UNSPECIFIED_ERROR;
     }
 
     NETWORK_TRACE(StartNetworkClient, "Network client started, socket = %d", localSock);
@@ -182,7 +194,7 @@ void Network::AcceptConnection(void* param)
     SOCKET                  accepted_socket;
     StructSocketListenerData socketListenerData;
     socketListenerData.pThis = pThis;
-    unsigned socketListenerDataLength = sizeof(Network) + sizeof(SOCKET);
+    unsigned socketListenerDataLength = sizeof(Network) + sizeof(SOCKET) + sizeof(CommonThread*);
 
     NETWORK_TRACE(AcceptConnection, "Accepting all incoming connections for socket %i", pThis->localSock);
 
@@ -214,23 +226,40 @@ void Network::AcceptConnection(void* param)
 
         socketListenerData.listenedSocket = accepted_socket;
 
-        if(!pThis->threadSockListener->startThread((void * (*)(void*))(Network::SocketListener), &socketListenerData, socketListenerDataLength))
+        unsigned char i = 0;
+        for(i = 0; i < MAX_CLIENTS_NUMBER; i++)
         {
-            NETWORK_TRACE(AcceptConnection, "Failed to start SocketListener thread. See CommonThread logs for information");
-            continue;
+            if((pThis->threadClientListener[i]->getThreadState() != COMMON_THREAD_INITIATED) && (pThis->threadClientListener[i]->getThreadState() != COMMON_THREAD_STARTED))
+            {
+                pThis->threadClientListener[i]->stopThread();
+                socketListenerData.thread = pThis->threadClientListener[i];
+                if(!pThis->threadClientListener[i]->startThread((void * (*)(void*))(Network::SocketListener), &socketListenerData, socketListenerDataLength))
+                {
+                    NETWORK_TRACE(AcceptConnection, "Failed to start SocketListener thread. See CommonThread logs for information");
+                    continue;
+                }
+                break;
+            }
         }
 
-        // Send NET_SERVER_CONNECTED message via callback
-        if(pThis->callback != NULL)
+        if(i == MAX_CLIENTS_NUMBER)
         {
-            pThis->callback(NET_SERVER_CONNECTED, accepted_socket, 0, NULL);
+            NETWORK_TRACE(AcceptConnection, "MAX_CLIENTS_NUMBER reached. Terminate any connection...");
+            shutdown(accepted_socket, 2);
         }
         else
         {
-            NETWORK_TRACE(AcceptConnection, "NULL callback. AcceptConnection shutdown");
-            shutdown(pThis->localSock, 2);
-            pThis->threadSockListener->stopThread();
-            return;
+            // Send NET_SERVER_CONNECTED message via callback
+            if(pThis->callback != NULL)
+            {
+                pThis->callback(NET_SERVER_CONNECTED, accepted_socket, 0, NULL);
+            }
+            else
+            {
+                NETWORK_TRACE(AcceptConnection, "NULL callback. AcceptConnection shutdown");
+                shutdown(pThis->localSock, 2);
+                return;
+            }
         }
     }
 
@@ -251,7 +280,7 @@ void Network::SocketListener(void* param)
 
     for(;;)
     {
-        if(pThis->threadSockListener->isStopThreadReceived())
+        if(psParam->thread->isStopThreadReceived())
         {
             NETWORK_TRACE(SocketListener, "terminate thread sema received");
             break;
@@ -267,8 +296,7 @@ void Network::SocketListener(void* param)
             // unspecified error occured
             NETWORK_TRACE(SocketListener, "recv failed on error %s", strerror(errno));
             NETWORK_TRACE(SocketListener, "SocketListener shutdown");
-            shutdown(pThis->localSock, 2);
-            pThis->threadAcceptConnection->stopThread();
+            shutdown(psParam->listenedSocket, 2);
             return;
         }
 

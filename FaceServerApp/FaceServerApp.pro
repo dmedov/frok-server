@@ -30,9 +30,11 @@ QMAKE_CFLAGS_DEBUG +=     -Werror -Wall -Wno-unused-function -Wno-write-strings 
 HEADERS +=          \
     stdafx.h        \
     FaceServer.h    \
-    activities.h
+    activities.h \
+    FaceActivityAgent.h
 
 SOURCES +=          \
     main.cpp        \
     FaceServer.cpp  \
-    activities.cpp
+    activities.cpp \
+    FaceActivityAgent.cpp
