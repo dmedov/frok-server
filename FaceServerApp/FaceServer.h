@@ -41,9 +41,8 @@ private:
     static void CallbackListener(void *pContext);
     static void NetworkCallback(unsigned evt, SOCKET sock, unsigned length, void *param);
     // Accepts any incoming connection
-    virtual static void AcceptConnection(void* param);
     // Recieves any incoming information, and gives it to the upper layer
-    virtual static void SocketListener(void* param);
+    static void SocketListener(void* param);
 };
 
 #pragma pack(pop)

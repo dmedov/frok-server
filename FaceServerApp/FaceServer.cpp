@@ -47,24 +47,11 @@ bool FaceServer::StartFaceServer()
 {
     InitFaceCommonLib();
 
-    if(!threadCallbackListener->startThread((void*(*)(void*))FaceServer::CallbackListener, this, sizeof(FaceServer)))
+    for(std::vector<FaceAgentConnector*>::const_iterator it = agents.begin(); it != agents.end(); ++it)
     {
-        return false;
-    }
+        FaceAgentConnector *agent = (FaceAgentConnector*)*it;
 
-    if(NET_SUCCESS != network->StartNetworkServer())
-    {
-        return false;
     }
-
-    for(unsigned char i = 0; i < numOfAgents; i++)
-    {
-        if(!agents[i]->ConnectToAgent())
-        {
-            return false;
-        }
-    }
-
     return true;
 }
 

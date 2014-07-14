@@ -10,10 +10,25 @@
 
 #include "network.h"
 
-
 pthread_mutex_t network_cs;
 pthread_mutex_t network_trace_cs;
+Network(NetworkCallback callback)
+{
+    pthread_mutexattr_t mAttr;
+    pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&network_cs, &mAttr);
+    pthread_mutex_init(&network_trace_cs, &mAttr);
+    pthread_mutexattr_destroy(&mAttr);
 
+    threadClientListener = new CommonThread* [MAX_CLIENTS_NUMBER];
+    for(unsigned char i = 0; i < MAX_CLIENTS_NUMBER; i++)
+    {
+        threadClientListener[i] = new CommonThread;
+    }
+    threadAcceptConnection = new CommonThread;
+    localSock = INVALID_SOCKET;
+    this->callback = callback;
+}
 Network::Network(NetworkCallback callback, unsigned short localPort)
 {
     pthread_mutexattr_t mAttr;
@@ -432,4 +447,14 @@ SOCKET Network::EstablishConnetcion(__uint32_t remoteIPv4addr, unsigned short re
     NETWORK_TRACE(EstablishConnetcion, "Connection successfully established");
 
     return sock;
+}
+
+NetResult Network::TerminateConnetcion(SOCKET sock)
+{
+    if(-1 == shutdown(sock, 2))
+    {
+        NETWORK_TRACE(TerminateConnetcion, "Failed to terminate connection with error = %s", strerror(errno));
+        return NET_SOCKET_ERROR;
+    }
+    return NET_SUCCESS;
 }

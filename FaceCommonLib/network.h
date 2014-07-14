@@ -68,6 +68,7 @@ private:
     NetworkCallback callback;
 public:
     Network(NetworkCallback callback, unsigned short localPort);
+    Network(NetworkCallback callback);      // Only client role
     virtual ~Network();
     // Initializes network socket, binds it with local ip address and creates thread, that accepts any incoming connection
     NetResult StartNetworkServer();
@@ -80,6 +81,7 @@ public:
 protected:
     // Connect to remote side. Returns socket, that should be used in SendData
     SOCKET EstablishConnetcion(__uint32_t remoteIP, unsigned short remotePort);
+    NetResult TerminateConnetcion(SOCKET sock);
 private:
     // Accepts any incoming connection
     virtual static void AcceptConnection(void* param);

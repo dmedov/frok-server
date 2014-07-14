@@ -13,6 +13,6 @@ extern char *log_file;
 int getFilesFromDir(const char *dir, std::vector<std::string> &files);
 int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs);
 
-void FilePrintMessage(char* file, const char* expr...);
+void FilePrintMessage(const char* expr...);
 
 #endif // IO_H
