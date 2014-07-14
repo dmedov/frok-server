@@ -5,8 +5,6 @@
 
 #include "FaceAgent.h"
 
-std::list <FaceRequest *> requests;
-sem_t                       newRequestSema;
 pthread_mutex_t             faceServer_cs;
 FaceAgent::FaceAgent(unsigned short localPort, char*photoBasePath, char*targetsFolderPath)
     : Network(DefaultCallback, localPort)
@@ -15,28 +13,19 @@ FaceAgent::FaceAgent(unsigned short localPort, char*photoBasePath, char*targetsF
     this->targetsFolderPath = new char[strlen(targetsFolderPath) + 1];
     strcpy(this->photoBasePath, photoBasePath);
     strcpy(this->photoBasePath, photoBasePath);
-
-    this->localPort = localPort;
-
-    sem_init(&newRequestSema, 0, 0);
-
-    network = new Network(FaceServer::NetworkCallback, this->localPort);
-    threadCallbackListener = new CommonThread();
 }
 
 FaceAgent::~FaceAgent()
 {
     delete []photoBasePath;
     delete []targetsFolderPath;
-    delete network;
-    delete threadCallbackListener;
 }
 
-bool FaceAgent::StartAgent()
+bool FaceAgent::StartFaceAgent()
 {
     InitFaceCommonLib();
 
-    if(NET_SUCCESS != network->StartNetworkServer())
+    if(NET_SUCCESS != StartNetworkServer())
     {
         return false;
     }
@@ -48,12 +37,7 @@ bool FaceAgent::StopFaceAgent()
 {
     bool success = true;
 
-    if(NET_SUCCESS != network->StopNetworkServer())
-    {
-        success = false;
-    }
-
-    if(!threadCallbackListener->stopThread())
+    if(NET_SUCCESS != StopNetworkServer())
     {
         success = false;
     }
@@ -63,178 +47,89 @@ bool FaceAgent::StopFaceAgent()
     return success;
 }
 
-void FaceAgent::NetworkCallback(unsigned evt, SOCKET sock, unsigned length, void *param)
+void FaceAgent::CallbackListener(void *pContext)
 {
-    if(evt == NET_RECEIVED_REMOTE_DATA)
-    {
-        FaceRequest *req = new FaceRequest;
-        req->replySocket = sock;
-        req->dataLength = length;
-        req->data = new char[req->dataLength];
-        memcpy(req->data, param, length);
+    SocketListenerData     *psParam = (SocketListenerData*)pContext;
+    FaceAgent     *pThis = (FaceAgent*)psParam->pThis;
 
-        requests.push_back(req);
+    int         dataLength;
+    char        data[MAX_SOCKET_BUFF_SIZE];
 
-        if(-1 == sem_post(&newRequestSema))
-        {
-            FilePrintMessage(_FAIL("Failed to post newRequestSema on error %s"), strerror(errno));
-        }
-    }
-}
-void FaceServer::CallbackListener(void *pContext)
-{
-    FaceServer *pThis = (FaceServer*)pContext;
+    std::vector<std::string> mandatoryKeys;
+    mandatoryKeys.push_back("cmd");
+    mandatoryKeys.push_back("req_id");
+    mandatoryKeys.push_back("reply_sock");
+    mandatoryKeys.push_back("result");
+
+    NETWORK_TRACE(SocketListener, "start listening to socket %i", psParam->listenedSocket);
+
     for(;;)
     {
-        if(pThis->threadCallbackListener->isStopThreadReceived())
+        if(psParam->thread->isStopThreadReceived())
         {
+            NETWORK_TRACE(SocketListener, "terminate thread sema received");
             break;
         }
 
-        if(0 != sem_trywait(&newRequestSema))
+        if( -1 == (dataLength = recv(psParam->listenedSocket, data, sizeof(data), MSG_DONTWAIT)))
         {
+            if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+            {
+                // Valid errors - continue
+                continue;
+            }
+            // unspecified error occured
+            NETWORK_TRACE(SocketListener, "recv failed on error %s", strerror(errno));
+            NETWORK_TRACE(SocketListener, "SocketListener shutdown");
+            shutdown(psParam->listenedSocket, 2);
+            return;
+        }
+
+        if(dataLength == 0)
+        {
+            // TCP keep alive
             continue;
         }
 
-        std::list<FaceRequest*>::const_iterator it = requests.begin();
+        NETWORK_TRACE(SocketListener, "Received %d bytes from the socket %u", sCallbackData.dataLength, psParam->listenedSocket);
 
-        FaceRequest *req = (FaceRequest*)*it;
-        req = req;
-        /*json::Object requestJson;
+        // Response from agent received
+        json::Object responseFromAgent;
         try
         {
-            requestJson = ((json::Value)json::Deserialize((std::string)req->data)).ToObject();
+            responseFromAgent = ((json::Value)json::Deserialize((std::string)data)).ToObject();
         }
         catch (...)
         {
-            FilePrintMessage(_FAIL("Failed to parse incoming JSON: %s"), req->data);
-            pThis->network->SendData(req->replySocket, COMMAND_WITH_LENGTH("{ \"error\":\"bad command\" }\n\0"));
+            FilePrintMessage(_FAIL("Failed to parse incoming JSON: %s"), data);
             continue;
         }
 
-        if (!requestJson.HasKey("cmd"))
+        if (!(responseFromAgent.HasKeys(mandatoryKeys)))
         {
-            FilePrintMessage(_FAIL("Invalid input JSON: no cmd field (%s)"), (char*)param);
-            pThis->network->SendData(sock, "{ \"error\":\"no cmd field\" }\n\0", strlen("{ \"error\":\"no cmd field\" }\n\0"));
-            return;
+            FilePrintMessage(_FAIL("Invalid input JSON: no cmd field (%s)"), data);
+            continue;
         }
 
-        // Parse cmd
-        if (objInputJson["cmd"].ToString() == NET_CMD_RECOGNIZE)
+        SOCKET replySock = responseFromAgent["reply_sock"].ToInt();
+        responseFromAgent.Erase("reply_sock");
+        std::string outJson = json::Serialize(responseFromAgent);
+
+        if(NET_SUCCESS != pThis->SendData(replySock, outJson.c_str(), outJson.size()))
         {
-            if (!objInputJson.HasKey("friends"))
-            {
-                FilePrintMessage(_FAIL("Invalid input JSON: no friends field (%s)"), (char*)param);
-                network->SendData(sock, "{ \"error\":\"no friends field\" }\n\0", strlen("{ \"error\":\"no friends field\" }\n\0"));
-                return;
-            }
-
-            if (!objInputJson.HasKey("photo_id"))
-            {
-                FilePrintMessage(_FAIL("Invalid input JSON: no photo_id field (%s)"), (char*)param);
-                network->SendData(sock, "{ \"error\":\"no photo_id field\" }\n\0", strlen("{ \"error\":\"no photo_id field\" }\n\0"));
-                return;
-            }
-
-            ContextForRecognize *psContext = new ContextForRecognize;
-            psContext->arrFrinedsList = objInputJson["friends"].ToArray();
-            psContext->targetImg = objInputJson["photo_id"].ToString();
-            psContext->sock = sock;
-
-            CommonThread *threadRecongnize = new CommonThread;
-            threadRecongnize->startThread((void*(*)(void*))recognizeFromModel, psContext, sizeof(ContextForRecognize));
-            FilePrintMessage(_SUCC("Recognizing started..."));
-            // Notice that psContext should be deleted in recognizeFromModel function!
+            FilePrintMessage(_FAIL("Failed to send response to remote peer %u. Response = %s"), replySock, outJson.c_str());
+            continue;
         }
-        else if (objInputJson["cmd"].ToString() == NET_CMD_GET_FACES)
-        {
-            if (!objInputJson.HasKey("user_id"))
-            {
-                FilePrintMessage(_FAIL("Invalid input JSON: no user_id field (%s)"), (char*)param);
-                network->SendData(sock, "{ \"error\":\"no user_id field\" }\n\0", strlen("{ \"error\":\"no user_id field\" }\n\0"));
-                return;
-            }
-
-            if (!objInputJson.HasKey("photo_id"))
-            {
-                FilePrintMessage(_FAIL("Invalid input JSON: no photo_id field (%s)"), (char*)param);
-                network->SendData(sock, "{ \"error\":\"no photo_id field\" }\n\0", strlen("{ \"error\":\"no photo_id field\" }\n\0"));
-                return;
-            }
-
-            ContextForGetFaces *psContext = new ContextForGetFaces;
-            psContext->userId = objInputJson["user_id"].ToString();
-            psContext->photoName = objInputJson["photo_id"].ToString();
-            psContext->sock = sock;
-
-            FilePrintMessage(_SUCC("Getting faces started..."));
-            CommonThread *threadGetFaces = new CommonThread;
-            threadGetFaces->startThread((void*(*)(void*))getFacesFromPhoto, psContext, sizeof(ContextForGetFaces));
-            // Notice that psContext should be deleted in recognizeFromModel function!
-        }
-        else if (objInputJson["cmd"].ToString() == NET_CMD_SAVE_FACE)
-        {
-            if (!objInputJson.HasKey("user_id"))
-            {
-                FilePrintMessage(_FAIL("Invalid input JSON: no user_id field (%s)"), (char*)param);
-                network->SendData(sock, "{ \"error\":\"no user_id field\" }\n\0", strlen("{ \"error\":\"no user_id field\" }\n\0"));
-                return;
-            }
-
-            if (!objInputJson.HasKey("photo_id"))
-            {
-                FilePrintMessage(_FAIL("Invalid input JSON: no photo_id field (%s)"), (char*)param);
-                network->SendData(sock, "{ \"error\":\"no photo_id field\" }\n\0", strlen("{ \"error\":\"no photo_id field\" }\n\0"));
-                return;
-            }
-
-            if (!objInputJson.HasKey("face_number"))
-            {
-                FilePrintMessage(_FAIL("Invalid input JSON: no face_number field (%s)"), (char*)param);
-                network->SendData(sock, "{ \"error\":\"no face_points field\" }\n\0", strlen("{ \"error\":\"no face_number field\" }\n\0"));
-                return;
-            }
-
-            ContextForSaveFaces *psContext = new ContextForSaveFaces;
-            psContext->userId = objInputJson["user_id"].ToString();
-            psContext->photoName = objInputJson["photo_id"].ToString();
-            psContext->faceNumber = atoi(objInputJson["face_number"].ToString().c_str());
-            psContext->sock = sock;
-
-            FilePrintMessage(_SUCC("Cut face started..."));
-            CommonThread *threadSaveFaces = new CommonThread;
-            threadSaveFaces->startThread((void*(*)(void*))saveFaceFromPhoto, psContext, sizeof(ContextForSaveFaces));
-            // Notice that psContext should be deleted in recognizeFromModel function!
-        }
-        else if (objInputJson["cmd"].ToString() == NET_CMD_TRAIN)
-        {
-            if (!objInputJson.HasKey("ids"))
-            {
-                FilePrintMessage(_FAIL("Invalid input JSON: no ids field (%s)"), (char*)param);
-                network->SendData(sock, "{ \"error\":\"no ids field\" }\n\0", strlen("{ \"error\":\"no ids field\" }\n\0"));
-                return;
-            }
-
-            ContextForTrain *psContext = new ContextForTrain;
-            psContext->arrIds = objInputJson["ids"].ToArray();
-            psContext->sock = sock;
-
-            FilePrintMessage(_SUCC("Training started..."));
-            CommonThread *threadTrain = new CommonThread;
-            threadTrain->startThread((void*(*)(void*))generateAndTrainBase, (void*)psContext, sizeof(ContextForTrain));
-
-            // Notice that psContext should be deleted in recognizeFromModel function!
-        }
-        else
-        {
-            FilePrintMessage(_FAIL("Invalid input JSON: invalid cmd received (%s)"), (char*)param);
-            network->SendData(sock, "{ \"error\":\"invalid cmd\" }\n\0", strlen("{ \"error\":\"invalid cmd\" }\n\0"));
-            return;
-        }
-        break;*/
     }
-}
 
+    if(pThis->callback != NULL)
+    {
+        pThis->callback(NET_SERVER_DISCONNECTED, psParam->listenedSocket, 0, NULL);
+    }
+
+    NETWORK_TRACE(SocketListener, "SocketListener finished");
+}
+/*
 #include "LibInclude.h"
 #include <ctime>
 
@@ -555,3 +450,4 @@ void generateAndTrainBase(void *pContext)
 
 
 
+*/

@@ -21,11 +21,8 @@ typedef struct
 class FaceAgent : public Network
 {
 private:
-    Network            *network;
     char               *photoBasePath;
     char               *targetsFolderPath;
-    unsigned short      localPort;
-    CommonThread       *threadCallbackListener;
 
 public:
     FaceAgent(unsigned short localPort = DEFAULT_PORT, char *photoBasePath = DEFAULT_PHOTO_BASE_PATH, char*targetsFolderPath = DEFAULT_TARGETS_FOLDER_PATH);
