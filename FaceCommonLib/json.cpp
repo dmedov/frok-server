@@ -332,6 +332,10 @@ bool Object::HasKey(const std::string& key) const
 {
     return find(key) != end();
 }
+void Object::Erase(const std::string& key)
+{
+    mValues.erase(key);
+}
 
 int Object::HasKeys(const std::vector<std::string>& keys) const
 {

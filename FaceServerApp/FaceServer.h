@@ -38,11 +38,11 @@ public:
     //bool DeregisterAgent();
 
 private:
-    static void CallbackListener(void *pContext);
+    void CallbackListener(void *pContext);
     static void NetworkCallback(unsigned evt, SOCKET sock, unsigned length, void *param);
     // Accepts any incoming connection
     // Recieves any incoming information, and gives it to the upper layer
-    static void SocketListener(void* param);
+    void SocketListener(void* param);
 };
 
 #pragma pack(pop)

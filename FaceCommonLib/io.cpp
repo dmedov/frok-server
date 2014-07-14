@@ -12,7 +12,6 @@ char *log_file;
 
 void FilePrintMessage(const char* expr...)
 {
-    UNREFERENCED_PARAMETER(file);
     char message[LOG_MESSAGE_MAX_LENGTH];
     va_list args;
 

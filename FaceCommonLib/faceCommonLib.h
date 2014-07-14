@@ -15,7 +15,7 @@ extern pthread_mutex_t filePrint_cs;
 
 // Common defines
 #define UNREFERENCED_PARAMETER(P)           (P=P)
-#define COMMAND_WITH_LENGTH(__CHARS__)      (__CHARS__, strlen(__CHARS__))
+#define COMMAND_WITH_LENGTH(__CHARS__)      (__CHARS__), strlen((__CHARS__))
 
 // Colored print defines
 #define _FAIL(__x__)    "\x1b[1;91m[FAIL] " __x__ "\n\x1b[0m"
@@ -25,7 +25,7 @@ extern pthread_mutex_t filePrint_cs;
 #define _N(__x__)                           __x__ "\n"
 
 // Library init functions
-void InitFaceCommonLib();
+void InitFaceCommonLib(char *logFileName = DEFAULT_LOG_FILE_NAME);
 void DeinitFaceCommonLib();
 
 #endif // FACECOMMONLIB_H

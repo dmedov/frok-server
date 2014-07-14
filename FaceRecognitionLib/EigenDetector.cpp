@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "LibInclude.h"
 #include "common.h"
 #include "EigenDetector.h"

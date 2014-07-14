@@ -9,6 +9,7 @@ std::list <FaceRequest *> requests;
 sem_t                       newRequestSema;
 pthread_mutex_t             faceServer_cs;
 FaceAgent::FaceAgent(unsigned short localPort, char*photoBasePath, char*targetsFolderPath)
+    : Network(DefaultCallback, localPort)
 {
     this->photoBasePath = new char[strlen(photoBasePath) + 1];
     this->targetsFolderPath = new char[strlen(targetsFolderPath) + 1];
@@ -34,11 +35,6 @@ FaceAgent::~FaceAgent()
 bool FaceAgent::StartAgent()
 {
     InitFaceCommonLib();
-
-    if(!threadCallbackListener->startThread((void*(*)(void*))FaceAgent::CallbackListener, this, sizeof(FaceServer)))
-    {
-        return false;
-    }
 
     if(NET_SUCCESS != network->StartNetworkServer())
     {

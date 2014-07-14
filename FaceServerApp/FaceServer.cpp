@@ -11,36 +11,18 @@ pthread_mutex_t             faceServer_cs;
 FaceServer::FaceServer(std::vector<AgentInfo*> &agentsInfo, unsigned short localPort)
     : Network(FaceServer::NetworkCallback, localPort)
 {
-    numOfAgents = agentsInfo.size();
-    if(numOfAgents != 0)
+    for(std::vector<AgentInfo*>::const_iterator it = agentsInfo.begin(); it != agentsInfo.end(); ++it)
     {
-        agents = new FaceAgentConnector*[numOfAgents];
-        std::vector<AgentInfo*>::iterator it = agentsInfo.begin();
-        for(unsigned i = 0; i < numOfAgents; i++)
-        {
-            agents[i] = new FaceAgentConnector(*((AgentInfo*)*it++));
-        }
+        agents.push_back(new FaceAgentConnector(*(AgentInfo*)*it));
     }
 
-    this->localPort = localPort;
+    this->localPortNumber = localPort;
 
     sem_init(&newRequestSema, 0, 0);
-
-    network = new Network(FaceServer::NetworkCallback, this->localPort);
-    threadCallbackListener = new CommonThread();
 }
 
 FaceServer::~FaceServer()
 {
-    delete []photoBasePath;
-    delete []targetsFolderPath;
-    delete network;
-    delete threadCallbackListener;
-    for(unsigned i = 0; i < numOfAgents; i++)
-    {
-        delete agents[i];
-    }
-    delete []agents;
 }
 
 bool FaceServer::StartFaceServer()
@@ -50,7 +32,14 @@ bool FaceServer::StartFaceServer()
     for(std::vector<FaceAgentConnector*>::const_iterator it = agents.begin(); it != agents.end(); ++it)
     {
         FaceAgentConnector *agent = (FaceAgentConnector*)*it;
-
+        if(!agent->ConnectToAgent())
+        {
+            FilePrintMessage(_FAIL("Failed to connect to agent"));
+        }
+    }
+    if(NET_SUCCESS != StartNetworkServer())
+    {
+        return false;
     }
     return true;
 }
@@ -59,20 +48,16 @@ bool FaceServer::StopFaceServer()
 {
     bool success = true;
 
-    for(unsigned char i = 0; i < numOfAgents; i++)
+    for(std::vector<FaceAgentConnector*>::const_iterator it = agents.begin(); it != agents.end(); ++it)
     {
-        if(!agents[i]->DisconnectFromAgent())
+        FaceAgentConnector *agent = (FaceAgentConnector*)*it;
+        if(!agent->DisconnectFromAgent())
         {
             success = false;
         }
     }
 
-    if(NET_SUCCESS != network->StopNetworkServer())
-    {
-        success = false;
-    }
-
-    if(!threadCallbackListener->stopThread())
+    if(NET_SUCCESS != StopNetworkServer())
     {
         success = false;
     }
@@ -102,10 +87,11 @@ void FaceServer::NetworkCallback(unsigned evt, SOCKET sock, unsigned length, voi
 }
 void FaceServer::CallbackListener(void *pContext)
 {
-    FaceServer *pThis = (FaceServer*)pContext;
+    SocketListenerData     *psParam = (SocketListenerData*)pContext;
+    FaceServer *pThis = (FaceServer*)psParam->pThis;
     for(;;)
     {
-        if(pThis->threadCallbackListener->isStopThreadReceived())
+        if(psParam->thread->isStopThreadReceived())
         {
             break;
         }
@@ -118,7 +104,6 @@ void FaceServer::CallbackListener(void *pContext)
         std::list<FaceRequest*>::const_iterator it = requests.begin();
 
         FaceRequest *req = (FaceRequest*)*it;
-        req = req;
         json::Object requestJson;
         try
         {
@@ -127,44 +112,16 @@ void FaceServer::CallbackListener(void *pContext)
         catch (...)
         {
             FilePrintMessage(_FAIL("Failed to parse incoming JSON: %s"), req->data);
-            pThis->network->SendData(req->replySocket, COMMAND_WITH_LENGTH("{ \"error\":\"bad command\" }\n\0"));
+            pThis->SendData(req->replySocket, COMMAND_WITH_LENGTH("{ \"error\":\"bad command\" }\n\0"));
             continue;
         }
 
-        if (!requestJson.HasKey("cmd"))
-        {
-            FilePrintMessage(_FAIL("Invalid input JSON: no cmd field (%s)"), (char*)param);
-            pThis->network->SendData(sock, "{ \"error\":\"no cmd field\" }\n\0", strlen("{ \"error\":\"no cmd field\" }\n\0"));
-            return;
-        }
+        std::vector<std::string> mandatoryFileds;
+        mandatoryFileds.push_back("cmd");
+        mandatoryFileds.push_back("req_id");
 
-        // Parse cmd
-        if(objInputJson["cmd"].ToString() == NET_CMD_RECOGNIZE)
-        {
-            if (!objInputJson.HasKey("friends"))
-            {
-                FilePrintMessage(_FAIL("Invalid input JSON: no friends field (%s)"), (char*)param);
-                network->SendData(sock, "{ \"error\":\"no friends field\" }\n\0", strlen("{ \"error\":\"no friends field\" }\n\0"));
-                return;
-            }
+        //requestJson["reply_sock"] = itoa(req->replySocket);
 
-            if (!objInputJson.HasKey("photo_id"))
-            {
-                FilePrintMessage(_FAIL("Invalid input JSON: no photo_id field (%s)"), (char*)param);
-                network->SendData(sock, "{ \"error\":\"no photo_id field\" }\n\0", strlen("{ \"error\":\"no photo_id field\" }\n\0"));
-                return;
-            }
-
-            ContextForRecognize *psContext = new ContextForRecognize;
-            psContext->arrFrinedsList = objInputJson["friends"].ToArray();
-            psContext->targetImg = objInputJson["photo_id"].ToString();
-            psContext->sock = sock;
-
-            CommonThread *threadRecongnize = new CommonThread;
-            threadRecongnize->startThread((void*(*)(void*))recognizeFromModel, psContext, sizeof(ContextForRecognize));
-            FilePrintMessage(_SUCC("Recognizing started..."));
-            // Notice that psContext should be deleted in recognizeFromModel function!
-        }
 
         break;
     }
@@ -209,27 +166,6 @@ void FaceServer::SocketListener(void* param)
         }
 
         NETWORK_TRACE(SocketListener, "Received %d bytes from the socket %u", sCallbackData.dataLength, psParam->listenedSocket);
-
-        if(pThis->callback != NULL)
-        {
-            pthread_mutex_lock(&network_cs);
-            pThis->callback(psParam->listenedSocket, NET_RECEIVED_REMOTE_DATA, sizeof(int) + dataLength, data);
-            pthread_mutex_unlock(&network_cs);
-
-            NETWORK_TRACE(SocketListener, "The packet from the socket %u was successfully processed by upper level callback", psParam->listenedSocket);
-        }
-        else
-        {
-            NETWORK_TRACE(SocketListener, "NULL callback. SocketListener shutdown");
-            shutdown(psParam->listenedSocket, 2);
-            pThis->threadAcceptConnection->stopThread();
-            return;
-        }
-    }
-
-    if(pThis->callback != NULL)
-    {
-        pThis->callback(NET_SERVER_DISCONNECTED, psParam->listenedSocket, 0, NULL);
     }
 
     NETWORK_TRACE(SocketListener, "SocketListener finished");

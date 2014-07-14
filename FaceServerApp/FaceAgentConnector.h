@@ -73,10 +73,10 @@ typedef struct FaceAgentCommandParam
     FaceAgentCommand cmd;
     union param
     {
-        struct ParamForRecognize            recognizeParam;
-        struct ParamForTrainModel           trainModelParam;
-        struct ParamForGetFacesFromPhoto    getFacesFromPhotoParam;
-        struct ParamForAddFaceFromPhoto     addFaceFromPhotoParam;
+        struct ParamForRecognize           *recognizeParam;
+        struct ParamForTrainModel          *trainModelParam;
+        struct ParamForGetFacesFromPhoto   *getFacesFromPhotoParam;
+        struct ParamForAddFaceFromPhoto    *addFaceFromPhotoParam;
     };
 } AgentCommandParam;
 
@@ -85,8 +85,6 @@ class FaceAgentConnector : public Network
 public:
     AgentInfo netInfo;
 private:
-    sem_t          *agentEnvokeSema;
-    CommonThread   *agentThread;
     AgentState      state;
     SOCKET          agentSocket;
 public:
@@ -98,6 +96,9 @@ public:
 
     bool SendCommand(AgentCommandParam command);
     AgentState GetAgentState();
+private:
+    static void DefaultCallback(unsigned Event, SOCKET sock, unsigned length, void *param) {}
+    void SocketListener(void *param);
 };
 
 #pragma pack(pop)

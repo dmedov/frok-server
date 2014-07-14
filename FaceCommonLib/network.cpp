@@ -1,18 +1,12 @@
-#include <arpa/inet.h>
-#include "errno.h"
+#include <errno.h>
 #include <pthread.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
 #include "network.h"
 
 pthread_mutex_t network_cs;
 pthread_mutex_t network_trace_cs;
-Network(NetworkCallback callback)
+Network::Network(NetworkCallback callback)
 {
     pthread_mutexattr_t mAttr;
     pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
@@ -147,7 +141,10 @@ NetResult Network::StartNetworkServer()
         return NET_UNSPECIFIED_ERROR;
     }
 
-    if(!threadAcceptConnection->startThread((void * (*)(void*))(Network::AcceptConnection), this, sizeof(Network)))
+    void *function = (void*)&Network::AcceptConnection;
+
+    //if(!threadAcceptConnection->startThread(&Network::AcceptConnection, this, sizeof(Network)))
+    if(!threadAcceptConnection->startThread((void* (*) (void*))function, this, sizeof(Network)))
     {
         NETWORK_TRACE(StartNetworkServer, "Failed to start AcceptConnection thread. See CommonThread logs for information");
         return NET_COMMON_THREAD_ERROR;
@@ -225,7 +222,9 @@ void Network::AcceptConnection(void* param)
             {
                 pThis->threadClientListener[i]->stopThread();
                 socketListenerData.thread = pThis->threadClientListener[i];
-                if(!pThis->threadClientListener[i]->startThread((void * (*)(void*))(Network::SocketListener), &socketListenerData, socketListenerDataLength))
+                void *function = (void*)&Network::SocketListener;
+                //if(!pThis->threadClientListener[i]->startThread(&Network::SocketListener, &socketListenerData, socketListenerDataLength))
+                if(!pThis->threadClientListener[i]->startThread((void*(*)(void*))function, &socketListenerData, socketListenerDataLength))
                 {
                     NETWORK_TRACE(AcceptConnection, "Failed to start SocketListener thread. See CommonThread logs for information");
                     continue;
@@ -427,7 +426,9 @@ SOCKET Network::EstablishConnetcion(__uint32_t remoteIPv4addr, unsigned short re
         {
             threadClientListener[i]->stopThread();
             sData.thread = threadClientListener[i];
-            if(!threadClientListener[i]->startThread((void * (*)(void*))(Network::SocketListener), &sData, sizeof(SOCKET) + sizeof(Network) + sizeof(CommonThread*)))
+            void *function = (void*)&Network::SocketListener;
+            //if(!threadClientListener[i]->startThread((void * (*)(void*))(Network::SocketListener), &sData, sizeof(SOCKET) + sizeof(Network) + sizeof(CommonThread*)))
+            if(!threadClientListener[i]->startThread((void*(*)(void*))function, &sData, sizeof(SOCKET) + sizeof(Network) + sizeof(CommonThread*)))
             {
                 NETWORK_TRACE(EstablishConnetcion, "Failed to start SocketListener thread. See CommonThread logs for information");
                 continue;

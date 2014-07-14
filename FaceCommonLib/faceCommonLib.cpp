@@ -1,5 +1,5 @@
 #include <pthread.h>
-
+#include <string.h>
 #include "faceCommonLib.h"
 
 pthread_mutex_t filePrint_cs;

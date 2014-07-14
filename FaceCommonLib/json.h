@@ -101,6 +101,9 @@ namespace json
 
             size_t size() const {return mValues.size();}
 
+            // Erase by key
+            void Erase(const std::string& key);
+
     };
 
     class Array

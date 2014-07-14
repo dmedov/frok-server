@@ -18,7 +18,7 @@ typedef struct
     char       *data;
 } FaceRequest;
 
-class FaceAgent
+class FaceAgent : public Network
 {
 private:
     Network            *network;
@@ -41,7 +41,7 @@ public:
     void AddFaceFromPhoto(void *pContext);
 private:
     static void CallbackListener(void *pContext);
-    static void NetworkCallback(unsigned evt, SOCKET sock, unsigned length, void *param);
+    static void DefaultCallback(unsigned evt, SOCKET sock, unsigned length, void *param) {}
 };
 
 #pragma pack(pop)

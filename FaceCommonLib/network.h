@@ -2,6 +2,12 @@
 #define NETWORK_H
 
 // include dependencies
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include "commonThread.h"
 
@@ -55,7 +61,7 @@ typedef void(*NetworkCallback)(unsigned Event, SOCKET sock, unsigned length, voi
 
 class Network
 {
-private:
+protected:
     // Local port
     unsigned short          localPortNumber;
     // Local socket
@@ -84,9 +90,9 @@ protected:
     NetResult TerminateConnetcion(SOCKET sock);
 private:
     // Accepts any incoming connection
-    virtual static void AcceptConnection(void* param);
+    virtual void AcceptConnection(void* param);
     // Recieves any incoming information, and gives it to the upper layer
-    virtual static void SocketListener(void* param);
+    virtual void SocketListener(void* param);
 };
 
 // Contexts for threads
