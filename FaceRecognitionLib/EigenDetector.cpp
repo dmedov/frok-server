@@ -23,7 +23,7 @@ void EigenDetector::loadBaseFace(const char* facesPath, vector<Mat> * images, ve
         }
         catch (...)
         {
-            FilePrintMessage(NULL, _FAIL("failed to load image %s"), files[i].c_str());
+            FilePrintMessage(_FAIL("failed to load image %s"), files[i].c_str());
             continue;
         }
         IplImage *resize = cvCreateImage(cvSize(158, 190), dist->depth, dist->nChannels);
@@ -49,7 +49,7 @@ bool EigenDetector::train(const char* idPath){
     }
     catch (...)
     {
-        FilePrintMessage(NULL, _FAIL("Failed to load images for learning (path = %s)."), facesPath.c_str());
+        FilePrintMessage(_FAIL("Failed to load images for learning (path = %s)."), facesPath.c_str());
         return false;
     }
 
@@ -59,7 +59,7 @@ bool EigenDetector::train(const char* idPath){
     }
     catch (...)
     {
-        FilePrintMessage(NULL, _FAIL("Failed to train model."));
+        FilePrintMessage(_FAIL("Failed to train model."));
         return false;
     }
 
@@ -69,11 +69,11 @@ bool EigenDetector::train(const char* idPath){
     }
     catch (...)
     {
-        FilePrintMessage(NULL, _FAIL("Failed to save %s"), (((string)idPath).append("/eigenface.yml")).c_str());
+        FilePrintMessage(_FAIL("Failed to save %s"), (((string)idPath).append("/eigenface.yml")).c_str());
         return false;
     }
 
-    FilePrintMessage(NULL, _SUCC("Learning completed. See resulting file eigenface.yml in %s folder"), idPath);
+    FilePrintMessage(_SUCC("Learning completed. See resulting file eigenface.yml in %s folder"), idPath);
     return true;
 }
 
@@ -241,7 +241,7 @@ double testMatch(IplImage* image, IplImage* rec){
 
     cvReleaseImage(&binI);
     cvReleaseImage(&binT);
-    FilePrintMessage(NULL, _N("match = %lf"), matchM);
+    FilePrintMessage(_N("match = %lf"), matchM);
     /*double probability = ((double)koef_image / (double)koef_dif) / 1.7;
     if (probability >= 1) probability = 0.99;*/
 
@@ -300,7 +300,7 @@ void EigenDetector::recognize(const map < string, Ptr<FaceRecognizer> > &models,
 {
     if (psDataJson == NULL)
     {
-        FilePrintMessage(NULL, _FAIL("NULL psDataJson received"));
+        FilePrintMessage(_FAIL("NULL psDataJson received"));
         return;
     }
     double oldProb = 0;        // probability
@@ -347,7 +347,7 @@ void EigenDetector::recognize(const map < string, Ptr<FaceRecognizer> > &models,
             prob = abs(prob_res1 - abs(prob_res2 - prob_res3))/1.5;
 
 
-            FilePrintMessage(NULL, _RES("id = %s probability \t= \t%lf \t(%lf | %lf | %lf)"), (*it).first.c_str(), prob, prob1,prob2, prob3);
+            FilePrintMessage(_RES("id = %s probability \t= \t%lf \t(%lf | %lf | %lf)"), (*it).first.c_str(), prob, prob1,prob2, prob3);
             //cout << (*it).first << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
 
             if (prob > oldProb)
@@ -427,7 +427,7 @@ void EigenDetector::recognize(const map < string, Ptr<FaceRecognizer> > &models,
             prob = abs(prob_res1 - abs(prob_res2 - prob_res3))/1.5;
 
 
-            FilePrintMessage(NULL, _RES("id = %s probability \t= \t%lf \t(%lf | %lf | %lf)"), (*it).first.c_str(), prob, prob1,prob2, prob3);
+            FilePrintMessage(_RES("id = %s probability \t= \t%lf \t(%lf | %lf | %lf)"), (*it).first.c_str(), prob, prob1,prob2, prob3);
             //cout << (*it).first << " " << prob1 << "\t" << prob2 << "\t" << prob << endl;
 
             if (prob > oldProb)

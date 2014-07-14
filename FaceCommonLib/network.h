@@ -68,7 +68,7 @@ private:
     NetworkCallback callback;
 public:
     Network(NetworkCallback callback, unsigned short localPort);
-    ~Network();
+    virtual ~Network();
     // Initializes network socket, binds it with local ip address and creates thread, that accepts any incoming connection
     NetResult StartNetworkServer();
     // Initializes network socket, binds it with local ip address and creates thread, that accepts any incoming connection
@@ -77,13 +77,14 @@ public:
     NetResult StopNetworkServer();
     // Sends data to the remote side's socket
     NetResult SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize);
-private:
+protected:
     // Connect to remote side. Returns socket, that should be used in SendData
-    NetResult EstablishConnetcion(__uint32_t remoteIP, unsigned short remotePort);
+    SOCKET EstablishConnetcion(__uint32_t remoteIP, unsigned short remotePort);
+private:
     // Accepts any incoming connection
-    static void AcceptConnection(void* param);
+    virtual static void AcceptConnection(void* param);
     // Recieves any incoming information, and gives it to the upper layer
-    static void SocketListener(void* param);
+    virtual static void SocketListener(void* param);
 };
 
 // Contexts for threads

@@ -143,7 +143,7 @@ NetResult Network::StartNetworkServer()
     return NET_SUCCESS;
 }
 
-NetResult Network::StartNetworkClient(uint32_t repoteIp, unsigned short repotePort)
+NetResult Network::StartNetworkClient(__uint32_t repoteIp, unsigned short repotePort)
 {
     if(threadAcceptConnection->getThreadState() == COMMON_THREAD_STARTED)
     {
@@ -151,37 +151,14 @@ NetResult Network::StartNetworkClient(uint32_t repoteIp, unsigned short repotePo
         return NET_ALREADY_STARTED;
     }
 
-    NetResult res;
-    if(NET_SUCCESS != (res = EstablishConnetcion(repoteIp, repotePort)))
+    SOCKET sock;
+    if(INVALID_SOCKET == (sock = EstablishConnetcion(repoteIp, repotePort)))
     {
         NETWORK_TRACE(StartNetworkClient, "Establish connection failed on error %x", res);
         return NET_SOCKET_ERROR;
     }
-    SocketListenerData sData;
-    sData.listenedSocket = localSock;
-    sData.pThis = this;
 
-    unsigned char i = 0;
-    for(i = 0; i < MAX_CLIENTS_NUMBER; i++)
-    {
-        if((threadClientListener[i]->getThreadState() != COMMON_THREAD_INITIATED) && (threadClientListener[i]->getThreadState() != COMMON_THREAD_STARTED))
-        {
-            threadClientListener[i]->stopThread();
-            sData.thread = threadClientListener[i];
-            if(!threadClientListener[i]->startThread((void * (*)(void*))(Network::SocketListener), &sData, sizeof(SOCKET) + sizeof(Network) + sizeof(CommonThread*)))
-            {
-                NETWORK_TRACE(StartNetworkClient, "Failed to start SocketListener thread. See CommonThread logs for information");
-                continue;
-            }
-            break;
-        }
-    }
-
-    if(i == MAX_CLIENTS_NUMBER)
-    {
-        NETWORK_TRACE(StartNetworkClient, "MAX_CLIENTS_NUMBER reached. Terminate any connection...");
-        return NET_UNSPECIFIED_ERROR;
-    }
+    localSock = sock;
 
     NETWORK_TRACE(StartNetworkClient, "Network client started, socket = %d", localSock);
 
@@ -319,7 +296,7 @@ void Network::SocketListener(void* param)
         else
         {
             NETWORK_TRACE(SocketListener, "NULL callback. SocketListener shutdown");
-            shutdown(pThis->localSock, 2);
+            shutdown(psParam->listenedSocket, 2);
             pThis->threadAcceptConnection->stopThread();
             return;
         }
@@ -358,8 +335,9 @@ NetResult Network::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSi
     return NET_SUCCESS;
 }
 
-NetResult Network::EstablishConnetcion(uint32_t remoteIPv4addr, unsigned short remotePort)
+SOCKET Network::EstablishConnetcion(__uint32_t remoteIPv4addr, unsigned short remotePort)
 {
+    SOCKET sock;
     sockaddr_in     sock_addr;
 
     if (remoteIPv4addr == 0)
@@ -368,29 +346,29 @@ NetResult Network::EstablishConnetcion(uint32_t remoteIPv4addr, unsigned short r
         return NET_INVALID_PARAM;
     }
 
-    if ((localSock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
+    if ((sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
     {
         NETWORK_TRACE(StartNetworkServer, "socket failed on error = %s", strerror(errno));
         return NET_SOCKET_ERROR;
     }
 
     int option = 1;
-    if(0 != setsockopt(localSock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
+    if(0 != setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
     {
         NETWORK_TRACE(StartNetworkServer, "setsockopt failed on error %s", strerror(errno));
-        shutdown(localSock, 2);
-        localSock = INVALID_SOCKET;
-        return NET_SOCKET_ERROR;
+        shutdown(sock, 2);
+        sock = INVALID_SOCKET;
+        return sock;
     }
 
     int         optval;
     socklen_t   optlen = sizeof(int);
-    if(0 != getsockopt(localSock, SOL_SOCKET,  SO_REUSEADDR, &optval, &optlen))
+    if(0 != getsockopt(sock, SOL_SOCKET,  SO_REUSEADDR, &optval, &optlen))
     {
         NETWORK_TRACE(StartNetworkServer, "getsockopt failed on error %s", strerror(errno));
-        shutdown(localSock, 2);
-        localSock = INVALID_SOCKET;
-        return NET_SOCKET_ERROR;
+        shutdown(sock, 2);
+        sock = INVALID_SOCKET;
+        return sock;
     }
 
     if(optval == 0)
@@ -403,12 +381,12 @@ NetResult Network::EstablishConnetcion(uint32_t remoteIPv4addr, unsigned short r
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_port = htons(remotePort);
 
-    if (0 != connect(localSock, (struct sockaddr*)&sock_addr, sizeof(struct sockaddr)))
+    if (0 != connect(sock, (struct sockaddr*)&sock_addr, sizeof(struct sockaddr)))
     {
         NETWORK_TRACE(EstablishConnetcion, "connect failed on error %s", strerror(errno));
-        shutdown(localSock, 2);
-        localSock = INVALID_SOCKET;
-        return NET_SOCKET_ERROR;
+        shutdown(sock, 2);
+        sock = INVALID_SOCKET;
+        return sock;
     }
 
     if(callback != NULL)
@@ -418,12 +396,40 @@ NetResult Network::EstablishConnetcion(uint32_t remoteIPv4addr, unsigned short r
     else
     {
         NETWORK_TRACE(EstablishConnetcion, "No callback. Terminating connection");
-        shutdown(localSock, 2);
-        localSock = INVALID_SOCKET;
+        shutdown(sock, 2);
+        sock = INVALID_SOCKET;
         return NET_NO_CALLBACK;
+    }
+
+    SocketListenerData sData;
+    sData.listenedSocket = sock;
+    sData.pThis = this;
+
+    unsigned char i = 0;
+    for(i = 0; i < MAX_CLIENTS_NUMBER; i++)
+    {
+        if((threadClientListener[i]->getThreadState() != COMMON_THREAD_INITIATED) && (threadClientListener[i]->getThreadState() != COMMON_THREAD_STARTED))
+        {
+            threadClientListener[i]->stopThread();
+            sData.thread = threadClientListener[i];
+            if(!threadClientListener[i]->startThread((void * (*)(void*))(Network::SocketListener), &sData, sizeof(SOCKET) + sizeof(Network) + sizeof(CommonThread*)))
+            {
+                NETWORK_TRACE(EstablishConnetcion, "Failed to start SocketListener thread. See CommonThread logs for information");
+                continue;
+            }
+            break;
+        }
+    }
+
+    if(i == MAX_CLIENTS_NUMBER)
+    {
+        NETWORK_TRACE(EstablishConnetcion, "MAX_CLIENTS_NUMBER reached. Terminate any connection...");
+        shutdown(sock, 2);
+        sock = INVALID_SOCKET;
+        return sock;
     }
 
     NETWORK_TRACE(EstablishConnetcion, "Connection successfully established");
 
-    return NET_SUCCESS;
+    return sock;
 }

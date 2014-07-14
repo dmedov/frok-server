@@ -4,6 +4,7 @@ btmtest.pro
 
 SUBDIRS =               \
     FaceServerApp       \
+    FaceAgentApp        \
     FaceDetectionLib    \
     FaceRecognitionLib  \
     FaceCommonLib       \

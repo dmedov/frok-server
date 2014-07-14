@@ -249,7 +249,7 @@ void ViolaJonesDetection::createJson(const DataJson &dataJson, SOCKET sock)
 void ViolaJonesDetection::keysFaceDetectFromForeignImage(CvHaarClassifierCascade* cscd, IplImage *face, int type, CvPoint facePoints[]){
 
     if (!cscd){
-        FilePrintMessage(NULL, _FAIL("Empty cascade"));
+        FilePrintMessage(_FAIL("Empty cascade"));
         return;
     }
 
@@ -310,7 +310,7 @@ void ViolaJonesDetection::keysFaceDetectFromForeignImage(CvHaarClassifierCascade
 void ViolaJonesDetection::keysFaceDetect(CascadeClassifier* cscd, CvPoint pointFace, int type)
 {
     if (!cscd){
-        FilePrintMessage(NULL, _FAIL("Empty cascade"));
+        FilePrintMessage(_FAIL("Empty cascade"));
         return;
     }
 
@@ -403,7 +403,7 @@ void ViolaJonesDetection::normalizateHistFace(){
 bool ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock)
 {
     if (faceCascades == NULL){
-        FilePrintMessage(NULL, _FAIL("Face cascade == NULL"));
+        FilePrintMessage(_FAIL("Face cascade == NULL"));
         return false;
     }
     string outJson;
@@ -447,7 +447,7 @@ bool ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock
 bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map < string, Ptr<FaceRecognizer> > &models, SOCKET outSock)
 {
     if (faceCascades == NULL){
-        FilePrintMessage(NULL, _FAIL("Face cascade == NULL"));
+        FilePrintMessage(_FAIL("Face cascade == NULL"));
         return false;
     }
 
@@ -592,11 +592,11 @@ bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath
     }
     catch (...)
     {
-        FilePrintMessage(NULL, _FAIL("Failed to save image. Runtime error occured"));
+        FilePrintMessage(_FAIL("Failed to save image. Runtime error occured"));
         delete temporary;
         return false;
     }
-    FilePrintMessage(NULL, "+");
+    FilePrintMessage("+");
     cvReleaseImage(&dest);
 
     delete temporary;
@@ -608,7 +608,7 @@ void ViolaJonesDetection::cutFaceThread(void *params)
     cutFaceThreadParams *psParams = (cutFaceThreadParams*)params;
 
     if (psParams->pThis->faceCascades == NULL){
-        FilePrintMessage(NULL, _FAIL("Face cascade == NULL"));
+        FilePrintMessage(_FAIL("Face cascade == NULL"));
         return;
     }
 
@@ -636,7 +636,7 @@ void ViolaJonesDetection::cutFaceThread(void *params)
         {
             if (!psParams->pThis->cutFaceToBase(psParams->pThis->gray_img, psParams->destPath, x, y, w, h))
             {
-                FilePrintMessage(NULL, "-");
+                FilePrintMessage("-");
                 cvClearMemStorage(psParams->pThis->strg);
                 cvReleaseImage(&psParams->pThis->face_img);
                 cvReleaseImage(&psParams->pThis->gray_img);
@@ -646,7 +646,7 @@ void ViolaJonesDetection::cutFaceThread(void *params)
         }
         else
         {
-            FilePrintMessage(NULL, "-");
+            FilePrintMessage("-");
         }
 
     }
@@ -662,7 +662,7 @@ void ViolaJonesDetection::cutFaceThread(void *params)
 bool ViolaJonesDetection::cutTheFace(IplImage *inputImage, const char* destPath, int faceNumber){
 
     if (this->faceCascades == NULL){
-        FilePrintMessage(NULL, _FAIL("Face cascade == NULL"));
+        FilePrintMessage(_FAIL("Face cascade == NULL"));
         return false;
     }
 
@@ -688,7 +688,7 @@ bool ViolaJonesDetection::cutTheFace(IplImage *inputImage, const char* destPath,
 
         if (!cutFaceToBase(gray_img, destPath, x, y, w, h))
         {
-            FilePrintMessage(NULL, "-");
+            FilePrintMessage("-");
             cvClearMemStorage(strg);
             cvReleaseImage(&face_img);
             cvReleaseImage(&gray_img);

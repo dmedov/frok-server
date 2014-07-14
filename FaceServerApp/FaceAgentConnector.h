@@ -1,5 +1,5 @@
-#ifndef FACEACTIVITYAGENT_H
-#define FACEACTIVITYAGENT_H
+#ifndef FACEAGENTCONNECTOR_H
+#define FACEAGENTCONNECTOR_H
 
 // FaceServer defaults
 #define DEFAULT_PHOTO_BASE_PATH     "/home/zda/faces/"
@@ -18,16 +18,33 @@ typedef enum FaceActivityAgentState
     FACE_AGENT_ERROR
 } AgentState;
 
-class FaceActivityAgent
+typedef struct AgentInfo
+{
+    __uint32_t      agentIpV4Address;
+    unsigned short  agentPortNumber;
+    AgentInfo()
+    {
+        agentIpV4Address = 0;
+        agentPortNumber = 0;
+    }
+    AgentInfo(__uint32_t ip, unsigned short port)
+    {
+        agentIpV4Address = ip;
+        agentPortNumber = port;
+    }
+} AgentInfo;
+
+class FaceAgentConnector
 {
 public:
+    AgentInfo netInfo;
 private:
     sem_t          *agentEnvokeSema;
     CommonThread   *agentThread;
     AgentState      state;
 public:
-    FaceActivityAgent();
-    ~FaceActivityAgent();
+    FaceAgentConnector(AgentInfo &info);
+    ~FaceAgentConnector();
 
     bool ConnectToAgent();
     bool DisconnectFromAgent();
@@ -37,7 +54,6 @@ public:
 
 private:
     /*void CommandExecuter(void *pContext);
-
     void Recognize(void *pContext);
     void TrainUserModel(void *pContext);
     void GetFacesFromPhoto(void *pContext);
@@ -73,4 +89,4 @@ struct ContextForSaveFaces
     int faceNumber;
 };
 
-#endif // FACEACTIVITYAGENT_H
+#endif // FACEAGENTCONNECTOR_H

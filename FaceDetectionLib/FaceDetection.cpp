@@ -19,7 +19,7 @@ getSubdirsFromDir(ID_PATH, users);
 
 if(users.empty())
 {
-    FilePrintMessage(NULL, _WARN("No trained users found in %s folder"), ID_PATH);
+    FilePrintMessage(_WARN("No trained users found in %s folder"), ID_PATH);
     return;
 }
 
@@ -32,18 +32,18 @@ for (unsigned int i = 0; i < users.size(); i++)
         if (access(fileName.c_str(), 0) != -1)
         {
             model->load(fileName.c_str());
-            FilePrintMessage(NULL, _SUCC("Model base for user %s successfully loaded. Continue..."), users[i].c_str());
+            FilePrintMessage(_SUCC("Model base for user %s successfully loaded. Continue..."), users[i].c_str());
         }
         else
         {
-            FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), users[i].c_str());
+            FilePrintMessage(_WARN("Failed to load model base for user %s. Continue..."), users[i].c_str());
             continue;
         }
 
     }
     catch (...)
     {
-        FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), users[i].c_str());
+        FilePrintMessage(_WARN("Failed to load model base for user %s. Continue..."), users[i].c_str());
         continue;
     }
     models[users[i]] = model;

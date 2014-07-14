@@ -16,7 +16,7 @@ void getFacesFromPhoto(void *pContext)
 
     if (img == NULL)
     {
-        FilePrintMessage(NULL, _FAIL("Failed to load image %s. Continue..."), photoName.c_str());
+        FilePrintMessage(_FAIL("Failed to load image %s. Continue..."), photoName.c_str());
         net.SendData(psContext->sock, "{ \"error\":\"failed to load photo\" }\n\0", strlen("{ \"error\":\"failed to load photo\" }\n\0"));
 
         return;
@@ -27,7 +27,7 @@ void getFacesFromPhoto(void *pContext)
     try{
         if (!detector.allFacesDetection(img, psContext->sock))
         {
-            FilePrintMessage(NULL, _FAIL("All Faces Detection FAILED"), photoName.c_str());
+            FilePrintMessage(_FAIL("All Faces Detection FAILED"), photoName.c_str());
             net.SendData(psContext->sock, "{ \"error\":\"All Faces Detection FAILED\" }\n\0", strlen("{ \"error\":\"All Faces Detection FAILED\" }\n\0"));
 
             return;
@@ -35,7 +35,7 @@ void getFacesFromPhoto(void *pContext)
     }
     catch (...)
     {
-        FilePrintMessage(NULL, _FAIL("All Faces Detection FAILED"), photoName.c_str());
+        FilePrintMessage(_FAIL("All Faces Detection FAILED"), photoName.c_str());
         net.SendData(psContext->sock, "{ \"error\":\"All Faces Detection FAILED\" }\n\0", strlen("{ \"error\":\"All Faces Detection FAILED\" }\n\0"));
 
         return;
@@ -43,7 +43,7 @@ void getFacesFromPhoto(void *pContext)
 
     net.SendData(psContext->sock, "{ \"success\":\"get faces succeed\" }\n\0", strlen("{ \"success\":\"get faces succeed\" }\n\0"));
 
-    FilePrintMessage(NULL, _SUCC("Get faces finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
+    FilePrintMessage(_SUCC("Get faces finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
 
     return;
 }
@@ -59,7 +59,7 @@ void saveFaceFromPhoto(void *pContext)
 
     if (img == NULL)
     {
-        FilePrintMessage(NULL, _FAIL("Failed to load image %s. Continue..."), photoName.c_str());
+        FilePrintMessage(_FAIL("Failed to load image %s. Continue..."), photoName.c_str());
         net.SendData(psContext->sock, "{ \"error\":\"failed to load photo\" }\n\0", strlen("{ \"error\":\"failed to load photo\" }\n\0"));
 
         return;
@@ -71,7 +71,7 @@ void saveFaceFromPhoto(void *pContext)
     {
         if (!detector.cutTheFace(img, ((string)ID_PATH).append(psContext->userId).append("/faces/").append(psContext->photoName).append(".jpg").c_str(), psContext->faceNumber))
         {
-            FilePrintMessage(NULL, _FAIL("cut face FAILED"), photoName.c_str());
+            FilePrintMessage(_FAIL("cut face FAILED"), photoName.c_str());
             net.SendData(psContext->sock, "{ \"error\":\"cut face FAILED\" }\n\0", strlen("{ \"error\":\"cut face FAILED\" }\n\0"));
 
             return;
@@ -79,7 +79,7 @@ void saveFaceFromPhoto(void *pContext)
     }
     catch (...)
     {
-        FilePrintMessage(NULL, _FAIL("cut face FAILED"), photoName.c_str());
+        FilePrintMessage(_FAIL("cut face FAILED"), photoName.c_str());
         net.SendData(psContext->sock, "{ \"error\":\"cut face FAILED\" }\n\0", strlen("{ \"error\":\"cut face FAILED\" }\n\0"));
 
         return;
@@ -87,7 +87,7 @@ void saveFaceFromPhoto(void *pContext)
 
     net.SendData(psContext->sock, "{ \"success\":\"cut face succeed\" }\n\0", strlen("{ \"success\":\"cut face succeed\" }\n\0"));
 
-    FilePrintMessage(NULL, _SUCC("Cut face finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
+    FilePrintMessage(_SUCC("Cut face finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
 
     return;
 }
@@ -111,13 +111,13 @@ void recognizeFromModel(void *pContext)
         }
         else
         {
-            FilePrintMessage(NULL, _WARN("No model found for user %s"), psContext->arrFrinedsList[i].ToString().c_str());
+            FilePrintMessage(_WARN("No model found for user %s"), psContext->arrFrinedsList[i].ToString().c_str());
         }
     }
 
     if (currentModels.empty())
     {
-        FilePrintMessage(NULL, _FAIL("No models loaded."));
+        FilePrintMessage(_FAIL("No models loaded."));
         net.SendData(psContext->sock, "{ \"error\":\"training was not called\" }\n\0", strlen("{ \"error\":\"training was not called\" }\n\0"));
         delete violaJonesDetection;
         return;
@@ -129,7 +129,7 @@ void recognizeFromModel(void *pContext)
     }
     catch (...)
     {
-        FilePrintMessage(NULL, _FAIL("Failed to load image %s"), ((string)(TARGET_PATH)).append(psContext->targetImg).append(".jpg").c_str());
+        FilePrintMessage(_FAIL("Failed to load image %s"), ((string)(TARGET_PATH)).append(psContext->targetImg).append(".jpg").c_str());
         net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
         delete violaJonesDetection;
         return;
@@ -137,7 +137,7 @@ void recognizeFromModel(void *pContext)
 
     if (!img)
     {
-        FilePrintMessage(NULL, _FAIL("Failed to load image %s"), (((string)(TARGET_PATH)).append(psContext->targetImg)).c_str());
+        FilePrintMessage(_FAIL("Failed to load image %s"), (((string)(TARGET_PATH)).append(psContext->targetImg)).c_str());
         net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
         delete violaJonesDetection;
         return;
@@ -148,7 +148,7 @@ void recognizeFromModel(void *pContext)
     {
         if (!violaJonesDetection->faceDetect(img, currentModels, psContext->sock))
         {
-            FilePrintMessage(NULL, _FAIL("Some error occured during recognze call"));
+            FilePrintMessage(_FAIL("Some error occured during recognze call"));
             net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
             delete violaJonesDetection;
             return;
@@ -156,7 +156,7 @@ void recognizeFromModel(void *pContext)
     }
     catch (...)
     {
-        FilePrintMessage(NULL, _FAIL("Some error occured during recognze call"));
+        FilePrintMessage(_FAIL("Some error occured during recognze call"));
         net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
         delete violaJonesDetection;
         return;
@@ -171,7 +171,7 @@ void recognizeFromModel(void *pContext)
 
     net.SendData(psContext->sock, "{ \"success\":\"recognize faces succeed\" }\n\0", strlen("{ \"success\":\"recognize faces succeed\" }\n\0"));
 
-    FilePrintMessage(NULL, _SUCC("Recognize finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
+    FilePrintMessage(_SUCC("Recognize finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
     cvReleaseImage(&img);
     //cvClearMemStorage(storage);
     cvDestroyAllWindows();
@@ -203,7 +203,7 @@ void generateAndTrainBase(void *pContext)
             IplImage *img = cvLoadImage(photoName.c_str());
             if (img == NULL)
             {
-                FilePrintMessage(NULL, _WARN("Failed to load image %s. Continue..."), photoName.c_str());
+                FilePrintMessage(_WARN("Failed to load image %s. Continue..."), photoName.c_str());
                 continue;
             }
 
@@ -243,14 +243,14 @@ void generateAndTrainBase(void *pContext)
         {
             if (!eigenDetector->train((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str()))
             {
-                FilePrintMessage(NULL, _FAIL("Some error has occured during Learn call."));
+                FilePrintMessage(_FAIL("Some error has occured during Learn call."));
                 delete eigenDetector;
                 continue;
             }
         }
         catch (...)
         {
-            FilePrintMessage(NULL, _FAIL("Some error has occured during Learn call."));
+            FilePrintMessage(_FAIL("Some error has occured during Learn call."));
             delete eigenDetector;
             continue;
         }
@@ -263,11 +263,11 @@ void generateAndTrainBase(void *pContext)
             if (access(fileName.c_str(), 0) != -1)
             {
                 model->load(fileName.c_str());
-                FilePrintMessage(NULL, _SUCC("Model base for user %s successfully loaded. Continue..."), psContext->arrIds[i].ToString().c_str());
+                FilePrintMessage(_SUCC("Model base for user %s successfully loaded. Continue..."), psContext->arrIds[i].ToString().c_str());
             }
             else
             {
-                FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), psContext->arrIds[i].ToString().c_str());
+                FilePrintMessage(_WARN("Failed to load model base for user %s. Continue..."), psContext->arrIds[i].ToString().c_str());
                 pthread_mutex_unlock(&faceDetectionCS);
                 continue;
             }
@@ -275,7 +275,7 @@ void generateAndTrainBase(void *pContext)
         }
         catch (...)
         {
-            FilePrintMessage(NULL, _WARN("Failed to load model base for user %s. Continue..."), psContext->arrIds[i].ToString().c_str());
+            FilePrintMessage(_WARN("Failed to load model base for user %s. Continue..."), psContext->arrIds[i].ToString().c_str());
             pthread_mutex_unlock(&faceDetectionCS);
             continue;
         }
@@ -288,7 +288,7 @@ void generateAndTrainBase(void *pContext)
     }
 
     cvDestroyAllWindows();
-    FilePrintMessage(NULL, _SUCC("Train finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
+    FilePrintMessage(_SUCC("Train finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
     if (uSuccCounter == 0)
     {
         net.SendData(psContext->sock, "{ \"fail\":\"learning failed\" }\n\0", strlen("{ \"fail\":\"learning failed\" }\n\0"));

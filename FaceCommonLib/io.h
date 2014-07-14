@@ -5,6 +5,9 @@
 #include <vector>
 #include <string>
 
+//externals
+extern char *log_file;
+
 // don't forget '/' in the end of dir name.
 // Example: good = "/home/workspace/" bad: "/home/workspace"
 int getFilesFromDir(const char *dir, std::vector<std::string> &files);

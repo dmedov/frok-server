@@ -8,7 +8,9 @@
 #include "io.h"
 #include "faceCommonLib.h"
 
-void FilePrintMessage(char* file, const char* expr...)
+char *log_file;
+
+void FilePrintMessage(const char* expr...)
 {
     UNREFERENCED_PARAMETER(file);
     char message[LOG_MESSAGE_MAX_LENGTH];
@@ -25,13 +27,13 @@ void FilePrintMessage(char* file, const char* expr...)
         printf("%s", message);
         pthread_mutex_unlock(&filePrint_cs);
 
-        if (file)
+        if (log_file)
         {
             pthread_mutex_lock(&filePrint_cs);
 
             FILE* fl = NULL;
 
-            if ((fl = fopen(file, "a+")) != NULL)
+            if ((fl = fopen(log_file, "a+")) != NULL)
             {
                 if (fl)
                 {
@@ -42,7 +44,7 @@ void FilePrintMessage(char* file, const char* expr...)
             }
             else
             {
-                printf("Failed to open file %s, error = %u", file, errno);
+                printf("Failed to open file %s, error = %u", log_file, errno);
             }
 
             pthread_mutex_unlock(&filePrint_cs);
@@ -55,7 +57,7 @@ int getFilesFromDir(const char *dir, std::vector<std::string> &files)
 {
     if(dir == NULL)
     {
-        FilePrintMessage(NULL, _FAIL("Invalid parameter dir == NULL in getFilesFromDir\n"));
+        FilePrintMessage(_FAIL("Invalid parameter dir == NULL in getFilesFromDir\n"));
         return -1;
     }
 
@@ -64,7 +66,7 @@ int getFilesFromDir(const char *dir, std::vector<std::string> &files)
     struct stat     fileInfo;
     if(NULL == (dirStream = opendir(dir)))
     {
-        FilePrintMessage(NULL, _FAIL("failed to load dir stream on error %s\n"), strerror(errno));
+        FilePrintMessage(_FAIL("failed to load dir stream on error %s\n"), strerror(errno));
         return -1;
     }
 
@@ -76,7 +78,7 @@ int getFilesFromDir(const char *dir, std::vector<std::string> &files)
         memcpy(fullname + strlen(dir), file->d_name, strlen(file->d_name));
         if(-1 == stat(fullname, &fileInfo))
         {
-            FilePrintMessage(NULL, _WARN("failed to get %s stats on error %s\n"), file->d_name, strerror(errno));
+            FilePrintMessage(_WARN("failed to get %s stats on error %s\n"), file->d_name, strerror(errno));
             continue;
         }
 
@@ -89,7 +91,7 @@ int getFilesFromDir(const char *dir, std::vector<std::string> &files)
     }
     if(-1 == closedir(dirStream))
     {
-        FilePrintMessage(NULL, _FAIL("failed to close dir stream on error %s\n"), strerror(errno));
+        FilePrintMessage(_FAIL("failed to close dir stream on error %s\n"), strerror(errno));
         return -1;
     }
     return 0;
@@ -99,7 +101,7 @@ int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs)
 {
     if(dir == NULL)
     {
-        FilePrintMessage(NULL, _FAIL("Invalid parameter dir == NULL in getFilesFromDir\n"));
+        FilePrintMessage(_FAIL("Invalid parameter dir == NULL in getFilesFromDir\n"));
         return -1;
     }
 
@@ -108,7 +110,7 @@ int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs)
     struct stat     fileInfo;
     if(NULL == (dirStream = opendir(dir)))
     {
-        FilePrintMessage(NULL, _FAIL("failed to load dir stream on error %s\n"), strerror(errno));
+        FilePrintMessage(_FAIL("failed to load dir stream on error %s\n"), strerror(errno));
         return -1;
     }
 
@@ -124,7 +126,7 @@ int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs)
         memcpy(fullname + strlen(dir), file->d_name, strlen(file->d_name));
         if(-1 == stat(fullname, &fileInfo))
         {
-            FilePrintMessage(NULL, _WARN("failed to get %s stats on error %s\n"), file->d_name, strerror(errno));
+            FilePrintMessage(_WARN("failed to get %s stats on error %s\n"), file->d_name, strerror(errno));
             continue;
         }
 
@@ -137,7 +139,7 @@ int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs)
     }
     if(-1 == closedir(dirStream))
     {
-        FilePrintMessage(NULL, _FAIL("failed to close dir stream on error %s\n"), strerror(errno));
+        FilePrintMessage(_FAIL("failed to close dir stream on error %s\n"), strerror(errno));
         return -1;
     }
     return 0;
