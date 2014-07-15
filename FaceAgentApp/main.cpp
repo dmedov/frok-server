@@ -9,10 +9,8 @@ void usage()
 
 int main(void)
 {
-    /*FaceAgent agent(DEFAULT_PORT);
-    agent.StartFaceAgent();*/
-    A tmp;
-    tmp.function1();
+    FaceAgent agent(DEFAULT_PORT);
+    agent.StartFaceAgent();
     getchar();
 
     return 0;

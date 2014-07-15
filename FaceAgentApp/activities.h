@@ -1,17 +1,3 @@
-
-class A
-{
-public:
-    A();
-    ~A();
-
-
-    void function1();
-    virtual void function2(void *param);
-    static void function3(void *param);
-    virtual void function5();
-};
-
 /*#ifndef ACTIVITIES_H
 #define ACTIVITIES_H
 

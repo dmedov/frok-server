@@ -15,6 +15,9 @@ extern pthread_mutex_t filePrint_cs;
 
 // Common defines
 #define UNREFERENCED_PARAMETER(P)           (P=P)
+#define SOCKET                          int
+#define SOCKET_ERROR                    (-1)
+#define INVALID_SOCKET                  (-1)
 #define COMMAND_WITH_LENGTH(__CHARS__)      (__CHARS__), strlen((__CHARS__))
 
 // Colored print defines
@@ -25,7 +28,7 @@ extern pthread_mutex_t filePrint_cs;
 #define _N(__x__)                           __x__ "\n"
 
 // Library init functions
-void InitFaceCommonLib(char *logFileName = DEFAULT_LOG_FILE_NAME);
-void DeinitFaceCommonLib();
+bool InitFaceCommonLib(char *logFileName = DEFAULT_LOG_FILE_NAME);
+bool DeinitFaceCommonLib();
 
 #endif // FACECOMMONLIB_H

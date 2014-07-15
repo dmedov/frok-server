@@ -8,6 +8,7 @@
 
 // include dependencies
 #include "../FaceCommonLib/faceCommonLib.h"
+#include "../FaceCommonLib/network.h"
 
 #pragma pack(push, 1)
 

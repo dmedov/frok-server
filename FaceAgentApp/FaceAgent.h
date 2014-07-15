@@ -1,13 +1,26 @@
 #ifndef FACESERVER_H
 #define FACESERVER_H
 
-// FaceServer defaults
+// FaceAgent defaults
 #define DEFAULT_PHOTO_BASE_PATH     "/home/zda/faces/"
 #define DEFAULT_TARGETS_FOLDER_PATH "/home/zda/faces/"
 #define DEFAULT_PORT                28015
+#define MAX_SOCKET_BUFF_SIZE            (163840)
 
 // include dependencies
 #include "../FaceCommonLib/faceCommonLib.h"
+
+// FaceAgent logging system
+#ifdef FACE_AGENT_TRACE_ENABLED
+#define FACE_AGENT_TRACE(__function_name__, format, ...)    \
+    pthread_mutex_lock(&faceAgent_trace_cs);                \
+    printf("[FACE_AGENT->%s]: ", #__function_name__);       \
+    printf(format, ##__VA_ARGS__);                          \
+    printf("\n");                                           \
+    pthread_mutex_unlock(&faceAgent_trace_cs)
+#else
+#define FACE_AGENT_TRACE(__function_name__, format, ...)
+#endif
 
 // Return codes for Network class
 typedef enum NetResult
@@ -39,7 +52,7 @@ private:
     char                   *targetsFolderPath;
     unsigned short          localPortNumber;
     SOCKET                  localSock;
-    CommonThread           *threadAcceptConnection;
+    CommonThread           *threadServerListener;
 
 public:
     FaceAgent(unsigned short localPort = DEFAULT_PORT, char *photoBasePath = DEFAULT_PHOTO_BASE_PATH, char*targetsFolderPath = DEFAULT_TARGETS_FOLDER_PATH);
@@ -55,15 +68,11 @@ public:
     void AddFaceFromPhoto(void *pContext);
 protected:
     NetResult StartNetworkServer();
+    NetResult StopNetworkServer();
     NetResult SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize);
 private:
-    static void CallbackListener(void *pContext);
-    static void DefaultCallback(unsigned evt, SOCKET sock, unsigned length, void *param) {}
-
-    // Accepts any incoming connection
+    // Only one connected server is allowed. Disconnect current connection to allow new server connect
     static void ServerListener(void* param);
-    // Recieves any incoming information, and gives it to the upper layer
-    static void SocketListener(void* param);
 };
 
 #pragma pack(pop)
