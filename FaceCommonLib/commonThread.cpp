@@ -1,6 +1,5 @@
 #include <pthread.h>
-#include <string.h>
-
+#include <unistd.h>
 #include "commonThread.h"
 
 CommonThread::CommonThread()
@@ -164,6 +163,12 @@ bool CommonThread::waitForFinish(unsigned timeout_sec)
     return true;
 }
 
+void somefunction(void* param)
+{
+    printf("param = %p", param);
+    return;
+}
+
 void CommonThread::startRoutine(void *param)
 {
     CTHREAD_PRINT(startRoutine, "Thread routine started.");
@@ -174,8 +179,13 @@ void CommonThread::startRoutine(void *param)
     memcpy(threadParams, psParams->params, psParams->paramsLength);
     void *(*function) (void *) = psParams->function;
 
+    printf("\n");
+    for(int i = 0; i < 8; i++)
+    {
+        printf("%2x", threadParams[i]);
+    }
+    printf("\n");
     sem_post(psParams->threadStartedSema);
-
     CTHREAD_PRINT(startRoutine, "User function started. threadParams = %p", threadParams);
     function(threadParams);
     CTHREAD_PRINT(startRoutine, "User function finished.threadParams = %p", threadParams);
