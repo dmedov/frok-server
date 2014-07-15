@@ -4,7 +4,7 @@
 // Lib includes
 #include "json.h"               // class for easy json (de)serializing, MIT LICENSE
 #include "commonThread.h"       // class for safe working with unix threads
-#include "network.h"            // class for making tcp network server or client
+//#include "network.h"            // class for making tcp network server or client
 #include "io.h"                 // File system - depend operations, input - output operations
 // FaceDetectionLib defaults
 #define LOG_MESSAGE_MAX_LENGTH      1024

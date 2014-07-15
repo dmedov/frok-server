@@ -13,12 +13,30 @@ FaceAgent::FaceAgent(unsigned short localPort, char*photoBasePath, char*targetsF
     this->targetsFolderPath = new char[strlen(targetsFolderPath) + 1];
     strcpy(this->photoBasePath, photoBasePath);
     strcpy(this->photoBasePath, photoBasePath);
+
+    pthread_mutexattr_t mAttr;
+    pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&network_cs, &mAttr);
+    pthread_mutex_init(&network_trace_cs, &mAttr);
+    pthread_mutexattr_destroy(&mAttr);
+
+    threadAcceptConnection = new CommonThread;
+    localSock = INVALID_SOCKET;
+
+    this->localPortNumber = localPort;
 }
 
 FaceAgent::~FaceAgent()
 {
     delete []photoBasePath;
     delete []targetsFolderPath;
+
+    shutdown(localSock, 2);
+    threadAcceptConnection->stopThread();
+    delete threadAcceptConnection;
+
+    pthread_mutex_destroy(&network_cs);
+    pthread_mutex_destroy(&network_trace_cs);
 }
 
 bool FaceAgent::StartFaceAgent()
@@ -31,6 +49,75 @@ bool FaceAgent::StartFaceAgent()
     }
 
     return true;
+}
+
+NetResult FaceAgent::StartNetworkServer()
+{
+    sockaddr_in             server;
+    memset(&server, 0, sizeof(server));
+
+    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_family = AF_INET;
+    server.sin_port = htons(localPortNumber);
+
+    if ((localSock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
+    {
+        NETWORK_TRACE(StartNetworkServer, "socket failed on error = %s", strerror(errno));
+        return NET_SOCKET_ERROR;
+    }
+
+    //[TBD] think about SO_KEEPALIVE option
+
+    int option = 1;
+    if(0 != setsockopt(localSock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
+    {
+        NETWORK_TRACE(StartNetworkServer, "setsockopt failed on error %s", strerror(errno));
+        shutdown(localSock, 2);
+        return NET_SOCKET_ERROR;
+    }
+
+    int         optval;
+    socklen_t   optlen = sizeof(int);
+
+    if(0 != getsockopt(localSock, SOL_SOCKET,  SO_REUSEADDR, &optval, &optlen))
+    {
+        NETWORK_TRACE(StartNetworkServer, "getsockopt failed on error %s", strerror(errno));
+        shutdown(localSock, 2);
+        return NET_SOCKET_ERROR;
+    }
+
+    if(optval == 0)
+    {
+        NETWORK_TRACE(StartNetworkServer, "setsockopt failed to enabled SO_REUSEADDR option");
+        //return NET_SOCKET_ERROR;
+    }
+
+    if(0 != bind(localSock, (struct sockaddr*)&server, sizeof(server)))
+    {
+        NETWORK_TRACE(StartNetworkServer, "bind failed on error %s", strerror(errno));
+        shutdown(localSock, 2);
+        return NET_SOCKET_ERROR;
+    }
+
+    if (0 != listen(localSock, SOMAXCONN))
+    {
+        NETWORK_TRACE(StartNetworkServer, "listen failed on error %s", strerror(errno));
+        shutdown(localSock, 2);
+        return NET_UNSPECIFIED_ERROR;
+    }
+
+    FaceAgent *pThis = this;
+
+    if(!threadAcceptConnection->startThread(&FaceAgent::ServerListener &pThis, sizeof(FaceAgent*)))
+    {
+        NETWORK_TRACE(StartNetworkServer, "Failed to start AcceptConnection thread. See CommonThread logs for information");
+        return NET_COMMON_THREAD_ERROR;
+    }
+
+    //sleep(10);
+    NETWORK_TRACE(StartNetworkServer, "Succeed, socket = %d, port = %d", localSock, localPortNumber);
+
+    return NET_SUCCESS;
 }
 
 bool FaceAgent::StopFaceAgent()
@@ -47,88 +134,132 @@ bool FaceAgent::StopFaceAgent()
     return success;
 }
 
-void FaceAgent::CallbackListener(void *pContext)
+void FaceAgent::ServerListener(void* param)
 {
-    SocketListenerData     *psParam = (SocketListenerData*)pContext;
-    FaceAgent     *pThis = (FaceAgent*)psParam->pThis;
+    FaceAgent                  *pThis                       = NULL;
+    SOCKET                      accepted_socket             = INVALID_SOCKET;
+    int                         dataLength                  = 0;
+    char                        data[MAX_SOCKET_BUFF_SIZE]  = {0};
+    std::vector<std::string>    mandatoryKeys;
 
-    int         dataLength;
-    char        data[MAX_SOCKET_BUFF_SIZE];
+    memcpy(&pThis, param, sizeof(FaceAgent*));
 
-    std::vector<std::string> mandatoryKeys;
     mandatoryKeys.push_back("cmd");
     mandatoryKeys.push_back("req_id");
     mandatoryKeys.push_back("reply_sock");
     mandatoryKeys.push_back("result");
 
-    NETWORK_TRACE(SocketListener, "start listening to socket %i", psParam->listenedSocket);
-
     for(;;)
     {
-        if(psParam->thread->isStopThreadReceived())
+        NETWORK_TRACE(ServerListener, "Accepting single incoming connections for socket %i", pThis->localSock);
+        if ((accepted_socket = accept(pThis->localSock, NULL, NULL)) == SOCKET_ERROR)
         {
-            NETWORK_TRACE(SocketListener, "terminate thread sema received");
-            break;
+            if(pThis->threadAcceptConnection->isStopThreadReceived())
+            {
+                NETWORK_TRACE(AcceptConnection, "terminate thread sema received");
+                break;
+            }
+            continue;
         }
 
-        if( -1 == (dataLength = recv(psParam->listenedSocket, data, sizeof(data), MSG_DONTWAIT)))
+        NETWORK_TRACE(AcceptConnection, "Incoming connection accepted. Accepted socket = %u", accepted_socket);
+
+        int flag = 1;   //TRUE
+        if(0 != setsockopt(accepted_socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)))
         {
-            if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+            NETWORK_TRACE(AcceptConnection, "setsockopt (TCP_NODELAY) failed on error %s", strerror(errno));
+            continue;
+        }
+        if(0 != setsockopt(accepted_socket, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int)))
+        {
+            NETWORK_TRACE(AcceptConnection, "setsockopt (SO_REUSEADDR) failed on error %s", strerror(errno));
+            continue;
+        }
+
+        NETWORK_TRACE(ServerListener, "Socket listener cycle started. All incoming connections are ingored");
+        for(;;)
+        {
+            if( -1 == (dataLength = recv(accepted_socket, data, sizeof(data), MSG_DONTWAIT)))
             {
-                // Valid errors - continue
+                if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+                {
+                    // Valid errors - continue
+                    continue;
+                }
+                // unspecified error occured
+                NETWORK_TRACE(SocketListener, "recv failed on error %s", strerror(errno));
+                NETWORK_TRACE(SocketListener, "SocketListener shutdown");
+                shutdown(psParam->listenedSocket, 2);
+                break;
+            }
+
+            if(dataLength == 0)
+            {
+                // TCP keep alive
                 continue;
             }
-            // unspecified error occured
-            NETWORK_TRACE(SocketListener, "recv failed on error %s", strerror(errno));
-            NETWORK_TRACE(SocketListener, "SocketListener shutdown");
-            shutdown(psParam->listenedSocket, 2);
-            return;
+
+            NETWORK_TRACE(SocketListener, "Received %d bytes from the socket %u", dataLength, accepted_socket);
+
+            // Response from agent received
+            json::Object requestJson;
+            try
+            {
+                requestJson = ((json::Value)json::Deserialize((std::string)data)).ToObject();
+            }
+            catch (...)
+            {
+                FilePrintMessage(_FAIL("Failed to parse incoming JSON: %s"), data);
+                continue;
+            }
+
+            if (!(responseFromAgent.HasKeys(mandatoryKeys)))
+            {
+                FilePrintMessage(_FAIL("Invalid input JSON: no cmd field (%s)"), data);
+                continue;
+            }
+
+            requestJson["result"] = "success";
+
+            std::string outJson = json::Serialize(requestJson);
+
+            if(NET_SUCCESS != pThis->SendData(accepted_socket, outJson.c_str(), outJson.size()))
+            {
+                FilePrintMessage(_FAIL("Failed to send response to server (%u). Response = %s"), replySock, outJson.c_str());
+                continue;
+            }
         }
 
-        if(dataLength == 0)
-        {
-            // TCP keep alive
-            continue;
-        }
-
-        NETWORK_TRACE(SocketListener, "Received %d bytes from the socket %u", sCallbackData.dataLength, psParam->listenedSocket);
-
-        // Response from agent received
-        json::Object responseFromAgent;
-        try
-        {
-            responseFromAgent = ((json::Value)json::Deserialize((std::string)data)).ToObject();
-        }
-        catch (...)
-        {
-            FilePrintMessage(_FAIL("Failed to parse incoming JSON: %s"), data);
-            continue;
-        }
-
-        if (!(responseFromAgent.HasKeys(mandatoryKeys)))
-        {
-            FilePrintMessage(_FAIL("Invalid input JSON: no cmd field (%s)"), data);
-            continue;
-        }
-
-        SOCKET replySock = responseFromAgent["reply_sock"].ToInt();
-        responseFromAgent.Erase("reply_sock");
-        std::string outJson = json::Serialize(responseFromAgent);
-
-        if(NET_SUCCESS != pThis->SendData(replySock, outJson.c_str(), outJson.size()))
-        {
-            FilePrintMessage(_FAIL("Failed to send response to remote peer %u. Response = %s"), replySock, outJson.c_str());
-            continue;
-        }
     }
-
-    if(pThis->callback != NULL)
-    {
-        pThis->callback(NET_SERVER_DISCONNECTED, psParam->listenedSocket, 0, NULL);
-    }
-
-    NETWORK_TRACE(SocketListener, "SocketListener finished");
+    shutdown(pThis->localSock, 2);
+    NETWORK_TRACE(AcceptConnection, "AcceptConnection finished");
+    return;
 }
+
+NetResult FaceAgent::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)
+{
+    int sendlen = 0;
+
+    if(sock != INVALID_SOCKET)
+    {
+        if (-1 == (sendlen = send(sock, pBuffer, uBufferSize, 0)))
+        {
+            NETWORK_TRACE(SendData, "Failed to send outgoing bytes to the remote peer %u with error %s", sock, strerror(errno));
+            return NET_SOCKET_ERROR;
+        }
+
+        usleep(50000);      // sleep for 1 system monitor tact
+        NETWORK_TRACE(SendData, "%d bytes were sent to the remote peer %u", sendlen, sock);
+    }
+    else
+    {
+        NETWORK_TRACE(SendData, "Invalid socket");
+        return NET_SOCKET_ERROR;
+    }
+
+    return NET_SUCCESS;
+}
+
 /*
 #include "LibInclude.h"
 #include <ctime>
