@@ -39,6 +39,10 @@ int main(int argc, char *argv[])
     info.agentPortNumber = atoi(argv[2]);
     FaceAgentConnector agent(info);
     agent.ConnectToAgent();
+    AgentCommandParam param;
+    agent.SendCommand(param);
+    getchar();
+    agent.DisconnectFromAgent();
     /*InitFaceDetectionLib();
 
     FilePrintMessage(_SUCC("Starting network server with port = %d"), PORT);

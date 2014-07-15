@@ -13,5 +13,7 @@ int main(void)
     agent.StartFaceAgent();
     getchar();
 
+    agent.StopFaceAgent();
+
     return 0;
 }

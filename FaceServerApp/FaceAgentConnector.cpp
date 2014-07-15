@@ -33,6 +33,7 @@ FaceAgentConnector::~FaceAgentConnector()
     state = FACE_AGENT_NOT_STARTED;
 
     shutdown(agentSocket, 2);
+    close(agentSocket);
     threadAgentListener->stopThread();
     delete threadAgentListener;
 
@@ -66,13 +67,16 @@ bool FaceAgentConnector::DisconnectFromAgent()
         return true;
     }
 
+    FACE_AGENT_CONNECTOR_TRACE(DisconnectFromAgent, "Calling shutdown agentSocket");
     if(-1 == shutdown(agentSocket, 2))
     {
         FACE_AGENT_CONNECTOR_TRACE(DisconnectFromAgent, "Failed to terminate connection with error = %s", strerror(errno));
         state = FACE_AGENT_ERROR;
         return false;
     }
+    FACE_AGENT_CONNECTOR_TRACE(DisconnectFromAgent, "shutdown succeed");
 
+    close(agentSocket);
     state = FACE_AGENT_STOPPED;
 
     return true;
@@ -114,8 +118,14 @@ bool FaceAgentConnector::SendCommand(AgentCommandParam command)
     }
     }
 
+    outJson["cmd"] = "command";
+    outJson["req_id"] = "0";
+    outJson["reply_sock"] = -1;
+
+
     // [TBD] this is possibly incorrect, need to serialize all objects
     std::string outString = json::Serialize(outJson);
+
     NetResult res;
     if(NET_SUCCESS != (res = SendData(agentSocket, outString.c_str(), outString.length())))
     {
@@ -220,6 +230,13 @@ NetResult FaceAgentConnector::StartNetworkClient()
     }
 
     int option = 1;
+
+    if(0 != setsockopt(agentSocket, SOL_SOCKET, SO_KEEPALIVE, &option, sizeof(int)))
+    {
+        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
+        return NET_SOCKET_ERROR;
+    }
+
     if(0 != setsockopt(agentSocket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
     {
         FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "setsockopt failed on error %s", strerror(errno));
