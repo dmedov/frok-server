@@ -22,7 +22,6 @@
 #define FACE_AGENT_TRACE(__function_name__, format, ...)
 #endif
 
-// Return codes for Network class
 typedef enum NetResult
 {
     NET_SUCCESS                 = 0x00,
@@ -44,6 +43,8 @@ typedef struct
     unsigned    dataLength;
     char       *data;
 } FaceRequest;
+
+#pragma pack(pop)
 
 class FaceAgent
 {
@@ -74,7 +75,5 @@ private:
     // Only one connected server is allowed. Disconnect current connection to allow new server connect
     static void ServerListener(void* param);
 };
-
-#pragma pack(pop)
 
 #endif // FACESERVER_H

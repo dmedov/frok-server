@@ -9,14 +9,13 @@ std::list <FaceRequest *> requests;
 sem_t                       newRequestSema;
 pthread_mutex_t             faceServer_cs;
 FaceServer::FaceServer(std::vector<AgentInfo*> &agentsInfo, unsigned short localPort)
-    : Network(FaceServer::NetworkCallback, localPort)
 {
     for(std::vector<AgentInfo*>::const_iterator it = agentsInfo.begin(); it != agentsInfo.end(); ++it)
     {
         agents.push_back(new FaceAgentConnector(*(AgentInfo*)*it));
     }
 
-    this->localPortNumber = localPort;
+    //this->localPortNumber = localPort;
 
     sem_init(&newRequestSema, 0, 0);
 }
@@ -24,7 +23,7 @@ FaceServer::FaceServer(std::vector<AgentInfo*> &agentsInfo, unsigned short local
 FaceServer::~FaceServer()
 {
 }
-
+/*
 bool FaceServer::StartFaceServer()
 {
     InitFaceCommonLib();
@@ -171,3 +170,4 @@ void FaceServer::SocketListener(void* param)
     NETWORK_TRACE(SocketListener, "SocketListener finished");
     return;
 }
+*/

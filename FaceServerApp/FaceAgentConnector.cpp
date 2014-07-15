@@ -1,27 +1,57 @@
 #include <errno.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include "FaceAgentConnector.h"
 
+pthread_mutex_t             faceAgentConnector_trace_cs;
+pthread_mutex_t             faceAgentConnector_cs;
+
 FaceAgentConnector::FaceAgentConnector(AgentInfo &info)
-    : Network(DefaultCallback)
 {
     netInfo.agentIpV4Address = info.agentIpV4Address;
     netInfo.agentPortNumber = info.agentPortNumber;
     state = FACE_AGENT_NOT_STARTED;
+
+    pthread_mutexattr_t mAttr;
+    pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&faceAgentConnector_trace_cs, &mAttr);
+    pthread_mutex_init(&faceAgentConnector_cs, &mAttr);
+    pthread_mutexattr_destroy(&mAttr);
+
+    threadAgentListener = new CommonThread;
+    agentSocket = INVALID_SOCKET;
+
+    FACE_AGENT_CONNECTOR_TRACE(FaceAgentConnector, "new FaceAgentConnector");
 }
 
 FaceAgentConnector::~FaceAgentConnector()
 {
     state = FACE_AGENT_NOT_STARTED;
+
+    shutdown(agentSocket, 2);
+    threadAgentListener->stopThread();
+    delete threadAgentListener;
+
+    pthread_mutex_destroy(&faceAgentConnector_cs);
+    pthread_mutex_destroy(&faceAgentConnector_trace_cs);
+    FACE_AGENT_CONNECTOR_TRACE(~FaceAgentConnector, "~FaceAgent");
 }
 
 bool FaceAgentConnector::ConnectToAgent()
 {
-    if(INVALID_SOCKET != (agentSocket = EstablishConnetcion(netInfo.agentIpV4Address, netInfo.agentPortNumber)))
+    NetResult res;
+    FACE_AGENT_CONNECTOR_TRACE(ConnectToAgent, "Calling StartNetworkClient");
+    if(NET_SUCCESS != (res = StartNetworkClient()))
     {
-        FilePrintMessage(_FAIL("Failed to connect to agent"));
+        FACE_AGENT_CONNECTOR_TRACE(ConnectToAgent, "StartNetworkClient failed on error %x", res);
         state = FACE_AGENT_ERROR;
         return false;
     }
+    FACE_AGENT_CONNECTOR_TRACE(ConnectToAgent, "StartNetworkClient succeed");
 
     state = FACE_AGENT_FREE;
 
@@ -32,12 +62,13 @@ bool FaceAgentConnector::DisconnectFromAgent()
 {
     if(agentSocket == INVALID_SOCKET)
     {
-        FilePrintMessage(_SUCC("Already terminated"));
+        FACE_AGENT_CONNECTOR_TRACE(DisconnectFromAgent, "Already disconnected");
         return true;
     }
-    if(NET_SUCCESS != TerminateConnetcion(agentSocket))
+
+    if(-1 == shutdown(agentSocket, 2))
     {
-        FilePrintMessage(_FAIL("Failed to disconnect from agent"));
+        FACE_AGENT_CONNECTOR_TRACE(DisconnectFromAgent, "Failed to terminate connection with error = %s", strerror(errno));
         state = FACE_AGENT_ERROR;
         return false;
     }
@@ -56,7 +87,7 @@ bool FaceAgentConnector::SendCommand(AgentCommandParam command)
 {
     if(agentSocket == INVALID_SOCKET)
     {
-        FilePrintMessage(_FAIL("Agent not connected"));
+        FACE_AGENT_CONNECTOR_TRACE(SendCommand, "Agent not connected");
         return false;
     }
     json::Object outJson;
@@ -85,18 +116,19 @@ bool FaceAgentConnector::SendCommand(AgentCommandParam command)
 
     // [TBD] this is possibly incorrect, need to serialize all objects
     std::string outString = json::Serialize(outJson);
-    if(NET_SUCCESS != SendData(agentSocket, outString.c_str(), outString.length()))
+    NetResult res;
+    if(NET_SUCCESS != (res = SendData(agentSocket, outString.c_str(), outString.length())))
     {
-        FilePrintMessage(_FAIL("Failed to send command to agent"));
+        FACE_AGENT_CONNECTOR_TRACE(SendCommand, "Failed to send command to agent on error %x", res);
         return false;
     }
     return true;
 }
 
-void FaceAgentConnector::SocketListener(void *param)
+void FaceAgentConnector::AgentListener(void *param)
 {
-    SocketListenerData     *psParam = (SocketListenerData*)param;
-    FaceAgentConnector     *pThis = (FaceAgentConnector*)psParam->pThis;
+    FaceAgentConnector     *pThis = NULL;
+    memcpy(&pThis, param, sizeof(FaceAgentConnector*));
 
     int         dataLength;
     char        data[MAX_SOCKET_BUFF_SIZE];
@@ -107,17 +139,17 @@ void FaceAgentConnector::SocketListener(void *param)
     mandatoryKeys.push_back("reply_sock");
     mandatoryKeys.push_back("result");
 
-    NETWORK_TRACE(SocketListener, "start listening to socket %i", psParam->listenedSocket);
+    FACE_AGENT_CONNECTOR_TRACE(AgentListener, "start listening to socket %i", pThis->agentSocket);
 
     for(;;)
     {
-        if(psParam->thread->isStopThreadReceived())
+        if(pThis->threadAgentListener->isStopThreadReceived())
         {
-            NETWORK_TRACE(SocketListener, "terminate thread sema received");
+            FACE_AGENT_CONNECTOR_TRACE(AgentListener, "terminate thread sema received");
             break;
         }
 
-        if( -1 == (dataLength = recv(psParam->listenedSocket, data, sizeof(data), MSG_DONTWAIT)))
+        if( -1 == (dataLength = recv(pThis->agentSocket, data, sizeof(data), MSG_DONTWAIT)))
         {
             if((errno == EAGAIN) || (errno == EWOULDBLOCK))
             {
@@ -125,9 +157,9 @@ void FaceAgentConnector::SocketListener(void *param)
                 continue;
             }
             // unspecified error occured
-            NETWORK_TRACE(SocketListener, "recv failed on error %s", strerror(errno));
-            NETWORK_TRACE(SocketListener, "SocketListener shutdown");
-            shutdown(psParam->listenedSocket, 2);
+            FACE_AGENT_CONNECTOR_TRACE(AgentListener, "recv failed on error %s", strerror(errno));
+            FACE_AGENT_CONNECTOR_TRACE(AgentListener, "SocketListener shutdown");
+            shutdown(pThis->agentSocket, 2);
             return;
         }
 
@@ -137,7 +169,7 @@ void FaceAgentConnector::SocketListener(void *param)
             continue;
         }
 
-        NETWORK_TRACE(SocketListener, "Received %d bytes from the socket %u", sCallbackData.dataLength, psParam->listenedSocket);
+        FACE_AGENT_CONNECTOR_TRACE(AgentListener, "Received %d bytes from the socket %u", dataLength, pThis->agentSocket);
 
         // Response from agent received
         json::Object responseFromAgent;
@@ -147,13 +179,13 @@ void FaceAgentConnector::SocketListener(void *param)
         }
         catch (...)
         {
-            FilePrintMessage(_FAIL("Failed to parse incoming JSON: %s"), data);
+            FACE_AGENT_CONNECTOR_TRACE(AgentListener, "Failed to parse incoming JSON: %s", data);
             continue;
         }
 
         if (!(responseFromAgent.HasKeys(mandatoryKeys)))
         {
-            FilePrintMessage(_FAIL("Invalid input JSON: no cmd field (%s)"), (char*)param);
+            FACE_AGENT_CONNECTOR_TRACE(AgentListener, "Invalid input JSON: no cmd field (%s)", data);
             continue;
         }
 
@@ -163,15 +195,100 @@ void FaceAgentConnector::SocketListener(void *param)
 
         if(NET_SUCCESS != pThis->SendData(replySock, outJson.c_str(), outJson.size()))
         {
-            FilePrintMessage(_FAIL("Failed to send response to remote peer %u. Response = %s"), replySock, outJson.c_str());
+            FACE_AGENT_CONNECTOR_TRACE(AgentListener, "Failed to send response to remote peer %u. Reponse = %s",replySock, outJson.c_str());
             continue;
         }
     }
 
-    if(pThis->callback != NULL)
+    FACE_AGENT_CONNECTOR_TRACE(AgentListener, "SocketListener finished");
+}
+
+NetResult FaceAgentConnector::StartNetworkClient()
+{
+    if(threadAgentListener->getThreadState() == COMMON_THREAD_STARTED)
     {
-        pThis->callback(NET_SERVER_DISCONNECTED, psParam->listenedSocket, 0, NULL);
+        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "AgentListener already started. Call StopNetwork first");
+        return NET_ALREADY_STARTED;
     }
 
-    NETWORK_TRACE(SocketListener, "SocketListener finished");
+    sockaddr_in     sock_addr;
+
+    if ((agentSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
+    {
+        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "socket failed on error = %s", strerror(errno));
+        return NET_SOCKET_ERROR;
+    }
+
+    int option = 1;
+    if(0 != setsockopt(agentSocket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
+    {
+        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "setsockopt failed on error %s", strerror(errno));
+        shutdown(agentSocket, 2);
+        agentSocket = INVALID_SOCKET;
+        return NET_SOCKET_ERROR;
+    }
+
+    int         optval;
+    socklen_t   optlen = sizeof(int);
+    if(0 != getsockopt(agentSocket, SOL_SOCKET,  SO_REUSEADDR, &optval, &optlen))
+    {
+        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "getsockopt failed on error %s", strerror(errno));
+        shutdown(agentSocket, 2);
+        agentSocket = INVALID_SOCKET;
+        return NET_SOCKET_ERROR;
+    }
+
+    if(optval == 0)
+    {
+        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "setsockopt failed to enabled SO_REUSEADDR option");
+    }
+
+    sock_addr.sin_addr.s_addr = netInfo.agentIpV4Address;
+    sock_addr.sin_family = AF_INET;
+    sock_addr.sin_port = htons(netInfo.agentPortNumber);
+
+    if (0 != connect(agentSocket, (struct sockaddr*)&sock_addr, sizeof(struct sockaddr)))
+    {
+        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "connect failed on error %s", strerror(errno));
+        shutdown(agentSocket, 2);
+        agentSocket = INVALID_SOCKET;
+        return NET_SOCKET_ERROR;
+    }
+
+    FaceAgentConnector *pThis = this;
+    FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "Starting AgentListener");
+
+    if(!threadAgentListener->startThread((void * (*)(void*))(FaceAgentConnector::AgentListener), &pThis, sizeof(FaceAgentConnector*)))
+    {
+        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "Failed to start SocketListener thread. See CommonThread logs for information");
+        return NET_COMMON_THREAD_ERROR;
+    }
+
+    FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "Network client started, socket = %d", agentSocket);
+
+    return NET_SUCCESS;
+}
+
+NetResult FaceAgentConnector::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)
+{
+    int sendlen = 0;
+
+    if(sock != INVALID_SOCKET)
+    {
+        if (-1 == (sendlen = send(sock, pBuffer, uBufferSize, 0)))
+        {
+            FACE_AGENT_CONNECTOR_TRACE(SendData, "Failed to send outgoing bytes to the remote peer %u with error %s", sock, strerror(errno));
+            return NET_SOCKET_ERROR;
+        }
+
+        usleep(50000);      // sleep for 1 system monitor tact
+        FACE_AGENT_CONNECTOR_TRACE(SendData, "%d bytes were sent to the remote peer %u", sendlen, sock);
+    }
+    else
+    {
+        FACE_AGENT_CONNECTOR_TRACE(SendData, "Invalid socket");
+        return NET_SOCKET_ERROR;
+    }
+
+    return NET_SUCCESS;
 }

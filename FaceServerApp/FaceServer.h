@@ -7,7 +7,7 @@
 // include dependencies
 #include "../FaceCommonLib/faceCommonLib.h"
 #include "FaceAgentConnector.h"
-
+//#include "../FaceCommonLib/network.h"
 #pragma pack(push, 1)
 
 typedef enum
@@ -22,15 +22,14 @@ typedef struct
     char       *data;
 } FaceRequest;
 
-class FaceServer : public Network
+class FaceServer
 {
-public:
 private:
     std::vector<FaceAgentConnector*> agents;
 public:
     FaceServer(std::vector<AgentInfo*> &agentsInfo, unsigned short localPort = DEFAULT_PORT);
     ~FaceServer();
-
+/*
     bool StartFaceServer();
     bool StopFaceServer();
 
@@ -42,7 +41,7 @@ private:
     static void NetworkCallback(unsigned evt, SOCKET sock, unsigned length, void *param);
     // Accepts any incoming connection
     // Recieves any incoming information, and gives it to the upper layer
-    void SocketListener(void* param);
+    void SocketListener(void* param);*/
 };
 
 #pragma pack(pop)

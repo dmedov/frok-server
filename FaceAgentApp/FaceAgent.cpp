@@ -44,7 +44,7 @@ FaceAgent::~FaceAgent()
 
     pthread_mutex_destroy(&faceAgent_cs);
     pthread_mutex_destroy(&faceAgent_trace_cs);
-    FACE_AGENT_TRACE(FaceAgent, "~FaceAgent");
+    FACE_AGENT_TRACE(~FaceAgent, "~FaceAgent");
 }
 
 bool FaceAgent::StartFaceAgent()

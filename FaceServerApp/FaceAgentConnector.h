@@ -5,12 +5,35 @@
 #define DEFAULT_PHOTO_BASE_PATH     "/home/zda/faces/"
 #define DEFAULT_TARGETS_FOLDER_PATH "/home/zda/faces/"
 #define DEFAULT_PORT                27015
+#define MAX_SOCKET_BUFF_SIZE            (163840)
 
 // include dependencies
 #include "../FaceCommonLib/faceCommonLib.h"
-#include "../FaceCommonLib/network.h"
 
-#pragma pack(push, 1)
+// FaceAgentConnector logging system
+#ifdef FACE_AGENT_CONNECTOR_TRACE_ENABLED
+#define FACE_AGENT_CONNECTOR_TRACE(__function_name__, format, ...)    \
+    pthread_mutex_lock(&faceAgentConnector_trace_cs);                \
+    printf("[FACE_AGENT_CONNECTOR->%s]: ", #__function_name__);       \
+    printf(format, ##__VA_ARGS__);                          \
+    printf("\n");                                           \
+    pthread_mutex_unlock(&faceAgentConnector_trace_cs)
+#else
+#define FACE_AGENT_CONNECTOR_TRACE(__function_name__, format, ...)
+#endif
+
+typedef enum NetResult
+{
+    NET_SUCCESS                 = 0x00,
+    NET_SOCKET_ERROR            = 0x01,
+    NET_MEM_ALLOCATION_FAIL     = 0x02,
+    NET_NO_CALLBACK             = 0x03,
+    NET_UNSPECIFIED_ERROR       = 0x04,
+    NET_INVALID_PARAM           = 0x05,
+    NET_COMMON_THREAD_ERROR     = 0x06,
+    NET_ALREADY_STARTED         = 0x07
+    //...
+} NetResult;
 
 typedef enum FaceActivityAgentState
 {
@@ -20,6 +43,8 @@ typedef enum FaceActivityAgentState
     FACE_AGENT_STOPPED,
     FACE_AGENT_ERROR
 } AgentState;
+
+#pragma pack(push, 1)
 
 typedef struct AgentInfo
 {
@@ -81,13 +106,16 @@ typedef struct FaceAgentCommandParam
     };
 } AgentCommandParam;
 
-class FaceAgentConnector : public Network
+#pragma pack(pop)
+
+class FaceAgentConnector
 {
-public:
-    AgentInfo netInfo;
 private:
-    AgentState      state;
-    SOCKET          agentSocket;
+    AgentInfo netInfo;
+    AgentState          state;
+    SOCKET              agentSocket;
+    CommonThread       *threadAgentListener;
+
 public:
     FaceAgentConnector(AgentInfo &info);
     ~FaceAgentConnector();
@@ -97,11 +125,12 @@ public:
 
     bool SendCommand(AgentCommandParam command);
     AgentState GetAgentState();
+protected:
+    NetResult StartNetworkClient();
+    NetResult SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize);
 private:
-    static void DefaultCallback(unsigned Event, SOCKET sock, unsigned length, void *param) {}
-    void SocketListener(void *param);
+    static void AgentListener(void *param);
+private:
 };
-
-#pragma pack(pop)
 
 #endif // FACEAGENTCONNECTOR_H
