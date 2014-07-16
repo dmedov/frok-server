@@ -22,14 +22,12 @@ INCLUDEPATH +=                                              \
 
 HEADERS +=                  \
     stdafx.h \
-    network.h \
     json.h \
     commonThread.h \
     io.h \
     faceCommonLib.h
 
 SOURCES +=                  \
-    network.cpp \
     json.cpp \
     commonThread.cpp \
     io.cpp \

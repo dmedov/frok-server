@@ -1,7 +1,6 @@
 #include <stdlib.h>
 
-//#include "FaceServer.h"
-#include "FaceAgentConnector.h"
+#include "FaceServer.h"
 
 // Add SHOW_IMAGE define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
 

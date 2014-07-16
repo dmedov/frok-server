@@ -2,9 +2,6 @@
 #define FACEAGENTCONNECTOR_H
 
 // FaceServer defaults
-#define DEFAULT_PHOTO_BASE_PATH     "/home/zda/faces/"
-#define DEFAULT_TARGETS_FOLDER_PATH "/home/zda/faces/"
-#define DEFAULT_PORT                27015
 #define MAX_SOCKET_BUFF_SIZE            (163840)
 
 // include dependencies
@@ -111,7 +108,7 @@ typedef struct FaceAgentCommandParam
 class FaceAgentConnector
 {
 private:
-    AgentInfo netInfo;
+    AgentInfo           netInfo;
     AgentState          state;
     SOCKET              agentSocket;
     CommonThread       *threadAgentListener;

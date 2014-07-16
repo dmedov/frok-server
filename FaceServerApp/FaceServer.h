@@ -2,48 +2,65 @@
 #define FACESERVER_H
 
 // FaceServer defaults
-#define DEFAULT_PORT                27015
+#define DEFAULT_PORT                    (27015)
+#define MAX_SOCKET_BUFF_SIZE            (163840)
 
 // include dependencies
 #include "../FaceCommonLib/faceCommonLib.h"
 #include "FaceAgentConnector.h"
-//#include "../FaceCommonLib/network.h"
+
+#ifdef FACE_SERVER_TRACE_ENABLED
+#define FACE_SERVER_TRACE(__function_name__, format, ...)    \
+    pthread_mutex_lock(&faceServer_trace_cs);                \
+    printf("[FACE_AGENT_CONNECTOR->%s]: ", #__function_name__);       \
+    printf(format, ##__VA_ARGS__);                          \
+    printf("\n");                                           \
+    pthread_mutex_unlock(&faceServer_trace_cs)
+#else
+#define FACE_SERVER_TRACE(__function_name__, format, ...)
+#endif
+
 #pragma pack(push, 1)
 
-typedef enum
-{
-    ROLE_AGENT,
-    ROLE_CLIENT
-} NetworkRole;
-typedef struct
+typedef struct StructFaceRequest
 {
     SOCKET      replySocket;
     unsigned    dataLength;
     char       *data;
 } FaceRequest;
 
+typedef struct StructSocketListenerData
+{
+
+    SOCKET          listenedSocket;
+    CommonThread   *thread;
+    void           *pThis;
+} SocketListenerData;
+
+#pragma pack(pop)
+
 class FaceServer
 {
 private:
-    std::vector<FaceAgentConnector*> agents;
+    unsigned short                      localPortNumber;
+    SOCKET                              localSock;
+    std::vector < FaceAgentConnector* > agents;
+    std::vector < CommonThread* >       threadVecSocketListener;
+    CommonThread                       *threadAcceptConnection;
+
 public:
     FaceServer(std::vector<AgentInfo*> &agentsInfo, unsigned short localPort = DEFAULT_PORT);
     ~FaceServer();
-/*
+
     bool StartFaceServer();
     bool StopFaceServer();
-
-    bool RegisterAgent(AgentInfo newAgent);
-    //bool DeregisterAgent();
-
+protected:
+    NetResult StartNetworkServer();
+    NetResult StopNetworkServer();
+    NetResult SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize);
 private:
-    void CallbackListener(void *pContext);
-    static void NetworkCallback(unsigned evt, SOCKET sock, unsigned length, void *param);
-    // Accepts any incoming connection
-    // Recieves any incoming information, and gives it to the upper layer
-    void SocketListener(void* param);*/
+    static void AcceptConnection(void* param);
+    static void SocketListener(void* param);
 };
-
-#pragma pack(pop)
 
 #endif // FACESERVER_H

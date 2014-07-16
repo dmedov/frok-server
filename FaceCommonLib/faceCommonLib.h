@@ -8,7 +8,7 @@
 #include "io.h"                 // File system - depend operations, input - output operations
 // FaceDetectionLib defaults
 #define LOG_MESSAGE_MAX_LENGTH      1024
-#define DEFAULT_LOG_FILE_NAME       "facelog.log"
+const char DEFAULT_LOG_FILE_NAME [] = "facelog.log";
 
 // Externals
 extern pthread_mutex_t filePrint_cs;
@@ -28,7 +28,7 @@ extern pthread_mutex_t filePrint_cs;
 #define _N(__x__)                           __x__ "\n"
 
 // Library init functions
-bool InitFaceCommonLib(char *logFileName = DEFAULT_LOG_FILE_NAME);
+bool InitFaceCommonLib(const char *logFileName = DEFAULT_LOG_FILE_NAME);
 bool DeinitFaceCommonLib();
 
 #endif // FACECOMMONLIB_H

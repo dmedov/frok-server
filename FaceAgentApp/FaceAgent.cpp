@@ -13,7 +13,7 @@
 
 pthread_mutex_t             faceAgent_trace_cs;
 pthread_mutex_t             faceAgent_cs;
-FaceAgent::FaceAgent(unsigned short localPort, char*photoBasePath, char*targetsFolderPath)
+FaceAgent::FaceAgent(unsigned short localPort, const char *photoBasePath, const char *targetsFolderPath)
 {
     this->photoBasePath = new char[strlen(photoBasePath) + 1];
     this->targetsFolderPath = new char[strlen(targetsFolderPath) + 1];
@@ -132,7 +132,7 @@ NetResult FaceAgent::StartNetworkServer()
 
     FaceAgent *pThis = this;
 
-    FACE_AGENT_TRACE(StartNetworkServer, "Starting ServerListener", strerror(errno));
+    FACE_AGENT_TRACE(StartNetworkServer, "Starting ServerListener");
 
     if(!threadServerListener->startThread((void*(*)(void*))FaceAgent::ServerListener, &pThis, sizeof(FaceAgent*)))
     {
@@ -236,10 +236,7 @@ void FaceAgent::ServerListener(void* param)
                 FACE_AGENT_TRACE(ServerListener, "AcceptConnection finished");
                 return;
             }
-            if(-1 == send(accepted_socket, NULL, 0, 0))
-            {
-                FACE_AGENT_TRACE(ServerListener, "fail on error %s", strerror(errno));
-            }
+
             if( -1 == (dataLength = recv(accepted_socket, data, sizeof(data), MSG_DONTWAIT)))
             {
                 if((errno == EAGAIN) || (errno == EWOULDBLOCK))

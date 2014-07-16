@@ -4,7 +4,7 @@
 
 pthread_mutex_t filePrint_cs;
 
-bool InitFaceCommonLib(char *log_name)
+bool InitFaceCommonLib(const char *log_name)
 {
     int result = 0;
 

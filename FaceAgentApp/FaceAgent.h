@@ -2,8 +2,9 @@
 #define FACESERVER_H
 
 // FaceAgent defaults
-#define DEFAULT_PHOTO_BASE_PATH     "/home/zda/faces/"
-#define DEFAULT_TARGETS_FOLDER_PATH "/home/zda/faces/"
+const char DEFAULT_PHOTO_BASE_PATH [] = "/home/zda/faces/";
+const char DEFAULT_TARGETS_FOLDER_PATH [] = "/home/zda/faces/";
+
 #define DEFAULT_PORT                28015
 #define MAX_SOCKET_BUFF_SIZE            (163840)
 
@@ -56,7 +57,7 @@ private:
     CommonThread           *threadServerListener;
 
 public:
-    FaceAgent(unsigned short localPort = DEFAULT_PORT, char *photoBasePath = DEFAULT_PHOTO_BASE_PATH, char*targetsFolderPath = DEFAULT_TARGETS_FOLDER_PATH);
+    FaceAgent(unsigned short localPort = DEFAULT_PORT, const char *photoBasePath = DEFAULT_PHOTO_BASE_PATH, const char *targetsFolderPath = DEFAULT_TARGETS_FOLDER_PATH);
     ~FaceAgent();
 
     bool StartFaceAgent();
