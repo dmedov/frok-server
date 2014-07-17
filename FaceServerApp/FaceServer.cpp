@@ -98,7 +98,10 @@ bool FaceServer::StopFaceServer()
         success = false;
     }
 
-    DeinitFaceCommonLib();
+    if(!DeinitFaceCommonLib())
+    {
+        success = false;
+    }
 
     return success;
 }

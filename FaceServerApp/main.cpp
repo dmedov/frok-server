@@ -26,22 +26,24 @@ int main(int argc, char *argv[])
         usage();
         return -1;
     }
-    AgentInfo info;
+    AgentInfo *info = new AgentInfo;
     __int32_t srvIPv4[4];
     sscanf(argv[1], "%u.%u.%u.%u", &srvIPv4[0], &srvIPv4[1], &srvIPv4[2], &srvIPv4[3]);
 
-    info.agentIpV4Address = srvIPv4[3] & 0x000000FF;
-    info.agentIpV4Address = ((info.agentIpV4Address << 8) & 0x0000FF00) + (srvIPv4[2] & 0x000000FF);
-    info.agentIpV4Address = ((info.agentIpV4Address << 8) & 0x00FFFF00) + (srvIPv4[1] & 0x000000FF);
-    info.agentIpV4Address = ((info.agentIpV4Address << 8) & 0xFFFFFF00) + (srvIPv4[0] & 0x000000FF);
+    info->agentIpV4Address = srvIPv4[3] & 0x000000FF;
+    info->agentIpV4Address = ((info->agentIpV4Address << 8) & 0x0000FF00) + (srvIPv4[2] & 0x000000FF);
+    info->agentIpV4Address = ((info->agentIpV4Address << 8) & 0x00FFFF00) + (srvIPv4[1] & 0x000000FF);
+    info->agentIpV4Address = ((info->agentIpV4Address << 8) & 0xFFFFFF00) + (srvIPv4[0] & 0x000000FF);
 
-    info.agentPortNumber = atoi(argv[2]);
-    FaceAgentConnector agent(info);
-    agent.ConnectToAgent();
-    AgentCommandParam param;
-    agent.SendCommand(param);
+    info->agentPortNumber = atoi(argv[2]);
+
+    std::vector<AgentInfo*> agentInfoVec;
+    agentInfoVec.push_back(info);
+    FaceServer server(agentInfoVec, 27015);
+    server.StartFaceServer();
+
     getchar();
-    agent.DisconnectFromAgent();
+    server.StopFaceServer();
     /*InitFaceDetectionLib();
 
     FilePrintMessage(_SUCC("Starting network server with port = %d"), PORT);

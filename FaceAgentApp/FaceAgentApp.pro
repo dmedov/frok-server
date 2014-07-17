@@ -29,9 +29,11 @@ QMAKE_CFLAGS_DEBUG +=     -Werror -Wall -Wno-unused-function -Wno-write-strings 
 
 HEADERS +=          \
     activities.h \
-    FaceAgent.h
+    FaceAgent.h \
+    FrokAPI.h
 
 SOURCES +=          \
     main.cpp        \
     activities.cpp \
-    FaceAgent.cpp
+    FaceAgent.cpp \
+    FrokAPI.cpp

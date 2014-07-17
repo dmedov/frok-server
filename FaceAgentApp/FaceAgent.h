@@ -10,6 +10,7 @@ const char DEFAULT_TARGETS_FOLDER_PATH [] = "/home/zda/faces/";
 
 // include dependencies
 #include "../FaceCommonLib/faceCommonLib.h"
+#include "FrokAPI.h"
 
 // FaceAgent logging system
 #ifdef FACE_AGENT_TRACE_ENABLED
@@ -64,10 +65,7 @@ public:
     bool StopFaceAgent();
 
 // Activities
-    void Recognize(void *pContext);
-    void TrainUserModel(void *pContext);
-    void GetFacesFromPhoto(void *pContext);
-    void AddFaceFromPhoto(void *pContext);
+
 protected:
     NetResult StartNetworkServer();
     NetResult StopNetworkServer();
