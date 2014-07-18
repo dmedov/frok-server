@@ -35,6 +35,7 @@ FaceServer::FaceServer(std::vector<AgentInfo*> &agentsInfo, unsigned short local
 FaceServer::~FaceServer()
 {
     shutdown(localSock, 2);
+    close(localSock);
 
     for(std::vector<CommonThread*>::iterator it = threadVecSocketListener.begin(); it != threadVecSocketListener.end(); ++it)
     {
@@ -110,13 +111,24 @@ NetResult FaceServer::StopNetworkServer()
 {
     NetResult res = NET_SUCCESS;
 
-    FACE_SERVER_TRACE(StopNetworkServer, "Calling socket shutdown. localSock = %i", localSock);
-    if(-1 == shutdown(localSock, 2))      // 2 = Both reception and transmission
+    if(localSock != INVALID_SOCKET)
     {
-        FACE_SERVER_TRACE(StopNetworkServer, "Failed to shutdown local socket with error = %s", strerror(errno));
-        res = NET_SOCKET_ERROR;
+        FACE_SERVER_TRACE(StopNetworkServer, "Calling socket shutdown. localSock = %i", localSock);
+        if(-1 == shutdown(localSock, 2))      // 2 = Both reception and transmission
+        {
+            FACE_SERVER_TRACE(StopNetworkServer, "Failed to shutdown local socket with error = %s", strerror(errno));
+            res = NET_SOCKET_ERROR;
+        }
+        FACE_SERVER_TRACE(StopNetworkServer, "socket shutdown succeed");
+
+        FACE_SERVER_TRACE(StopNetworkServer, "Closing socket descriptor. localSock = %i", localSock);
+        if(-1 == close(localSock))
+        {
+            FACE_SERVER_TRACE(StopNetworkServer, "Failed to close socket descriptor on error", strerror(errno));
+            res = NET_SOCKET_ERROR;
+        }
+        FACE_SERVER_TRACE(StopNetworkServer, "Descriptor successfully closed");
     }
-    FACE_SERVER_TRACE(StopNetworkServer, "socket shutdown succeed");
 
     for(std::vector<CommonThread*>::iterator it = threadVecSocketListener.begin(); it != threadVecSocketListener.end(); ++it)
     {
@@ -195,6 +207,7 @@ void FaceServer::AcceptConnection(void* param)
     }
 
     shutdown(pThis->localSock, 2);
+    close(pThis->localSock);
     FACE_SERVER_TRACE(AcceptConnection, "AcceptConnection finished");
     return;
 }
@@ -228,8 +241,6 @@ void FaceServer::SocketListener(void* param)
             // unspecified error occured
             FACE_SERVER_TRACE(SocketListener, "recv failed on error %s", strerror(errno));
             FACE_SERVER_TRACE(SocketListener, "SocketListener shutdown");
-            shutdown(psParam->listenedSocket, 2);
-            close(psParam->listenedSocket);
             return;
         }
 
@@ -292,6 +303,7 @@ NetResult FaceServer::StartNetworkServer()
     {
         FACE_SERVER_TRACE(StartNetworkServer, "setsockopt failed on error %s", strerror(errno));
         shutdown(localSock, 2);
+        close(localSock);
         return NET_SOCKET_ERROR;
     }
 
@@ -299,6 +311,7 @@ NetResult FaceServer::StartNetworkServer()
     {
         FACE_SERVER_TRACE(StartNetworkServer, "setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
         shutdown(localSock, 2);
+        close(localSock);
         return NET_SOCKET_ERROR;
     }
 
@@ -309,6 +322,7 @@ NetResult FaceServer::StartNetworkServer()
     {
         FACE_SERVER_TRACE(StartNetworkServer, "getsockopt failed on error %s", strerror(errno));
         shutdown(localSock, 2);
+        close(localSock);
         return NET_SOCKET_ERROR;
     }
 
@@ -322,6 +336,7 @@ NetResult FaceServer::StartNetworkServer()
     {
         FACE_SERVER_TRACE(StartNetworkServer, "bind failed on error %s", strerror(errno));
         shutdown(localSock, 2);
+        close(localSock);
         return NET_SOCKET_ERROR;
     }
 
@@ -329,6 +344,7 @@ NetResult FaceServer::StartNetworkServer()
     {
         FACE_SERVER_TRACE(StartNetworkServer, "listen failed on error %s", strerror(errno));
         shutdown(localSock, 2);
+        close(localSock);
         return NET_UNSPECIFIED_ERROR;
     }
 

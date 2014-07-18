@@ -29,6 +29,7 @@ QMAKE_CFLAGS_DEBUG +=     -Werror -Wall -Wno-unused-function -Wno-write-strings 
 
 HEADERS +=          \
     activities.h \
+    FrokAPI.h \
     FaceAgent.h \
     FrokAPI.h
 

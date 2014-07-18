@@ -76,7 +76,15 @@ bool FaceAgentConnector::DisconnectFromAgent()
     }
     FACE_AGENT_CONNECTOR_TRACE(DisconnectFromAgent, "shutdown succeed");
 
-    close(agentSocket);
+    FACE_AGENT_CONNECTOR_TRACE(StopNetworkServer, "Closing socket descriptor. socket = %i", agentSocket);
+    if(-1 == close(agentSocket))
+    {
+        FACE_AGENT_CONNECTOR_TRACE(StopNetworkServer, "Failed to close socket descriptor on error", strerror(errno));
+        state = FACE_AGENT_ERROR;
+        return false;
+    }
+    FACE_AGENT_CONNECTOR_TRACE(StopNetworkServer, "Descriptor successfully closed");
+
     state = FACE_AGENT_STOPPED;
 
     return true;
@@ -170,6 +178,7 @@ void FaceAgentConnector::AgentListener(void *param)
             FACE_AGENT_CONNECTOR_TRACE(AgentListener, "recv failed on error %s", strerror(errno));
             FACE_AGENT_CONNECTOR_TRACE(AgentListener, "SocketListener shutdown");
             shutdown(pThis->agentSocket, 2);
+            close(pThis->agentSocket);
             return;
         }
 
@@ -241,6 +250,7 @@ NetResult FaceAgentConnector::StartNetworkClient()
     {
         FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "setsockopt failed on error %s", strerror(errno));
         shutdown(agentSocket, 2);
+        close(agentSocket);
         agentSocket = INVALID_SOCKET;
         return NET_SOCKET_ERROR;
     }
@@ -251,6 +261,7 @@ NetResult FaceAgentConnector::StartNetworkClient()
     {
         FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "getsockopt failed on error %s", strerror(errno));
         shutdown(agentSocket, 2);
+        close(agentSocket);
         agentSocket = INVALID_SOCKET;
         return NET_SOCKET_ERROR;
     }
@@ -268,6 +279,7 @@ NetResult FaceAgentConnector::StartNetworkClient()
     {
         FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "connect failed on error %s", strerror(errno));
         shutdown(agentSocket, 2);
+        close(agentSocket);
         agentSocket = INVALID_SOCKET;
         return NET_SOCKET_ERROR;
     }

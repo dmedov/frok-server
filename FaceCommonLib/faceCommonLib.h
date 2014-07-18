@@ -13,6 +13,15 @@ const char DEFAULT_LOG_FILE_NAME [] = "facelog.log";
 // Externals
 extern pthread_mutex_t filePrint_cs;
 
+// Result of Face*Libraries
+enum FrokResult
+{
+    FROK_RESULT_SUCCESS,
+    FROK_RESULT_CASCADE_ERROR,
+    FROK_RESULT_UNSPECIFIED_ERROR,
+    // etc
+};
+
 // Common defines
 #define UNREFERENCED_PARAMETER(P)           (P=P)
 #define SOCKET                          int

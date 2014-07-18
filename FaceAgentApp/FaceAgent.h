@@ -64,12 +64,18 @@ public:
     bool StartFaceAgent();
     bool StopFaceAgent();
 
-// Activities
+
 
 protected:
     NetResult StartNetworkServer();
     NetResult StopNetworkServer();
     NetResult SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize);
+// API functions
+    FrokResult Recognize(void *param);
+    FrokResult TrainUserModel(void *param);
+    FrokResult GetFacesFromPhoto(void *param);
+    FrokResult AddFaceFromPhoto(void *param);
+
 private:
     // Only one connected server is allowed. Disconnect current connection to allow new server connect
     static void ServerListener(void* param);
