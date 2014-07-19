@@ -9,7 +9,7 @@ const char DEFAULT_TARGETS_FOLDER_PATH [] = "/home/zda/faces/";
 #define MAX_SOCKET_BUFF_SIZE            (163840)
 
 // include dependencies
-#include "../FaceCommonLib/faceCommonLib.h"
+#include "faceCommonLib.h"
 #include "FrokAPI.h"
 
 // FaceAgent logging system

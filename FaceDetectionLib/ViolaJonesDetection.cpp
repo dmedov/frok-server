@@ -1,4 +1,4 @@
-#include "LibInclude.h"
+/*#include "LibInclude.h"
 #include "ViolaJonesDetection.h"
 #include "common.h"
 #include "DescriptorDetection.h"
@@ -436,7 +436,7 @@ bool ViolaJonesDetection::allFacesDetection(IplImage *inputImage, SOCKET outSock
         coutData << "{ \"x1\": \"" << x << "\", \"y1\": \"" << y << "\", \"x2\": \"" << x + w << "\", \"y2\": \"" << y + h << "\" }";
 
         outJson.append(coutData.str());*/
-    }
+    /*}
     outJson.append(" ] }\n");
 
     net.SendData(outSock, outJson.c_str(), (unsigned)outJson.length());
@@ -501,9 +501,9 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map < string, P
             IplImage *dest = cvCreateImage(cvSize(158, 190), face_img->depth, face_img->nChannels);
             cvResize(face_img, dest, 1);
             eigenDetector->recognize(models, &dataJson, dest);
-            dataJson.p1s.push_back(points.p1/*cvPoint(points.p1.x / inputImage->width, points.p1.y / inputImage->height)*/);
-            dataJson.p2s.push_back(points.p2/*cvPoint(points.p2.x / inputImage->width, points.p2.y / inputImage->height)*/);
-            cvReleaseImage(&dest);//-> to introduce to function
+            dataJson.p1s.push_back(points.p1/*cvPoint(points.p1.x / inputImage->width, points.p1.y / inputImage->height)*///);
+            /*dataJson.p2s.push_back(points.p2/*cvPoint(points.p2.x / inputImage->width, points.p2.y / inputImage->height)*///);
+            /*cvReleaseImage(&dest);//-> to introduce to function
         }
     }
 
@@ -552,7 +552,7 @@ bool ViolaJonesDetection::faceDetect(IplImage *inputImage, const map < string, P
     faceImg = new IplImage(leftSide);
 }*/ // [TBD] IF YOU UNCOMMENT THIS FUNCTION - DON'T FORGET TO CALL 'delete faceImg;' AFTER IT'S USAGE!!!
 
-bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h){
+/*bool ViolaJonesDetection::cutFaceToBase(IplImage* bigImage, const char *destPath, int x, int y, int w, int h){
     EigenDetector *eigenDetector = new EigenDetector();
     ImageCoordinats points;
 
@@ -758,3 +758,4 @@ cvReleaseImage(&base_face);
 cvReleaseImage(&gray_face);
 delete descriptorDetection;*/
 //}
+

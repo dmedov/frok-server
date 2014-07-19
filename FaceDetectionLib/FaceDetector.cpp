@@ -1,54 +1,48 @@
+#include "FaceDetector.h"
 
-/*cascades = new FaceCascades[MAX_THREADS_AND_CASCADES_NUM];
-for(unsigned i = 0; i < MAX_THREADS_AND_CASCADES_NUM; i++)
+FaceDetector::FaceDetector()
 {
-    cascades[i].face->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml");
-    cascades[i].eyes->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye_tree_eyeglasses.xml");
-    cascades[i].righteye->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_righteye.xml");
-    cascades[i].lefteye->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_lefteye.xml");
-    cascades[i].righteye2->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_righteye_2splits.xml");
-    cascades[i].lefteye2->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_lefteye_2splits.xml");
-    cascades[i].eye->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye.xml");
-    cascades[i].nose->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_nose.xml");
-    cascades[i].mouth->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_mouth.xml");
-}*/
-
-
-/*std::vector<std::string> users = std::vector<std::string>();
-getSubdirsFromDir(ID_PATH, users);
-
-if(users.empty())
-{
-    FilePrintMessage(_WARN("No trained users found in %s folder"), ID_PATH);
-    return;
+    varScaleFactor = 1.1;
+    varMinNeighbors = 3;
+    varMinFaceSize = cvSize(40, 50);
+    FACE_DETECTOR_TRACE(FaceDetector, "new FaceDetector");
 }
 
-for (unsigned int i = 0; i < users.size(); i++)
+FaceDetector::~FaceDetector()
 {
-    Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
+    FACE_DETECTOR_TRACE(~FaceDetector, "~FaceDetector");
+}
+
+FrokResult FaceDetector::SetFaceDetectionParameters(double scaleFactor, int minNeighbors, cv::Size minFaceSize)
+{
+    varScaleFactor = scaleFactor;
+    varMinNeighbors = minNeighbors;
+    varMinFaceSize = minFaceSize;
+}
+
+FrokResult FaceDetector::SetTargetImage(const char *imagePath)
+{
+    targetImageOrigin = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
+    targetImageKappa = cv::imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE);
+}
+
+FrokResult FaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
+{
     try
     {
-        string fileName = ((string)ID_PATH).append(users[i]).append("/eigenface.yml");
-        if (access(fileName.c_str(), 0) != -1)
-        {
-            model->load(fileName.c_str());
-            FilePrintMessage(_SUCC("Model base for user %s successfully loaded. Continue..."), users[i].c_str());
-        }
-        else
-        {
-            FilePrintMessage(_WARN("Failed to load model base for user %s. Continue..."), users[i].c_str());
-            continue;
-        }
-
+        cascades.face->detectMultiScale(targetImageKappa, faces, varScaleFactor, varMinNeighbors, 0, varMinFaceSize, cv::Size(targetImageKappa.cols, targetImageKappa.rows));
     }
-    catch (...)
+    catch(...)
     {
-        FilePrintMessage(_WARN("Failed to load model base for user %s. Continue..."), users[i].c_str());
-        continue;
+        FACE_DETECTOR_TRACE(GetFacesFromPhoto, "detectMultiScale Failed");
+        return FROK_RESULT_CASCADE_ERROR;
     }
-    models[users[i]] = model;
-}*/
-
+    return FROK_RESULT_SUCCESS;
+}
+FrokResult FaceDetector::GetNormalizeFace(cv::Rect faceCoords, cv::Mat &normalizedFaceImage)
+{}
+FrokResult FaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
+{}
 
 /*delete []cascades;
 for (int i = 0; i < MAX_THREADS_AND_CASCADES_NUM; i++)

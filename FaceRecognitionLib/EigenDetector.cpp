@@ -1,4 +1,4 @@
-#include "LibInclude.h"
+/*#include "LibInclude.h"
 #include "common.h"
 #include "EigenDetector.h"
 #include "DescriptorDetection.h"
@@ -244,7 +244,7 @@ double testMatch(IplImage* image, IplImage* rec){
     /*double probability = ((double)koef_image / (double)koef_dif) / 1.7;
     if (probability >= 1) probability = 0.99;*/
 
-    return 0;
+    /*return 0;
 }
 
 __int64_t calcImageHash(IplImage* src)
@@ -437,7 +437,7 @@ void EigenDetector::recognize(const map < string, Ptr<FaceRecognizer> > &models,
         }
         delete reconstructedFace;
         delete image_mat;*/
-    }
+    /*}
 
     char *pcResultName = new char[result_name.length()];
     strcpy(pcResultName, result_name.c_str());
@@ -445,4 +445,4 @@ void EigenDetector::recognize(const map < string, Ptr<FaceRecognizer> > &models,
     psDataJson->ids.push_back(pcResultName);
     psDataJson->probs.push_back(oldProb * 100);
 
-}
+}*/

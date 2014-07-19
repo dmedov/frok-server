@@ -1,6 +1,9 @@
-#include "FaceAgent.h"
 #include <stdio.h>
+
+#include "FaceAgent.h"
 #include "activities.h"
+#include "FaceDetector.h"
+
 void usage()
 {
     FilePrintMessage(_SUCC("FaceDetectionApp <Local port number>"));

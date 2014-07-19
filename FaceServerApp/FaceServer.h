@@ -6,7 +6,7 @@
 #define MAX_SOCKET_BUFF_SIZE            (163840)
 
 // include dependencies
-#include "../FaceCommonLib/faceCommonLib.h"
+#include "faceCommonLib.h"
 #include "FaceAgentConnector.h"
 
 #ifdef FACE_SERVER_TRACE_ENABLED

@@ -2,7 +2,7 @@
 #define FACEUSERMODEL_H
 
 // include dependencies
-#include "../FaceCommonLib/faceCommonLib.h"
+#include "faceCommonLib.h"
 // opencv dependencies
 #include <cv.h>
 #include <highgui.h>
@@ -14,11 +14,11 @@ class FaceUserModel
 {
 public:
     FaceUserModel();
-    GenerateUserModel(const char *kappaFacesPath);
-    GenerateUserModel(std::vector<IplImage*> kappaFaces);
-    AddFaceToModel(IplImage *kappaFace);
-    AddFaceToModel(IplImage *kappaPhoto, cv::Rect faceCoords);
-    LoadUserModel(const char *userPath);
+    FrokResult GenerateUserModel(const char *kappaFacesPath);
+    FrokResult GenerateUserModel(std::vector<IplImage*> kappaFaces);
+    FrokResult AddFaceToModel(IplImage *kappaFace);
+    FrokResult AddFaceToModel(IplImage *kappaPhoto, cv::Rect faceCoords);
+    FrokResult LoadUserModel(const char *userPath);
 };
 
 #endif // FACEUSERMODEL_H

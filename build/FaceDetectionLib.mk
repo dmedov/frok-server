@@ -11,16 +11,19 @@ LANG := c++
 TARGET := libFaceDetectionLib.a
 TARGETTYPE := staticlib
 
-LIBS := -L$(BINOUTDIR)			\
-	-L/usr/lib/x86_64-linux-gnu	-lrt -lpthread \
-	$(OPENCV_LIB)
+LIBS := -L$(BINOUTDIR)			                            \
+	-L/usr/lib/x86_64-linux-gnu	-lrt -pthread               \
+    -lFaceCommonLib                                         \
+    $(OPENCV_LIB)                                           \
 
 
-CFLAGS += -Wno-unknown-pragmas
+DEPENDENCIES :=                             \
+    $(BINOUTDIR)/libFaceCommonLib.a         \
 
 SRCDIRS :=  ../$(SRCDIR)/
 
-HDRDIRS :=  ../$(SRCDIR)/		\
+HDRDIRS :=  ../$(SRCDIR)/	\
+	../FaceCommonLib/	    \
 	$(OPENCV_INCLUDES)
 
 include makefile.actions

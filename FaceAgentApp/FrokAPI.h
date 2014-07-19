@@ -1,7 +1,7 @@
 #ifndef FROKAPI_H
 #define FROKAPI_H
 
-#include "../FaceCommonLib/faceCommonLib.h"
+#include "faceCommonLib.h"
 
 typedef FrokResult (*FrokAPIFunction) (void *params);
 
