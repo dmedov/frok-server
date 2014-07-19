@@ -22,7 +22,6 @@ INCLUDEPATH +=                                          \
 
 HEADERS +=                  \
     ViolaJonesDetection.h   \
-    stdafx.h                \
     network.h               \
     LibInclude.h            \
     json.h                  \
@@ -31,7 +30,7 @@ HEADERS +=                  \
     activities.h            \
     EigenDetector.h         \
     commonThread.h \
-    FaceDetection.h
+    FaceDetector.h
 
 SOURCES +=                  \
     ViolaJonesDetection.cpp \
@@ -42,5 +41,5 @@ SOURCES +=                  \
     activities.cpp          \
     EigenDetector.cpp \
     commonThread.cpp \
-    FaceDetection.cpp
+    FaceDetector.cpp
     /opt/opencv-2.4.9/include/opencv2/                  \

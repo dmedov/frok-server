@@ -79,7 +79,7 @@ bool FaceAgentConnector::DisconnectFromAgent()
     FACE_AGENT_CONNECTOR_TRACE(StopNetworkServer, "Closing socket descriptor. socket = %i", agentSocket);
     if(-1 == close(agentSocket))
     {
-        FACE_AGENT_CONNECTOR_TRACE(StopNetworkServer, "Failed to close socket descriptor on error", strerror(errno));
+        FACE_AGENT_CONNECTOR_TRACE(StopNetworkServer, "Failed to close socket descriptor on error %s", strerror(errno));
         state = FACE_AGENT_ERROR;
         return false;
     }

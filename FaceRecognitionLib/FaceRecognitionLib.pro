@@ -16,11 +16,16 @@ QMAKE_CXXFLAGS +=   -Werror -Wall -Wno-unused-function -Wno-write-strings -Wno-u
 QMAKE_CFLAGS_DEBUG +=     -Werror -Wall -Wno-unused-function -Wno-write-strings -Wno-unused-result -Wno-unknown-pragmas
 
 INCLUDEPATH +=                                          \
+    /opt/opencv-2.4.9/install/include/opencv/           \
+    /opt/opencv-2.4.9/install/include/opencv2/          \
+    /opt/opencv-2.4.9/install/include
 
 HEADERS +=                  \
-    stdafx.h \
-    EigenDetector.h
+    EigenDetector.h \
+    FaceUserModel.h \
+    FaceRecognizer.h
 
 SOURCES +=                  \
-    EigenDetector.cpp
+    EigenDetector.cpp \
+    FaceUserModel.cpp
 

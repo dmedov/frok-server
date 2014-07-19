@@ -1,5 +1,5 @@
 
-cascades = new FaceCascades[MAX_THREADS_AND_CASCADES_NUM];
+/*cascades = new FaceCascades[MAX_THREADS_AND_CASCADES_NUM];
 for(unsigned i = 0; i < MAX_THREADS_AND_CASCADES_NUM; i++)
 {
     cascades[i].face->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml");
@@ -11,7 +11,7 @@ for(unsigned i = 0; i < MAX_THREADS_AND_CASCADES_NUM; i++)
     cascades[i].eye->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye.xml");
     cascades[i].nose->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_nose.xml");
     cascades[i].mouth->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_mouth.xml");
-}
+}*/
 
 
 /*std::vector<std::string> users = std::vector<std::string>();

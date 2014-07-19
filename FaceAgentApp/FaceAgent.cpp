@@ -362,7 +362,7 @@ NetResult FaceAgent::StopNetworkServer()
         FACE_AGENT_TRACE(StopNetworkServer, "Closing socket descriptor. localSock = %i", localSock);
         if(-1 == close(localSock))
         {
-            FACE_AGENT_TRACE(StopNetworkServer, "Failed to close socket descriptor on error", strerror(errno));
+            FACE_AGENT_TRACE(StopNetworkServer, "Failed to close socket descriptor on error %s", strerror(errno));
             res = NET_SOCKET_ERROR;
         }
         FACE_AGENT_TRACE(StopNetworkServer, "Descriptor successfully closed");
