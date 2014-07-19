@@ -22,15 +22,19 @@ FrokResult FaceDetector::SetFaceDetectionParameters(double scaleFactor, int minN
 
 FrokResult FaceDetector::SetTargetImage(const char *imagePath)
 {
-    targetImageOrigin = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
     targetImageKappa = cv::imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE);
+    if(!targetImageKappa.data)
+    {
+        FACE_DETECTOR_TRACE(SetTargetImage, "Failed to open image %s", imagePath);
+        return FROK_RESULT_INVALID_PARAMETER;
+    }
 }
 
 FrokResult FaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
 {
     try
     {
-        cascades.face->detectMultiScale(targetImageKappa, faces, varScaleFactor, varMinNeighbors, 0, varMinFaceSize, cv::Size(targetImageKappa.cols, targetImageKappa.rows));
+        cascades.face.detectMultiScale(targetImageKappa, faces, varScaleFactor, varMinNeighbors, 0, varMinFaceSize, cv::Size(targetImageKappa.cols, targetImageKappa.rows));
     }
     catch(...)
     {

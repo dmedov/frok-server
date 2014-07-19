@@ -26,47 +26,26 @@
 // [TBD] somehow replace paths to haarcascades with path defines
 struct HaarCascades
 {
-    cv::CascadeClassifier *face;
-    cv::CascadeClassifier *eyes;
-    cv::CascadeClassifier *righteye;
-    cv::CascadeClassifier *lefteye;
-    cv::CascadeClassifier *righteye2;
-    cv::CascadeClassifier *lefteye2;
-    cv::CascadeClassifier *eye;
-    cv::CascadeClassifier *nose;
-    cv::CascadeClassifier *mouth;
+    cv::CascadeClassifier face;
+    cv::CascadeClassifier eyeglasses;
+    cv::CascadeClassifier righteye;
+    cv::CascadeClassifier lefteye;
+    cv::CascadeClassifier splitted_righteye;
+    cv::CascadeClassifier splitted_lefteye;
+    cv::CascadeClassifier eye;
+    cv::CascadeClassifier mcs_nose;
+    cv::CascadeClassifier msc_mouth;
     HaarCascades()
     {
-        face        = new cv::CascadeClassifier;
-        eyes        = new cv::CascadeClassifier;
-        righteye    = new cv::CascadeClassifier;
-        lefteye     = new cv::CascadeClassifier;
-        righteye2   = new cv::CascadeClassifier;
-        lefteye2    = new cv::CascadeClassifier;
-        eye         = new cv::CascadeClassifier;
-        mouth       = new cv::CascadeClassifier;
-        nose        = new cv::CascadeClassifier;
-        face->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml");
-        eyes->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye_tree_eyeglasses.xml");
+        face.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml");
+        eyeglasses.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye_tree_eyeglasses.xml");
         righteye->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_righteye.xml");
         lefteye->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_lefteye.xml");
-        righteye2->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_righteye_2splits.xml");
-        lefteye2->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_lefteye_2splits.xml");
+        splitted_righteye.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_righteye_2splits.xml");
+        splitted_lefteye.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_lefteye_2splits.xml");
         eye->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye.xml");
-        nose->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_nose.xml");
-        mouth->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_mouth.xml");
-    }
-    ~HaarCascades()
-    {
-        delete face;
-        delete eyes;
-        delete righteye;
-        delete lefteye;
-        delete righteye2;
-        delete lefteye2;
-        delete eye;
-        delete mouth;
-        delete nose;
+        mcs_nose.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_nose.xml");
+        msc_mouth.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_mouth.xml");
     }
 };
 
@@ -82,7 +61,7 @@ public:
 private:
     HaarCascades cascades;
 
-    cv::Mat         targetImageOrigin;
+    //cv::Mat         targetImageOrigin; we don't need not gray-scaled photo now
     cv::Mat         targetImageKappa;
 public:
     FaceDetector();
