@@ -27,8 +27,8 @@
 
 #define TRACE_PRINT(format...)          fprintf(stdout, ##format)
 
-#define TRACE_TIMESTAMP(format...)      {unsigned sec, usec;                        \
-                                        set_time_stamp(&sec, &usec)                 \
+#define TRACE_TIMESTAMP(format...)      do{unsigned sec, usec;                      \
+                                        set_time_stamp(&sec, &usec);                \
                                         fprintf(stdout, "[%5u.%06u]", sec, usec);   \
-                                        fprintf(stdout, ##format);}
+                                        fprintf(stdout, ##format);}while(0)
 #endif // TRACE_H

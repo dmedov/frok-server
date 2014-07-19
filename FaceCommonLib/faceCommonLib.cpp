@@ -2,7 +2,12 @@
 #include <string.h>
 #include "faceCommonLib.h"
 
+#include <sys/time.h>
+
+#define MODULE_NAME     "COMMON_LIB"
+
 pthread_mutex_t filePrint_cs;
+struct timeval startTime;
 
 bool InitFaceCommonLib(const char *log_name)
 {
@@ -39,6 +44,9 @@ bool InitFaceCommonLib(const char *log_name)
         pthread_mutex_unlock(&filePrint_cs);
     }
 
+    memset(&startTime, 0, sizeof(startTime));
+    gettimeofday(&startTime, NULL);
+
     return true;
 }
 
@@ -56,4 +64,21 @@ bool DeinitFaceCommonLib()
         return false;
     }
     return true;
+}
+
+void set_time_stamp(unsigned *sec, unsigned *usec)
+{
+    struct timeval currentTime;
+    memset(&currentTime, 0, sizeof(currentTime));
+
+    gettimeofday(&currentTime, NULL);
+
+    (*sec)  = currentTime.tv_sec - startTime.tv_sec;
+    (*usec) = currentTime.tv_usec - startTime.tv_usec;
+
+    if (startTime.tv_usec > currentTime.tv_usec)
+    {
+        (*sec)--;
+        (*usec) += 1e6;
+    }
 }
