@@ -6,6 +6,8 @@
 
 #include "json.h"
 
+#define MODULE_NAME     "JSON"
+
 #define _stricmp strcasecmp
 
 #ifdef _MSC_VER

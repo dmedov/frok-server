@@ -12,18 +12,6 @@ const char DEFAULT_TARGETS_FOLDER_PATH [] = "/home/zda/faces/";
 #include "faceCommonLib.h"
 #include "FrokAPI.h"
 
-// FaceAgent logging system
-#ifdef FACE_AGENT_TRACE_ENABLED
-#define FACE_AGENT_TRACE(__function_name__, format, ...)    \
-    pthread_mutex_lock(&faceAgent_trace_cs);                \
-    printf("[FACE_AGENT->%s]: ", #__function_name__);       \
-    printf(format, ##__VA_ARGS__);                          \
-    printf("\n");                                           \
-    pthread_mutex_unlock(&faceAgent_trace_cs)
-#else
-#define FACE_AGENT_TRACE(__function_name__, format, ...)
-#endif
-
 typedef enum NetResult
 {
     NET_SUCCESS                 = 0x00,

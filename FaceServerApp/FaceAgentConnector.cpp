@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include "FaceAgentConnector.h"
 
+#define MODULE_NAME     "AGENT_CONNECTOR"
+
 pthread_mutex_t             faceAgentConnector_trace_cs;
 pthread_mutex_t             faceAgentConnector_cs;
 
@@ -25,7 +27,7 @@ FaceAgentConnector::FaceAgentConnector(AgentInfo &info)
     threadAgentListener = new CommonThread;
     agentSocket = INVALID_SOCKET;
 
-    FACE_AGENT_CONNECTOR_TRACE(FaceAgentConnector, "new FaceAgentConnector");
+    TRACE("new FaceAgentConnector");
 }
 
 FaceAgentConnector::~FaceAgentConnector()
@@ -39,20 +41,20 @@ FaceAgentConnector::~FaceAgentConnector()
 
     pthread_mutex_destroy(&faceAgentConnector_cs);
     pthread_mutex_destroy(&faceAgentConnector_trace_cs);
-    FACE_AGENT_CONNECTOR_TRACE(~FaceAgentConnector, "~FaceAgent");
+    TRACE("~FaceAgentConnector");
 }
 
 bool FaceAgentConnector::ConnectToAgent()
 {
     NetResult res;
-    FACE_AGENT_CONNECTOR_TRACE(ConnectToAgent, "Calling StartNetworkClient");
+    TRACE("Calling StartNetworkClient");
     if(NET_SUCCESS != (res = StartNetworkClient()))
     {
-        FACE_AGENT_CONNECTOR_TRACE(ConnectToAgent, "StartNetworkClient failed on error %x", res);
+        TRACE_F("StartNetworkClient failed on error %x", res);
         state = FACE_AGENT_ERROR;
         return false;
     }
-    FACE_AGENT_CONNECTOR_TRACE(ConnectToAgent, "StartNetworkClient succeed");
+    TRACE_S("StartNetworkClient succeed");
 
     state = FACE_AGENT_FREE;
 
@@ -63,27 +65,27 @@ bool FaceAgentConnector::DisconnectFromAgent()
 {
     if(agentSocket == INVALID_SOCKET)
     {
-        FACE_AGENT_CONNECTOR_TRACE(DisconnectFromAgent, "Already disconnected");
+        TRACE_S("Already disconnected");
         return true;
     }
 
-    FACE_AGENT_CONNECTOR_TRACE(DisconnectFromAgent, "Calling shutdown agentSocket");
+    TRACE("Calling shutdown agentSocket");
     if(-1 == shutdown(agentSocket, 2))
     {
-        FACE_AGENT_CONNECTOR_TRACE(DisconnectFromAgent, "Failed to terminate connection with error = %s", strerror(errno));
+        TRACE_F("Failed to terminate connection with error = %s", strerror(errno));
         state = FACE_AGENT_ERROR;
         return false;
     }
-    FACE_AGENT_CONNECTOR_TRACE(DisconnectFromAgent, "shutdown succeed");
+    TRACE_S("shutdown succeed");
 
-    FACE_AGENT_CONNECTOR_TRACE(StopNetworkServer, "Closing socket descriptor. socket = %i", agentSocket);
+    TRACE("Closing socket descriptor. socket = %i", agentSocket);
     if(-1 == close(agentSocket))
     {
-        FACE_AGENT_CONNECTOR_TRACE(StopNetworkServer, "Failed to close socket descriptor on error %s", strerror(errno));
+        TRACE_F("Failed to close socket descriptor on error %s", strerror(errno));
         state = FACE_AGENT_ERROR;
         return false;
     }
-    FACE_AGENT_CONNECTOR_TRACE(StopNetworkServer, "Descriptor successfully closed");
+    TRACE_S("Descriptor successfully closed");
 
     state = FACE_AGENT_STOPPED;
 
@@ -99,7 +101,7 @@ bool FaceAgentConnector::SendCommand(AgentCommandParam command)
 {
     if(agentSocket == INVALID_SOCKET)
     {
-        FACE_AGENT_CONNECTOR_TRACE(SendCommand, "Agent not connected");
+        TRACE_F("Agent not connected");
         return false;
     }
     json::Object outJson;
@@ -137,7 +139,7 @@ bool FaceAgentConnector::SendCommand(AgentCommandParam command)
     NetResult res;
     if(NET_SUCCESS != (res = SendData(agentSocket, outString.c_str(), outString.length())))
     {
-        FACE_AGENT_CONNECTOR_TRACE(SendCommand, "Failed to send command to agent on error %x", res);
+        TRACE_F("Failed to send command to agent on error %x", res);
         return false;
     }
     return true;
@@ -157,13 +159,13 @@ void FaceAgentConnector::AgentListener(void *param)
     mandatoryKeys.push_back("reply_sock");
     mandatoryKeys.push_back("result");
 
-    FACE_AGENT_CONNECTOR_TRACE(AgentListener, "start listening to socket %i", pThis->agentSocket);
+    TRACE("start listening to socket %i", pThis->agentSocket);
 
     for(;;)
     {
         if(pThis->threadAgentListener->isStopThreadReceived())
         {
-            FACE_AGENT_CONNECTOR_TRACE(AgentListener, "terminate thread sema received");
+            TRACE("terminate thread sema received");
             break;
         }
 
@@ -175,8 +177,8 @@ void FaceAgentConnector::AgentListener(void *param)
                 continue;
             }
             // unspecified error occured
-            FACE_AGENT_CONNECTOR_TRACE(AgentListener, "recv failed on error %s", strerror(errno));
-            FACE_AGENT_CONNECTOR_TRACE(AgentListener, "SocketListener shutdown");
+            TRACE_F("recv failed on error %s", strerror(errno));
+            TRACE_W("SocketListener shutdown");
             shutdown(pThis->agentSocket, 2);
             close(pThis->agentSocket);
             return;
@@ -188,7 +190,7 @@ void FaceAgentConnector::AgentListener(void *param)
             continue;
         }
 
-        FACE_AGENT_CONNECTOR_TRACE(AgentListener, "Received %d bytes from the socket %u", dataLength, pThis->agentSocket);
+        TRACE("Received %d bytes from the socket %u", dataLength, pThis->agentSocket);
 
         // Response from agent received
         json::Object responseFromAgent;
@@ -198,13 +200,13 @@ void FaceAgentConnector::AgentListener(void *param)
         }
         catch (...)
         {
-            FACE_AGENT_CONNECTOR_TRACE(AgentListener, "Failed to parse incoming JSON: %s", data);
+            TRACE_F("Failed to parse incoming JSON: %s", data);
             continue;
         }
 
         if (!(responseFromAgent.HasKeys(mandatoryKeys)))
         {
-            FACE_AGENT_CONNECTOR_TRACE(AgentListener, "Invalid input JSON: no cmd field (%s)", data);
+            TRACE_F("Invalid input JSON: no cmd field (%s)", data);
             continue;
         }
 
@@ -214,19 +216,19 @@ void FaceAgentConnector::AgentListener(void *param)
 
         if(NET_SUCCESS != pThis->SendData(replySock, outJson.c_str(), outJson.size()))
         {
-            FACE_AGENT_CONNECTOR_TRACE(AgentListener, "Failed to send response to remote peer %u. Reponse = %s",replySock, outJson.c_str());
+            TRACE_F("Failed to send response to remote peer %u. Reponse = %s",replySock, outJson.c_str());
             continue;
         }
     }
 
-    FACE_AGENT_CONNECTOR_TRACE(AgentListener, "SocketListener finished");
+    TRACE("SocketListener finished");
 }
 
 NetResult FaceAgentConnector::StartNetworkClient()
 {
     if(threadAgentListener->getThreadState() == COMMON_THREAD_STARTED)
     {
-        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "AgentListener already started. Call StopNetwork first");
+        TRACE_W("AgentListener already started. Call StopNetwork first");
         return NET_ALREADY_STARTED;
     }
 
@@ -234,7 +236,7 @@ NetResult FaceAgentConnector::StartNetworkClient()
 
     if ((agentSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
     {
-        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "socket failed on error = %s", strerror(errno));
+        TRACE_F("socket failed on error = %s", strerror(errno));
         return NET_SOCKET_ERROR;
     }
 
@@ -242,13 +244,13 @@ NetResult FaceAgentConnector::StartNetworkClient()
 
     if(0 != setsockopt(agentSocket, SOL_SOCKET, SO_KEEPALIVE, &option, sizeof(int)))
     {
-        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
+        TRACE_F("setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
         return NET_SOCKET_ERROR;
     }
 
     if(0 != setsockopt(agentSocket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
     {
-        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "setsockopt failed on error %s", strerror(errno));
+        TRACE_F("setsockopt failed on error %s", strerror(errno));
         shutdown(agentSocket, 2);
         close(agentSocket);
         agentSocket = INVALID_SOCKET;
@@ -259,7 +261,7 @@ NetResult FaceAgentConnector::StartNetworkClient()
     socklen_t   optlen = sizeof(int);
     if(0 != getsockopt(agentSocket, SOL_SOCKET,  SO_REUSEADDR, &optval, &optlen))
     {
-        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "getsockopt failed on error %s", strerror(errno));
+        TRACE_F("getsockopt failed on error %s", strerror(errno));
         shutdown(agentSocket, 2);
         close(agentSocket);
         agentSocket = INVALID_SOCKET;
@@ -268,7 +270,7 @@ NetResult FaceAgentConnector::StartNetworkClient()
 
     if(optval == 0)
     {
-        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "setsockopt failed to enabled SO_REUSEADDR option");
+        TRACE_F("setsockopt failed to enabled SO_REUSEADDR option");
     }
 
     sock_addr.sin_addr.s_addr = netInfo.agentIpV4Address;
@@ -277,7 +279,7 @@ NetResult FaceAgentConnector::StartNetworkClient()
 
     if (0 != connect(agentSocket, (struct sockaddr*)&sock_addr, sizeof(struct sockaddr)))
     {
-        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "connect failed on error %s", strerror(errno));
+        TRACE_F("connect failed on error %s", strerror(errno));
         shutdown(agentSocket, 2);
         close(agentSocket);
         agentSocket = INVALID_SOCKET;
@@ -285,15 +287,15 @@ NetResult FaceAgentConnector::StartNetworkClient()
     }
 
     FaceAgentConnector *pThis = this;
-    FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "Starting AgentListener");
+    TRACE("Starting AgentListener");
 
     if(!threadAgentListener->startThread((void * (*)(void*))(FaceAgentConnector::AgentListener), &pThis, sizeof(FaceAgentConnector*)))
     {
-        FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "Failed to start SocketListener thread. See CommonThread logs for information");
+        TRACE_F("Failed to start SocketListener thread. See CommonThread logs for information");
         return NET_COMMON_THREAD_ERROR;
     }
 
-    FACE_AGENT_CONNECTOR_TRACE(StartNetworkClient, "Network client started, socket = %d", agentSocket);
+    TRACE_S("Network client started, socket = %d", agentSocket);
 
     return NET_SUCCESS;
 }
@@ -306,16 +308,16 @@ NetResult FaceAgentConnector::SendData(SOCKET sock, const char* pBuffer, unsigne
     {
         if (-1 == (sendlen = send(sock, pBuffer, uBufferSize, 0)))
         {
-            FACE_AGENT_CONNECTOR_TRACE(SendData, "Failed to send outgoing bytes to the remote peer %u with error %s", sock, strerror(errno));
+            TRACE_F("Failed to send outgoing bytes to the remote peer %u with error %s", sock, strerror(errno));
             return NET_SOCKET_ERROR;
         }
 
         usleep(50000);      // sleep for 1 system monitor tact
-        FACE_AGENT_CONNECTOR_TRACE(SendData, "%d bytes were sent to the remote peer %u", sendlen, sock);
+        TRACE("%d bytes were sent to the remote peer %u", sendlen, sock);
     }
     else
     {
-        FACE_AGENT_CONNECTOR_TRACE(SendData, "Invalid socket");
+        TRACE_F("Invalid socket");
         return NET_SOCKET_ERROR;
     }
 

@@ -1,23 +1,33 @@
 #include "FaceDetector.h"
 
+#define MODULE_NAME         "FACE_DETECTOR"
+
 FaceDetector::FaceDetector()
 {
     varScaleFactor = 1.1;
     varMinNeighbors = 3;
     varMinFaceSize = cvSize(40, 50);
-    FACE_DETECTOR_TRACE(FaceDetector, "new FaceDetector");
+    TRACE("new FaceDetector");
 }
 
 FaceDetector::~FaceDetector()
 {
-    FACE_DETECTOR_TRACE(~FaceDetector, "~FaceDetector");
+    TRACE("~FaceDetector");
 }
 
 FrokResult FaceDetector::SetFaceDetectionParameters(double scaleFactor, int minNeighbors, cv::Size minFaceSize)
 {
+    timespec startTime;
+    timespec endTime;
+    memset(&endTime, 0, sizeof(endTime));
+    memset(&startTime, 0, sizeof(startTime));
+
+    clock_gettime(CLOCK_REALTIME, &startTime);
+
     varScaleFactor = scaleFactor;
     varMinNeighbors = minNeighbors;
     varMinFaceSize = minFaceSize;
+    clock_gettime(CLOCK_REALTIME, &endTime);
 }
 
 FrokResult FaceDetector::SetTargetImage(const char *imagePath)
@@ -25,7 +35,7 @@ FrokResult FaceDetector::SetTargetImage(const char *imagePath)
     targetImageKappa = cv::imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE);
     if(!targetImageKappa.data)
     {
-        FACE_DETECTOR_TRACE(SetTargetImage, "Failed to open image %s", imagePath);
+        TRACE_F_T("Failed to open image %s", imagePath);
         return FROK_RESULT_INVALID_PARAMETER;
     }
 }
@@ -38,7 +48,7 @@ FrokResult FaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
     }
     catch(...)
     {
-        FACE_DETECTOR_TRACE(GetFacesFromPhoto, "detectMultiScale Failed");
+        TRACE_F_T("detectMultiScale Failed");
         return FROK_RESULT_CASCADE_ERROR;
     }
     return FROK_RESULT_SUCCESS;

@@ -7,18 +7,6 @@
 // include dependencies
 #include "faceCommonLib.h"
 
-// FaceAgentConnector logging system
-#ifdef FACE_AGENT_CONNECTOR_TRACE_ENABLED
-#define FACE_AGENT_CONNECTOR_TRACE(__function_name__, format, ...)    \
-    pthread_mutex_lock(&faceAgentConnector_trace_cs);                \
-    printf("[FACE_AGENT_CONNECTOR->%s]: ", #__function_name__);       \
-    printf(format, ##__VA_ARGS__);                          \
-    printf("\n");                                           \
-    pthread_mutex_unlock(&faceAgentConnector_trace_cs)
-#else
-#define FACE_AGENT_CONNECTOR_TRACE(__function_name__, format, ...)
-#endif
-
 typedef enum NetResult
 {
     NET_SUCCESS                 = 0x00,

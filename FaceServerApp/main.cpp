@@ -11,7 +11,7 @@
 
 void usage()
 {
-    FilePrintMessage(_SUCC("FaceServerApp <Agent IP address> <Agent port number>"));
+    printf("FaceServerApp <Agent IP address> <Agent port number>");
     return;
 }
 

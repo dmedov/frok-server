@@ -6,17 +6,19 @@
 
 void usage()
 {
-    FilePrintMessage(_SUCC("FaceDetectionApp <Local port number>"));
+    printf("FaceDetectionApp <Local port number>");
     return;
 }
 
 int main(void)
 {
-    FaceAgent agent(DEFAULT_PORT);
+    FaceDetector detector;
+    //detector.SetTargetImage()
+    /*FaceAgent agent(DEFAULT_PORT);
     agent.StartFaceAgent();
     getchar();
 
-    agent.StopFaceAgent();
+    agent.StopFaceAgent();*/
 
     return 0;
 }

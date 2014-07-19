@@ -9,6 +9,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#define MODULE_NAME     "AGENT"
+
 #include "FaceAgent.h"
 
 pthread_mutex_t             faceAgent_trace_cs;
@@ -30,7 +32,7 @@ FaceAgent::FaceAgent(unsigned short localPort, const char *photoBasePath, const 
     localSock = INVALID_SOCKET;
 
     this->localPortNumber = localPort;
-    FACE_AGENT_TRACE(FaceAgent, "new FaceAgent");
+    TRACE("new FaceAgent");
 }
 
 FaceAgent::~FaceAgent()
@@ -48,26 +50,26 @@ FaceAgent::~FaceAgent()
 
     pthread_mutex_destroy(&faceAgent_cs);
     pthread_mutex_destroy(&faceAgent_trace_cs);
-    FACE_AGENT_TRACE(~FaceAgent, "~FaceAgent");
+    TRACE("~FaceAgent");
 }
 
 bool FaceAgent::StartFaceAgent()
 {
-    FACE_AGENT_TRACE(StartFaceAgent, "Calling InitFaceCommonLib");
+    TRACE("Calling InitFaceCommonLib");
     if(!InitFaceCommonLib("FaceAgent.log"))
     {
-        FACE_AGENT_TRACE(StartFaceAgent, "InitFaceCommonLib failed");
+        TRACE_F("InitFaceCommonLib failed");
         return false;
     }
-    FACE_AGENT_TRACE(StartFaceAgent, "InitFaceCommonLib succeed");
-    FACE_AGENT_TRACE(StartFaceAgent, "Calling StartNetworkServer");
+    TRACE_S("InitFaceCommonLib succeed");
+    TRACE("Calling StartNetworkServer");
     NetResult res;
     if(NET_SUCCESS != (res = StartNetworkServer()))
     {
-        FACE_AGENT_TRACE(StartFaceAgent, "StartNetworkServer failed on error %x", res);
+        TRACE_F("StartNetworkServer failed on error %x", res);
         return false;
     }
-    FACE_AGENT_TRACE(StartFaceAgent, "StartNetworkServer succeed");
+    TRACE_S("StartNetworkServer succeed");
 
     return true;
 }
@@ -83,7 +85,7 @@ NetResult FaceAgent::StartNetworkServer()
 
     if ((localSock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
     {
-        FACE_AGENT_TRACE(StartNetworkServer, "socket failed on error = %s", strerror(errno));
+        TRACE_F("socket failed on error = %s", strerror(errno));
         return NET_SOCKET_ERROR;
     }
 
@@ -92,7 +94,7 @@ NetResult FaceAgent::StartNetworkServer()
     int option = 1;
     if(0 != setsockopt(localSock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
     {
-        FACE_AGENT_TRACE(StartNetworkServer, "setsockopt failed on error %s", strerror(errno));
+        TRACE_F("setsockopt failed on error %s", strerror(errno));
         shutdown(localSock, 2);
         close(localSock);
         return NET_SOCKET_ERROR;
@@ -100,7 +102,7 @@ NetResult FaceAgent::StartNetworkServer()
 
     if(0 != setsockopt(localSock, SOL_SOCKET, SO_KEEPALIVE, &option, sizeof(option)))
     {
-        FACE_AGENT_TRACE(StartNetworkServer, "setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
+        TRACE_F("setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
         shutdown(localSock, 2);
         close(localSock);
         return NET_SOCKET_ERROR;
@@ -111,7 +113,7 @@ NetResult FaceAgent::StartNetworkServer()
 
     if(0 != getsockopt(localSock, SOL_SOCKET,  SO_REUSEADDR, &optval, &optlen))
     {
-        FACE_AGENT_TRACE(StartNetworkServer, "getsockopt failed on error %s", strerror(errno));
+        TRACE_F("getsockopt failed on error %s", strerror(errno));
         shutdown(localSock, 2);
         close(localSock);
         return NET_SOCKET_ERROR;
@@ -119,13 +121,13 @@ NetResult FaceAgent::StartNetworkServer()
 
     if(optval == 0)
     {
-        FACE_AGENT_TRACE(StartNetworkServer, "setsockopt failed to enabled SO_REUSEADDR option");
+        TRACE_F("setsockopt failed to enabled SO_REUSEADDR option");
         //return NET_SOCKET_ERROR;
     }
 
     if(0 != bind(localSock, (struct sockaddr*)&server, sizeof(server)))
     {
-        FACE_AGENT_TRACE(StartNetworkServer, "bind failed on error %s", strerror(errno));
+        TRACE_F("bind failed on error %s", strerror(errno));
         shutdown(localSock, 2);
         close(localSock);
         return NET_SOCKET_ERROR;
@@ -133,7 +135,7 @@ NetResult FaceAgent::StartNetworkServer()
 
     if (0 != listen(localSock, SOMAXCONN))
     {
-        FACE_AGENT_TRACE(StartNetworkServer, "listen failed on error %s", strerror(errno));
+        TRACE_F("listen failed on error %s", strerror(errno));
         shutdown(localSock, 2);
         close(localSock);
         return NET_UNSPECIFIED_ERROR;
@@ -141,15 +143,15 @@ NetResult FaceAgent::StartNetworkServer()
 
     FaceAgent *pThis = this;
 
-    FACE_AGENT_TRACE(StartNetworkServer, "Starting ServerListener");
+    TRACE("Starting ServerListener");
 
     if(!threadServerListener->startThread((void*(*)(void*))FaceAgent::ServerListener, &pThis, sizeof(FaceAgent*)))
     {
-        FACE_AGENT_TRACE(StartNetworkServer, "Failed to start ServerListener thread. See CommonThread logs for information");
+        TRACE_F("Failed to start ServerListener thread. See CommonThread logs for information");
         return NET_COMMON_THREAD_ERROR;
     }
 
-    FACE_AGENT_TRACE(StartNetworkServer, "Succeed, socket = %d, port = %d", localSock, localPortNumber);
+    TRACE_S("Succeed, socket = %d, port = %d", localSock, localPortNumber);
 
     return NET_SUCCESS;
 }
@@ -160,20 +162,20 @@ bool FaceAgent::StopFaceAgent()
 
     NetResult res;
 
-    FACE_AGENT_TRACE(StopFaceAgent, "Calling StopNetworkServer");
+    TRACE("Calling StopNetworkServer");
     if(NET_SUCCESS != (res = StopNetworkServer()))
     {
-        FACE_AGENT_TRACE(StopFaceAgent, "StopNetworkServer failed on result %x. Continue...", res);
+        TRACE_F("StopNetworkServer failed on result %x. Continue...", res);
         success = false;
     }
-    FACE_AGENT_TRACE(StopFaceAgent, "StopNetworkServer succeed");
-    FACE_AGENT_TRACE(StopFaceAgent, "Calling DeinitFaceCommonLib");
+    TRACE_S("StopNetworkServer succeed");
+    TRACE("Calling DeinitFaceCommonLib");
     if(!DeinitFaceCommonLib())
     {
-        FACE_AGENT_TRACE(StopFaceAgent, "DeinitFaceCommonLib failed");
+        TRACE_F("DeinitFaceCommonLib failed");
         success = false;
     }
-    FACE_AGENT_TRACE(StopFaceAgent, "DeinitFaceCommonLib succeed");
+    TRACE_S("DeinitFaceCommonLib succeed");
 
     return success;
 }
@@ -192,7 +194,7 @@ void FaceAgent::ServerListener(void* param)
     mandatoryKeys.push_back("req_id");
     mandatoryKeys.push_back("reply_sock");
 
-    FACE_AGENT_TRACE(ServerListener, "Accepting single incoming connections for socket %i", pThis->localSock);
+    TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
 
     for(;;)
     {
@@ -201,49 +203,48 @@ void FaceAgent::ServerListener(void* param)
         {
             if(pThis->threadServerListener->isStopThreadReceived())
             {
-                FACE_AGENT_TRACE(ServerListener, "terminate thread sema received");
+                TRACE("terminate thread sema received");
                 shutdown(pThis->localSock, 2);
                 close(pThis->localSock);
-                FACE_AGENT_TRACE(ServerListener, "AcceptConnection finished");
+                TRACE("AcceptConnection finished");
                 return;
             }
             continue;
         }
 
-        FACE_AGENT_TRACE(AcceptConnection, "Incoming connection accepted. Accepted socket = %u", accepted_socket);
+        TRACE("Incoming connection accepted. Accepted socket = %u", accepted_socket);
 
         int flag = 1;   //TRUE
         if(0 != setsockopt(accepted_socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)))
         {
-            FACE_AGENT_TRACE(AcceptConnection, "setsockopt (TCP_NODELAY) failed on error %s", strerror(errno));
-            FACE_AGENT_TRACE(ServerListener, "Accepting single incoming connections for socket %i", pThis->localSock);
+            TRACE_F("setsockopt (TCP_NODELAY) failed on error %s", strerror(errno));
+            TRACE_F("Accepting single incoming connections for socket %i", pThis->localSock);
             continue;
         }
 
         if(0 != setsockopt(accepted_socket, SOL_SOCKET, SO_KEEPALIVE, &flag, sizeof(int)))
         {
-            FACE_AGENT_TRACE(AcceptConnection, "setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
-            FACE_AGENT_TRACE(ServerListener, "Accepting single incoming connections for socket %i", pThis->localSock);
+            TRACE_F("setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
+            TRACE_F("Accepting single incoming connections for socket %i", pThis->localSock);
             continue;
         }
 
         if(0 != setsockopt(accepted_socket, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int)))
         {
-            FACE_AGENT_TRACE(AcceptConnection, "setsockopt (SO_REUSEADDR) failed on error %s", strerror(errno));
-            FACE_AGENT_TRACE(ServerListener, "Accepting single incoming connections for socket %i", pThis->localSock);
+            TRACE_F("setsockopt (SO_REUSEADDR) failed on error %s", strerror(errno));
+            TRACE_F("Accepting single incoming connections for socket %i", pThis->localSock);
             continue;
         }
 
-        FACE_AGENT_TRACE(ServerListener, "Socket listener cycle started. The agent will process one request and then connection would be terminated.");
+        TRACE_S("Socket listener cycle started. The agent will process one request and then connection would be terminated.");
         for(;;)
         {
             if(pThis->threadServerListener->isStopThreadReceived())
             {
-                FACE_AGENT_TRACE(ServerListener, "terminate thread sema received");
-                FACE_AGENT_TRACE(ServerListener, "Accepting single incoming connections for socket %i", pThis->localSock);
+                TRACE("terminate thread sema received");
                 shutdown(pThis->localSock, 2);
                 close(pThis->localSock);
-                FACE_AGENT_TRACE(ServerListener, "AcceptConnection finished");
+                TRACE("AcceptConnection finished");
                 return;
             }
 
@@ -255,11 +256,11 @@ void FaceAgent::ServerListener(void* param)
                     continue;
                 }
                 // unspecified error occured
-                FACE_AGENT_TRACE(ServerListener, "recv failed on error %s", strerror(errno));
-                FACE_AGENT_TRACE(ServerListener, "SocketListener shutdown");
+                TRACE_F("recv failed on error %s", strerror(errno));
+                TRACE_W("Listening to socket %u stopped", accepted_socket);
                 shutdown(accepted_socket, 2);
                 close(accepted_socket);
-                FACE_AGENT_TRACE(ServerListener, "Accepting single incoming connections for socket %i", pThis->localSock);
+                TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
                 break;
             }
 
@@ -269,7 +270,7 @@ void FaceAgent::ServerListener(void* param)
                 continue;
             }
 
-            FACE_AGENT_TRACE(ServerListener, "Received %d bytes from the server(%u)", dataLength, accepted_socket);
+            TRACE("Received %d bytes from the server(%u)", dataLength, accepted_socket);
 
             // Response from agent received
             json::Object requestJson;
@@ -279,8 +280,8 @@ void FaceAgent::ServerListener(void* param)
             }
             catch (...)
             {
-                FACE_AGENT_TRACE(ServerListener, "Failed to parse incoming JSON: %s", data);
-                FACE_AGENT_TRACE(ServerListener, "Accepting single incoming connections for socket %i", pThis->localSock);
+                TRACE_F("Failed to parse incoming JSON: %s", data);
+                TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
                 shutdown(accepted_socket, 2);
                 close(accepted_socket);
                 break;
@@ -288,8 +289,8 @@ void FaceAgent::ServerListener(void* param)
 
             if (!(requestJson.HasKeys(mandatoryKeys)))
             {
-                FACE_AGENT_TRACE(ServerListener, "Invalid input JSON: no cmd field (%s)", data);
-                FACE_AGENT_TRACE(ServerListener, "Accepting single incoming connections for socket %i", pThis->localSock);
+                TRACE_F("Invalid input JSON: no cmd field (%s)", data);
+                TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
                 shutdown(accepted_socket, 2);
                 close(accepted_socket);
                 break;
@@ -299,25 +300,25 @@ void FaceAgent::ServerListener(void* param)
 
             std::string outJson = json::Serialize(requestJson);
 
-            FACE_AGENT_TRACE(ServerListener, "Simply echo with success result %s", outJson.c_str());
+            printf("Simply echo with success result %s", outJson.c_str());
 
             if(NET_SUCCESS != pThis->SendData(accepted_socket, outJson.c_str(), outJson.size()))
             {
-                FACE_AGENT_TRACE(ServerListener, "Failed to send response to server (%u). Reponse = %s", accepted_socket, outJson.c_str());
+                TRACE_F("Failed to send response to server (%u). Reponse = %s", accepted_socket, outJson.c_str());
                 shutdown(accepted_socket, 2);
                 close(accepted_socket);
-                FACE_AGENT_TRACE(ServerListener, "Accepting single incoming connections for socket %i", pThis->localSock);
+                TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
                 break;
             }
             shutdown(accepted_socket, 2);
             close(accepted_socket);
-            FACE_AGENT_TRACE(ServerListener, "Accepting single incoming connections for socket %i", pThis->localSock);
+            TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
             break;
         }
     }
     shutdown(pThis->localSock, 2);
     close(pThis->localSock);
-    FACE_AGENT_TRACE(ServerListener, "AcceptConnection finished");
+    TRACE("AcceptConnection finished");
     return;
 }
 
@@ -329,16 +330,16 @@ NetResult FaceAgent::SendData(SOCKET sock, const char* pBuffer, unsigned uBuffer
     {
         if (-1 == (sendlen = send(sock, pBuffer, uBufferSize, 0)))
         {
-            FACE_AGENT_TRACE(SendData, "Failed to send outgoing bytes to the remote peer %u with error %s", sock, strerror(errno));
+            TRACE_F("Failed to send outgoing bytes to the remote peer %u with error %s", sock, strerror(errno));
             return NET_SOCKET_ERROR;
         }
 
         usleep(50000);      // sleep for 1 system monitor tact
-        FACE_AGENT_TRACE(SendData, "%d bytes were sent to the remote peer %u", sendlen, sock);
+        TRACE("%d bytes were sent to the remote peer %u", sendlen, sock);
     }
     else
     {
-        FACE_AGENT_TRACE(SendData, "Invalid socket");
+        TRACE_F("Invalid socket");
         return NET_SOCKET_ERROR;
     }
 
@@ -351,30 +352,30 @@ NetResult FaceAgent::StopNetworkServer()
 
     if(localSock != INVALID_SOCKET)
     {
-        FACE_AGENT_TRACE(StopNetworkServer, "Calling socket shutdown. localSock = %i", localSock);
+        TRACE("Calling socket shutdown. localSock = %i", localSock);
         if(-1 == shutdown(localSock, 2))      // 2 = Both reception and transmission
         {
-            FACE_AGENT_TRACE(StopNetworkServer, "Failed to shutdown local socket with error = %s", strerror(errno));
+            TRACE_F("Failed to shutdown local socket with error = %s", strerror(errno));
             res = NET_SOCKET_ERROR;
         }
-        FACE_AGENT_TRACE(StopNetworkServer, "socket shutdown succeed");
+        TRACE_S("socket shutdown succeed");
 
-        FACE_AGENT_TRACE(StopNetworkServer, "Closing socket descriptor. localSock = %i", localSock);
+        TRACE("Closing socket descriptor. localSock = %i", localSock);
         if(-1 == close(localSock))
         {
-            FACE_AGENT_TRACE(StopNetworkServer, "Failed to close socket descriptor on error %s", strerror(errno));
+            TRACE_F("Failed to close socket descriptor on error %s", strerror(errno));
             res = NET_SOCKET_ERROR;
         }
-        FACE_AGENT_TRACE(StopNetworkServer, "Descriptor successfully closed");
+        TRACE_S("Descriptor successfully closed");
     }
 
-    FACE_AGENT_TRACE(StopNetworkServer, "Calling threadServerListener->stopThread");
+    TRACE("Calling threadServerListener->stopThread");
     if(!threadServerListener->stopThread())
     {
-        FACE_AGENT_TRACE(StopNetworkServer, "threadServerListener->stopThread failed");
+        TRACE_F("threadServerListener->stopThread failed");
         res = NET_COMMON_THREAD_ERROR;
     }
-    FACE_AGENT_TRACE(StopNetworkServer, "threadServerListener->stopThread succeed");
+    TRACE_S("threadServerListener->stopThread succeed");
 
     return res;
 }

@@ -8,6 +8,8 @@
 #include "io.h"
 #include "faceCommonLib.h"
 
+#define MODULE_NAME     "IO"
+
 char *log_file;
 
 void FilePrintMessage(const char* expr...)

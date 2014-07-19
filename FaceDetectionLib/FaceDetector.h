@@ -9,20 +9,6 @@
 #include <cv.h>
 #include <highgui.h>
 
-
-// FaceAgentConnector logging system
-// [TBD] Add file printing and timestamps
-#ifdef FACE_DETECTOR_TRACE_ENABLED
-#define FACE_DETECTOR_TRACE(__function_name__, format, ...)     \
-    pthread_mutex_lock(&faceDetector_trace_cs);                 \
-    printf("[FACE_DETECTOR->%s]: ", #__function_name__);        \
-    printf(format, ##__VA_ARGS__);                              \
-    printf("\n");                                               \
-    pthread_mutex_unlock(&faceDetector_trace_cs)
-#else
-#define FACE_DETECTOR_TRACE(__function_name__, format, ...)
-#endif
-
 // [TBD] somehow replace paths to haarcascades with path defines
 struct HaarCascades
 {
@@ -39,11 +25,11 @@ struct HaarCascades
     {
         face.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml");
         eyeglasses.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye_tree_eyeglasses.xml");
-        righteye->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_righteye.xml");
-        lefteye->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_lefteye.xml");
+        righteye.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_righteye.xml");
+        lefteye.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_lefteye.xml");
         splitted_righteye.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_righteye_2splits.xml");
         splitted_lefteye.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_lefteye_2splits.xml");
-        eye->load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye.xml");
+        eye.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye.xml");
         mcs_nose.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_nose.xml");
         msc_mouth.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_mouth.xml");
     }
@@ -60,9 +46,10 @@ public:
     cv::Size varMinFaceSize;
 private:
     HaarCascades cascades;
-
     //cv::Mat         targetImageOrigin; we don't need not gray-scaled photo now
     cv::Mat         targetImageKappa;
+
+
 public:
     FaceDetector();
     ~FaceDetector();

@@ -9,17 +9,6 @@
 #include "faceCommonLib.h"
 #include "FaceAgentConnector.h"
 
-#ifdef FACE_SERVER_TRACE_ENABLED
-#define FACE_SERVER_TRACE(__function_name__, format, ...)    \
-    pthread_mutex_lock(&faceServer_trace_cs);                \
-    printf("[FACE_AGENT_CONNECTOR->%s]: ", #__function_name__);       \
-    printf(format, ##__VA_ARGS__);                          \
-    printf("\n");                                           \
-    pthread_mutex_unlock(&faceServer_trace_cs)
-#else
-#define FACE_SERVER_TRACE(__function_name__, format, ...)
-#endif
-
 #pragma pack(push, 1)
 
 typedef struct StructFaceRequest

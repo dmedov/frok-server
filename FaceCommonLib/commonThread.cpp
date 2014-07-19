@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include "commonThread.h"
 
+#define MODULE_NAME     "COMMON_THREAD"
+
 CommonThread::CommonThread()
 {
     thread = new pthread_t;

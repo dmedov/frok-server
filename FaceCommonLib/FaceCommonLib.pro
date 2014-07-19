@@ -21,7 +21,8 @@ HEADERS +=                  \
     json.h                  \
     commonThread.h          \
     io.h                    \
-    faceCommonLib.h
+    faceCommonLib.h \
+    trace.h
 
 SOURCES +=                  \
     json.cpp                \
