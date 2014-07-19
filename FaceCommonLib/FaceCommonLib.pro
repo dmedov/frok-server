@@ -15,21 +15,17 @@ DEFINES +=  \
 QMAKE_CXXFLAGS +=   -Werror -Wall -Wno-unused-function -Wno-write-strings -Wno-unused-result -Wno-unknown-pragmas
 QMAKE_CFLAGS_DEBUG +=     -Werror -Wall -Wno-unused-function -Wno-write-strings -Wno-unused-result -Wno-unknown-pragmas
 
-INCLUDEPATH +=                                              \
-    /opt/opencv-2.4.9/install/include/opencv/        \
-    /opt/opencv-2.4.9/install/include/opencv2/      \
-    /opt/opencv-2.4.9/install/include
+INCLUDEPATH +=
 
 HEADERS +=                  \
-    stdafx.h \
-    json.h \
-    commonThread.h \
-    io.h \
+    json.h                  \
+    commonThread.h          \
+    io.h                    \
     faceCommonLib.h
 
 SOURCES +=                  \
-    json.cpp \
-    commonThread.cpp \
-    io.cpp \
+    json.cpp                \
+    commonThread.cpp        \
+    io.cpp                  \
     faceCommonLib.cpp
 
