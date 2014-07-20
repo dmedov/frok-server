@@ -49,7 +49,6 @@ private:
     //cv::Mat         targetImageOrigin; we don't need not gray-scaled photo now
     cv::Mat         targetImageKappa;
 
-
 public:
     FaceDetector();
     ~FaceDetector();
@@ -57,9 +56,10 @@ public:
     FrokResult SetTargetImage(const char *imagePath);
     FrokResult SetTargetImage(cv::Mat &image);
     FrokResult GetFacesFromPhoto(std::vector< cv::Rect > &faces);
-    FrokResult GetNormalizeFace(cv::Rect faceCoords, cv::Mat &normalizedFaceImage);
     FrokResult GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages);
 private:
-
+    FrokResult NormalizeFace(cv::Mat &normalizedFaceImage);
+    FrokResult RemoveDrowbackFrokImage(cv::Mat &image);
+    FrokResult RotateImage(cv::Mat &image);
 };
 #endif
