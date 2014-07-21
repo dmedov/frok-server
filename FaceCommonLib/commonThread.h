@@ -75,7 +75,7 @@ private:
 
 typedef struct SructStartRoutineParam
 {
-    CommonThread   *pThis;
+    void           *pThis;
     sem_t          *threadStartedSema;
     unsigned        paramsLength;
     void           *params;

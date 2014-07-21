@@ -53,7 +53,6 @@ FaceServer::~FaceServer()
     pthread_mutex_destroy(&faceServer_cs);
     pthread_mutex_destroy(&faceServer_trace_cs);
 
-    close(localSock);
     TRACE("~FaceServer");
 }
 
@@ -167,6 +166,11 @@ void FaceServer::AcceptConnection(void* param)
 
     for(;;)
     {
+        if(accepted_socket != INVALID_SOCKET)
+        {
+            shutdown(accepted_socket, 2);
+            close(accepted_socket);
+        }
         if ((accepted_socket = accept(pThis->localSock, NULL, NULL)) == SOCKET_ERROR)
         {
             if(pThis->threadAcceptConnection->isStopThreadReceived())
@@ -210,6 +214,9 @@ void FaceServer::AcceptConnection(void* param)
         pThis->threadVecSocketListener.push_back(thread);
     }
 
+    shutdown(accepted_socket, 2);
+    close(accepted_socket);
+
     shutdown(pThis->localSock, 2);
     close(pThis->localSock);
     TRACE("AcceptConnection finished");
@@ -243,6 +250,8 @@ void FaceServer::SocketListener(void* param)
                 continue;
             }
             // unspecified error occured
+            shutdown(psParam->listenedSocket, 2);
+            close(psParam->listenedSocket);
             TRACE_F("recv failed on error %s", strerror(errno));
             TRACE_W("SocketListener shutdown");
             return;
@@ -250,11 +259,18 @@ void FaceServer::SocketListener(void* param)
 
         if(dataLength == 0)
         {
-            // TCP keep alive
-            continue;
+            TRACE("Half disconnection observed. Terminating...");
+            // TCP keep alivelocalSock
+            break;
         }
 
         TRACE("Received %d bytes from the socket %u", dataLength, psParam->listenedSocket);
+    }
+
+    if(psParam->listenedSocket != INVALID_SOCKET)
+    {
+        shutdown(psParam->listenedSocket, 2);
+        close(psParam->listenedSocket);
     }
 
     TRACE("SocketListener finished");
@@ -359,6 +375,8 @@ NetResult FaceServer::StartNetworkServer()
     if(!threadAcceptConnection->startThread((void*(*)(void*))FaceServer::AcceptConnection, &pThis, sizeof(FaceServer*)))
     {
         TRACE_F("Failed to start ServerListener thread. See CommonThread logs for information");
+        shutdown(localSock, 2);
+        close(localSock);
         return NET_COMMON_THREAD_ERROR;
     }
 

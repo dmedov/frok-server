@@ -186,8 +186,8 @@ void FaceAgentConnector::AgentListener(void *param)
 
         if(dataLength == 0)
         {
-            // TCP keep alive
-            continue;
+            TRACE("Half disconnection observed. Terminating...");
+            break;
         }
 
         TRACE("Received %d bytes from the socket %u", dataLength, pThis->agentSocket);
@@ -221,6 +221,12 @@ void FaceAgentConnector::AgentListener(void *param)
         }
     }
 
+    if(pThis->agentSocket != INVALID_SOCKET)
+    {
+        shutdown(pThis->agentSocket, 2);
+        close(pThis->agentSocket);
+    }
+
     TRACE("SocketListener finished");
 }
 
@@ -245,6 +251,8 @@ NetResult FaceAgentConnector::StartNetworkClient()
     if(0 != setsockopt(agentSocket, SOL_SOCKET, SO_KEEPALIVE, &option, sizeof(int)))
     {
         TRACE_F("setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
+        shutdown(agentSocket, 2);
+        close(agentSocket);
         return NET_SOCKET_ERROR;
     }
 
@@ -292,6 +300,8 @@ NetResult FaceAgentConnector::StartNetworkClient()
     if(!threadAgentListener->startThread((void * (*)(void*))(FaceAgentConnector::AgentListener), &pThis, sizeof(FaceAgentConnector*)))
     {
         TRACE_F("Failed to start SocketListener thread. See CommonThread logs for information");
+        shutdown(agentSocket, 2);
+        close(agentSocket);
         return NET_COMMON_THREAD_ERROR;
     }
 

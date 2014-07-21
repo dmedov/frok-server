@@ -198,7 +198,12 @@ void FaceAgent::ServerListener(void* param)
 
     for(;;)
     {
-        close(accepted_socket);
+        if(accepted_socket != INVALID_SOCKET)
+        {
+            shutdown(accepted_socket, 2);
+            close(accepted_socket);
+        }
+
         if ((accepted_socket = accept(pThis->localSock, NULL, NULL)) == SOCKET_ERROR)
         {
             if(pThis->threadServerListener->isStopThreadReceived())
@@ -242,6 +247,8 @@ void FaceAgent::ServerListener(void* param)
             if(pThis->threadServerListener->isStopThreadReceived())
             {
                 TRACE("terminate thread sema received");
+                shutdown(accepted_socket, 2);
+                close(accepted_socket);
                 shutdown(pThis->localSock, 2);
                 close(pThis->localSock);
                 TRACE("AcceptConnection finished");
@@ -266,8 +273,9 @@ void FaceAgent::ServerListener(void* param)
 
             if(dataLength == 0)
             {
-                // TCP keep alive
-                continue;
+                TRACE("Half disconnection received. Terminating...");
+                TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
+                break;
             }
 
             TRACE("Received %d bytes from the server(%u)", dataLength, accepted_socket);
@@ -316,6 +324,13 @@ void FaceAgent::ServerListener(void* param)
             break;
         }
     }
+
+    if(accepted_socket != INVALID_SOCKET)
+    {
+        shutdown(accepted_socket, 2);
+        close(accepted_socket);
+    }
+
     shutdown(pThis->localSock, 2);
     close(pThis->localSock);
     TRACE("AcceptConnection finished");

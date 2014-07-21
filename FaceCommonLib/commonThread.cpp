@@ -50,8 +50,9 @@ bool CommonThread::startThread(void *(*function) (void *), void *functionParams,
         return false;
     }
 
+    CommonThread *pThis = this;
     startRoutineParams sParams;
-    sParams.pThis = this;
+    sParams.pThis = &pThis;
     sParams.params = functionParams;
     sParams.paramsLength = functionParamsLength;
     sParams.function = function;
@@ -175,6 +176,8 @@ void CommonThread::startRoutine(void *param)
 {
     CTHREAD_PRINT(startRoutine, "Thread routine started.");
     startRoutineParams *psParams = (startRoutineParams*) param;
+    CommonThread *pThis = NULL;
+    memcpy(&pThis, psParams->pThis, sizeof(CommonThread*));
 
     char *threadParams = new char [psParams->paramsLength];
     memset(threadParams, 0, psParams->paramsLength);
@@ -186,6 +189,7 @@ void CommonThread::startRoutine(void *param)
     function(threadParams);
     CTHREAD_PRINT(startRoutine, "User function finished.threadParams = %p", threadParams);
 
+    pThis->threadState = COMMON_THREAD_NOT_INITED;
     delete []threadParams;
     CTHREAD_PRINT(startRoutine, "Thread routine finished.");
 }
