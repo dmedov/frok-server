@@ -23,12 +23,12 @@ FaceDetector::FaceDetector()
     {
         cascades[(EnumCascades)i] = cascade;
     }
+    cascades[CASCADE_EYE].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye.xml");
     cascades[CASCADE_EYE_WITH_GLASSES].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye_tree_eyeglasses.xml");
     cascades[CASCADE_EYE_RIGHT].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_righteye.xml");
     cascades[CASCADE_EYE_LEFT].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_lefteye.xml");
     cascades[CASCADE_EYE_RIGHT_SPLITTED].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_righteye_2splits.xml");
     cascades[CASCADE_EYE_LEFT_SPLITTED].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_lefteye_2splits.xml");
-    cascades[CASCADE_EYE].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye.xml");
 
 // Set Nose cascade defaults
     cascade.properties.scaleFactor = 1.2;
@@ -187,17 +187,17 @@ FrokResult FaceDetector::AlignFaceImage(cv::Mat &image)
 
     // Try to detect eyes
     std::vector < cv::Rect > eyes;
-    TRACE_T("Detecting eyes with CASCADE_EYES...");
-    cascades[CASCADE_EYES].cascade.detectMultiScale(image, eyes,
-                                                    cascades[CASCADE_EYES].properties.scaleFactor,
-                                                    cascades[CASCADE_EYES].properties.minNeighbors,
+    TRACE_T("Detecting eyes with CASCADE_EYE...");
+    cascades[CASCADE_EYE].cascade.detectMultiScale(image, eyes,
+                                                    cascades[CASCADE_EYE].properties.scaleFactor,
+                                                    cascades[CASCADE_EYE].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
-                                                    cascades[CASCADE_EYES].properties.minObjectSize,
-                                                    cascades[CASCADE_EYES].properties.maxObjectSize);
+                                                    cascades[CASCADE_EYE].properties.minObjectSize,
+                                                    cascades[CASCADE_EYE].properties.maxObjectSize);
 
     if(eyes.size() == 2)
     {
-        TRACE_S_T("2 eyes were successfully detected with CASCADE_EYES");
+        TRACE_S_T("2 eyes were successfully detected with CASCADE_EYE");
         // [TBD] Left eye is the left one or the one that is to the left on the photo?
         TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
         if(eyes[0].x > eyes[1].x)
@@ -214,7 +214,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Mat &image)
         rightEyeFound = true;
         goto detect_nose;
     }
-    TRACE_T("Failed to find 2 eyes with CASCADE_EYES");
+    TRACE_T("Failed to find 2 eyes with CASCADE_EYE");
     TRACE_T("Now trying to detect eyes in glasses");
 
     eyes.clear();
@@ -375,6 +375,13 @@ detect_mouth:
     TRACE_F_T("Mouth detection failed");
 
 detect_finish:
+
+    if(leftEyeFound) cv::imwrite("/home/zda/faces/LE.jpg", cv::Mat(image, humanFace.leftEye));
+    if(rightEyeFound) cv::imwrite("/home/zda/faces/RE.jpg", cv::Mat(image, humanFace.rightEye));
+    if(leftEyeFound) cv::imwrite("/home/zda/faces/nose.jpg", cv::Mat(image, humanFace.nose));
+    if(leftEyeFound) cv::imwrite("/home/zda/faces/mouth.jpg", cv::Mat(image, humanFace.mouth));
+
+
     TRACE_S_T("Detection finished");
     /*
 

@@ -14,6 +14,11 @@ bool InitFaceCommonLib(const char *log_name)
     int result = 0;
 
     pthread_mutexattr_t mAttr;
+    if(0 != (result = pthread_mutexattr_init(&mAttr)))
+    {
+        TRACE_F("pthread_mutexattr_init failed on error %s", strerror(result));
+        return false;
+    }
     if(0 != (result = pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP)))
     {
         TRACE_F("pthread_mutexattr_settype failed on error %s", strerror(result));

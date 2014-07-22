@@ -18,20 +18,19 @@ typedef enum
     // EYES cascades
     CASCADE_EYES_BEGIN          = 0x01,
 
-    CASCADE_EYES                = 0x01,
+    CASCADE_EYE                 = 0x01,
     CASCADE_EYE_WITH_GLASSES    = 0x02,
     CASCADE_EYE_LEFT            = 0x03,
     CASCADE_EYE_RIGHT           = 0x04,
     CASCADE_EYE_LEFT_SPLITTED   = 0x05,
     CASCADE_EYE_RIGHT_SPLITTED  = 0x06,
-    CASCADE_EYE                 = 0x07,
 
-    CASCADE_EYES_END            = 0x07,
+    CASCADE_EYES_END            = 0x06,
 
     // Nose cascade
-    CASCADE_NOSE_MSC            = 0x08,
+    CASCADE_NOSE_MSC            = 0x07,
     // Mouth cascade
-    CASCADE_MOUTH_MSC           = 0x09
+    CASCADE_MOUTH_MSC           = 0x08
 } EnumCascades;
 
 typedef struct
