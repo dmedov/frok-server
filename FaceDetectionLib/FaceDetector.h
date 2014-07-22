@@ -10,56 +10,75 @@
 #include <highgui.h>
 
 // [TBD] somehow replace paths to haarcascades with path defines
-struct HaarCascades
+typedef enum
 {
-    cv::CascadeClassifier face;
-    cv::CascadeClassifier eyeglasses;
-    cv::CascadeClassifier righteye;
-    cv::CascadeClassifier lefteye;
-    cv::CascadeClassifier splitted_righteye;
-    cv::CascadeClassifier splitted_lefteye;
-    cv::CascadeClassifier eye;
-    cv::CascadeClassifier mcs_nose;
-    cv::CascadeClassifier msc_mouth;
-    HaarCascades()
-    {
-        face.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml");
-        eyeglasses.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye_tree_eyeglasses.xml");
-        righteye.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_righteye.xml");
-        lefteye.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_lefteye.xml");
-        splitted_righteye.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_righteye_2splits.xml");
-        splitted_lefteye.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_lefteye_2splits.xml");
-        eye.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye.xml");
-        mcs_nose.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_nose.xml");
-        msc_mouth.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_mouth.xml");
-    }
-};
+    // face cascade
+    CASCADE_FACE                = 0x00,
+
+    // EYES cascades
+    CASCADE_EYES_BEGIN          = 0x01,
+
+    CASCADE_EYES                = 0x01,
+    CASCADE_EYE_WITH_GLASSES    = 0x02,
+    CASCADE_EYE_LEFT            = 0x03,
+    CASCADE_EYE_RIGHT           = 0x04,
+    CASCADE_EYE_LEFT_SPLITTED   = 0x05,
+    CASCADE_EYE_RIGHT_SPLITTED  = 0x06,
+    CASCADE_EYE                 = 0x07,
+
+    CASCADE_EYES_END            = 0x07,
+
+    // Nose cascade
+    CASCADE_NOSE_MSC            = 0x08,
+    // Mouth cascade
+    CASCADE_MOUTH_MSC           = 0x09
+} EnumCascades;
+
+typedef struct
+{
+    // Minimum possible object size. Objects smaller than that are ignored.
+    cv::Size minObjectSize;
+    // Maximum possible object size. Objects smaller than that are ignored.
+    cv::Size maxObjectSize;
+    // Parameter specifying how much the image size is reduced at each image scale
+    double scaleFactor;
+    // Parameter specifying how many neighbors each candidate rectangle should have to retain it.
+    int minNeighbors;
+}CascadeProperties;
+
+typedef struct StructCascade
+{
+    cv::CascadeClassifier cascade;
+    CascadeProperties properties;
+}Cascade;
+
+typedef struct HumanFace
+{
+    cv::Rect leftEye;
+    cv::Rect rightEye;
+    cv::Rect nose;
+    cv::Rect mouth;
+}HumanFace;
 
 class FaceDetector
 {
-public:
-    // Parameter specifying how much the image size is reduced at each image scale
-    double varScaleFactor;
-    // Parameter specifying how many neighbors each candidate rectangle should have to retain it.
-    int varMinNeighbors;
-    // Minimum possible object size. Objects smaller than that are ignored.
-    cv::Size varMinFaceSize;
 private:
-    HaarCascades cascades;
-    //cv::Mat         targetImageOrigin; we don't need not gray-scaled photo now
+    std::map <EnumCascades, Cascade> cascades;
     cv::Mat         targetImageKappa;
 
 public:
     FaceDetector();
     ~FaceDetector();
-    FrokResult SetFaceDetectionParameters(double scaleFactor, int minNeighbors, cv::Size minFaceSize);
+    FrokResult SetCascadeParameters(EnumCascades cascade, CascadeProperties params);
     FrokResult SetTargetImage(const char *imagePath);
     FrokResult SetTargetImage(cv::Mat &image);
     FrokResult GetFacesFromPhoto(std::vector< cv::Rect > &faces);
     FrokResult GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages);
+
+    FrokResult AlignFaceImage(cv::Mat &image);      // shall be private
 private:
     FrokResult NormalizeFace(cv::Mat &normalizedFaceImage);
     FrokResult RemoveDrowbackFrokImage(cv::Mat &image);
-    FrokResult RotateImage(cv::Mat &image);
+
 };
 #endif

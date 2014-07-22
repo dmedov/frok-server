@@ -12,7 +12,10 @@ void usage()
 
 int main(void)
 {
-    InitFaceCommonLib();
+    if(!InitFaceCommonLib())
+    {
+        return -1;
+    }
     FaceDetector detector;
     detector.SetTargetImage("/home/zda/faces/1.jpg");
     std::vector<cv::Rect> faces;
@@ -20,8 +23,11 @@ int main(void)
     detector.GetFacesFromPhoto(faces);
     detector.GetFaceImages(faces, images);
 
+
     for(std::vector<cv::Mat>::iterator it = images.begin(); it != images.end(); ++it)
     {
+        cv::Mat face = (cv::Mat)*it;
+        detector.AlignFaceImage(face);
         cv::imwrite("/home/zda/faces/face.jpg", (cv::Mat)*it);
         //cv::imshow("image",);
     }

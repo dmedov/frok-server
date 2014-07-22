@@ -16,19 +16,19 @@ bool InitFaceCommonLib(const char *log_name)
     pthread_mutexattr_t mAttr;
     if(0 != (result = pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP)))
     {
-        printf("pthread_mutexattr_settype failed on error %s", strerror(result));
+        TRACE_F("pthread_mutexattr_settype failed on error %s", strerror(result));
         return false;
     }
 
     if(0 != (result = pthread_mutex_init(&filePrint_cs, &mAttr)))
     {
-        printf("pthread_mutex_init failed on error %s", strerror(result));
+        TRACE_F("pthread_mutex_init failed on error %s", strerror(result));
         return false;
     }
 
     if(0 != (result = pthread_mutexattr_destroy(&mAttr)))
     {
-        printf("pthread_mutexattr_destroy failed on error %s", strerror(result));
+        TRACE_F("pthread_mutexattr_destroy failed on error %s", strerror(result));
         return false;
     }
 
