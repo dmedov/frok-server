@@ -533,6 +533,24 @@ FrokResult FaceDetector::RemoveDrowbackFrokImage(cv::Mat &image)
         return FROK_RESULT_OPENCV_ERROR;
     }
 
+    // Apply the elliptical mask on the face, to remove corners.
+    // Sets corners to gray, without touching the inner face.
+    try
+    {
+        int x = image.cols;
+        int y = image.rows;
+        cv::Mat maskEllipse = cv::Mat(image.size(), CV_8UC1, cv::Scalar(255));
+        cv::Point faceCenter = cv::Point(cvRound(x * 0.5), cvRound(y * 0.25));
+        cv::Size size = cv::Size(cvRound(x * 0.55), cvRound(y * 0.8));
+        cv::ellipse(maskEllipse, faceCenter, size, 0, 0, 360, cv::Scalar(0), CV_FILLED);
+        image.setTo(cv::Scalar(128), maskEllipse);
+    }
+    catch(...)
+    {
+        TRACE_F_T("Opencv failed to apply ellipse to image");
+        return FROK_RESULT_OPENCV_ERROR;
+    }
+
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
