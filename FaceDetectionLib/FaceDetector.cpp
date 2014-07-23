@@ -178,7 +178,7 @@ FrokResult FaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &coords
 
     cv::Mat targetImageCopy(targetImageKappa);
     normalizerClahe->apply(targetImageCopy, targetImageCopy);
-    //cv::normalize()  cvNormalize(image, image, 10, 250, CV_MINMAX);
+    cv::normalize(targetImageCopy, targetImageCopy, 10, 250, cv::NORM_MINMAX);
 
     for(std::vector<cv::Rect>::iterator it = coords.begin(); it != coords.end(); ++it)
     {
@@ -189,11 +189,11 @@ FrokResult FaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &coords
             continue;
         }
 
-        /*if(FROK_RESULT_SUCCESS != (res = RemoveDrowbackFrokImage(normalizedFaceImage)))
+        if(FROK_RESULT_SUCCESS != (res = RemoveDrowbackFrokImage(faceImage)))
         {
             TRACE_F_T("RemoveDrowbackFrokImage failed on result %x", res);
             return res;
-        }*/
+        }
 
         faceImages.push_back(faceImage);
     }
@@ -520,4 +520,19 @@ FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &proc
 }
 
 FrokResult FaceDetector::RemoveDrowbackFrokImage(cv::Mat &image)
-{}
+{
+    TRACE_T("started");
+    try
+    {
+        image = cv::Mat(image, cv::Rect(image.cols / 5, image.rows / 4,
+                              image.cols - 2 * image.cols / 5, image.rows - image.rows / 4));
+    }
+    catch(...)
+    {
+        TRACE_F_T("Opencv failed to set image ROI");
+        return FROK_RESULT_OPENCV_ERROR;
+    }
+
+    TRACE_T("finished");
+    return FROK_RESULT_SUCCESS;
+}

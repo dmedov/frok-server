@@ -91,9 +91,6 @@ public:
 private:
     FrokResult AlignFaceImage(cv::Rect faceCoords, const cv::Mat &processedImage, cv::Mat &alignedFaceImage);
     FrokResult GetHumanFaceParts(cv::Mat &image, HumanFace *faceParts);
-
-
-    FrokResult NormalizeFace(cv::Rect &normalizedFaceImage);
     FrokResult RemoveDrowbackFrokImage(cv::Mat &image);
 
 
