@@ -49,6 +49,11 @@ typedef struct StructCascade
 {
     cv::CascadeClassifier cascade;
     CascadeProperties properties;
+    bool nonDefaultParameters;
+    StructCascade()
+    {
+        nonDefaultParameters = false;
+    }
 }Cascade;
 
 typedef struct HumanFace
@@ -57,6 +62,11 @@ typedef struct HumanFace
     cv::Rect rightEye;
     cv::Rect nose;
     cv::Rect mouth;
+
+    bool leftEyeFound;
+    bool rightEyeFound;
+    bool noseFound;
+    bool mouthFound;
 }HumanFace;
 
 class FaceDetector
@@ -64,23 +74,28 @@ class FaceDetector
 private:
     std::map <EnumCascades, Cascade> cascades;
     cv::Mat         targetImageKappa;
-    cv::CLAHE *normalizerClahe;
+    cv::Ptr<cv::CLAHE> normalizerClahe;
     double aligningScaleFactor;
 
 public:
     FaceDetector();
     ~FaceDetector();
     FrokResult SetCascadeParameters(EnumCascades cascade, CascadeProperties params);
+    FrokResult SetDefaultCascadeParameters(EnumCascades cascade, cv::Mat &imageWithObjects);
     FrokResult SetTargetImage(const char *imagePath);
     FrokResult SetTargetImage(cv::Mat &image);
     FrokResult GetFacesFromPhoto(std::vector< cv::Rect > &faces);
     FrokResult GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages);
-    FrokResult GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages);
+    FrokResult GetNormalizedFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages);
 
 private:
-    FrokResult AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFaceImage);
+    FrokResult AlignFaceImage(cv::Rect faceCoords, const cv::Mat &processedImage, cv::Mat &alignedFaceImage);
+    FrokResult GetHumanFaceParts(cv::Mat &image, HumanFace *faceParts);
+
+
     FrokResult NormalizeFace(cv::Rect &normalizedFaceImage);
     FrokResult RemoveDrowbackFrokImage(cv::Mat &image);
+
 
 };
 #endif

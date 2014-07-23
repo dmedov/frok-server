@@ -69,8 +69,51 @@ FrokResult FaceDetector::SetCascadeParameters(EnumCascades cascade, CascadePrope
     }
 
     cascades[cascade].properties = params;
+    cascades[cascade].nonDefaultParameters = true;
 }
-
+FrokResult FaceDetector::SetDefaultCascadeParameters(EnumCascades cascade, cv::Mat &imageWithObjects)
+{
+    switch(cascade)
+    {
+    case CASCADE_FACE:
+    {
+        cascades[cascade].properties.maxObjectSize = cvSize(imageWithObjects.cols, imageWithObjects.rows);
+        cascades[cascade].properties.minObjectSize = cvSize(40, 50);
+        break;
+    }
+    case CASCADE_EYE:
+    case CASCADE_EYE_WITH_GLASSES:
+    case CASCADE_EYE_LEFT:
+    case CASCADE_EYE_RIGHT:
+    case CASCADE_EYE_LEFT_SPLITTED:
+    case CASCADE_EYE_RIGHT_SPLITTED:
+    {
+        // TBD Resolve magic numbers problem
+        cascades[cascade].properties.minObjectSize = cvSize(imageWithObjects.cols / 6, imageWithObjects.rows / 7);
+        cascades[cascade].properties.maxObjectSize = cvSize(imageWithObjects.cols / 3, imageWithObjects.rows / 4);
+        break;
+    }
+    case CASCADE_NOSE_MSC:
+    {
+        cascades[cascade].properties.minObjectSize = cvSize(imageWithObjects.cols / 5, imageWithObjects.rows / 6);
+        cascades[cascade].properties.maxObjectSize = cvSize((int)(imageWithObjects.cols / 3.5), (int)(imageWithObjects.rows / 3.5));
+        break;
+    }
+    case CASCADE_MOUTH_MSC:
+    {
+        cascades[cascade].properties.minObjectSize = cvSize(imageWithObjects.cols / 5, imageWithObjects.rows / 6);
+        cascades[cascade].properties.maxObjectSize = cvSize(imageWithObjects.cols / 2, imageWithObjects.rows / 2);
+        break;
+    }
+    default:
+    {
+        TRACE_F("Invalid cascade name");
+        return FROK_RESULT_INVALID_PARAMETER;
+    }
+    }
+    cascades[cascade].nonDefaultParameters = false;
+    return FROK_RESULT_SUCCESS;
+}
 FrokResult FaceDetector::SetTargetImage(const char *imagePath)
 {
     TRACE_T("started...");
@@ -109,6 +152,7 @@ FrokResult FaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std::vec
 
     if(coords.empty())
     {
+        TRACE_F_T("Empty vector with faces received");
         return FROK_RESULT_INVALID_PARAMETER;
     }
     for(std::vector<cv::Rect>::iterator it = coords.begin(); it != coords.end(); ++it)
@@ -121,90 +165,77 @@ FrokResult FaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std::vec
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceDetector::NormalizeFace(cv::Rect &normalizedFaceImage)
+FrokResult FaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
 {
     TRACE_T("started...");
+
+    if(coords.empty())
+    {
+        TRACE_F_T("Empty vector with faces received");
+        return FROK_RESULT_INVALID_PARAMETER;
+    }
     FrokResult res;
 
-    //normalizerClahe->apply(normalizedFaceImage, normalizedFaceImage);
+    cv::Mat targetImageCopy(targetImageKappa);
+    normalizerClahe->apply(targetImageCopy, targetImageCopy);
     //cv::normalize()  cvNormalize(image, image, 10, 250, CV_MINMAX);
 
-
-    if(FROK_RESULT_SUCCESS != (res = AlignFaceImage(normalizedFaceImage, targetImageKappa)))
+    for(std::vector<cv::Rect>::iterator it = coords.begin(); it != coords.end(); ++it)
     {
-        TRACE_F_T("RotateImage failed on result %x", res);
-        return res;
+        cv::Mat faceImage;
+        if(FROK_RESULT_SUCCESS != (res = AlignFaceImage(*it, targetImageCopy, faceImage)))
+        {
+            TRACE_F_T("AlignFaceImage failed on result %x", res);
+            continue;
+        }
+
+        /*if(FROK_RESULT_SUCCESS != (res = RemoveDrowbackFrokImage(normalizedFaceImage)))
+        {
+            TRACE_F_T("RemoveDrowbackFrokImage failed on result %x", res);
+            return res;
+        }*/
+
+        faceImages.push_back(faceImage);
     }
 
-    /*if(FROK_RESULT_SUCCESS != (res = RemoveDrowbackFrokImage(normalizedFaceImage)))
+    if(faceImages.empty())
     {
-        TRACE_F_T("RemoveDrowbackFrokImage failed on result %x", res);
-        return res;
-    }*/
+        TRACE_F_T("All faces are rejected");
+        return FROK_RESULT_NOT_A_FACE;
+    }
+
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFaceImage)
+FrokResult FaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *faceParts)
 {
-    TRACE_T("started...");
-    FrokResult result;
-    // If no value specified for cascades - set default
-    for(int i = CASCADE_EYES_BEGIN; i <= CASCADE_EYES_END; i++)
+    TRACE_T("started");
+
+    if(faceParts == NULL)
     {
-        if(cascades[(EnumCascades)i].properties.minObjectSize.width == -1 ||
-                cascades[(EnumCascades)i].properties.minObjectSize.height == -1)
+        TRACE_F_T("Invalid parameter: faceParts = %p", faceParts);
+        return FROK_RESULT_INVALID_PARAMETER;
+    }
+
+    TRACE_T("Checking non-default parameters for cascades");
+    for(int i = CASCADE_FACE; i != CASCADE_MOUTH_MSC; i++)
+    {
+        if(cascades[(EnumCascades)i].nonDefaultParameters == false)
         {
-            // TBD Resolve magic numbers problem
-            cascades[(EnumCascades)i].properties.minObjectSize = cvSize(faceCoords.width / 6, faceCoords.height / 7);
-        }
-        if(cascades[(EnumCascades)i].properties.maxObjectSize.width == -1 ||
-                cascades[(EnumCascades)i].properties.maxObjectSize.height == -1)
-        {
-            cascades[(EnumCascades)i].properties.maxObjectSize = cvSize(faceCoords.width / 3, faceCoords.height / 4);
+            if(FROK_RESULT_SUCCESS != SetDefaultCascadeParameters((EnumCascades)i, image))
+            {
+                TRACE_F_T("Setting defaults to cascade 0x%x failed", i);
+                return FROK_RESULT_CASCADE_ERROR;
+            }
         }
     }
-
-    if(cascades[CASCADE_NOSE_MSC].properties.minObjectSize.width == -1 ||
-            cascades[CASCADE_NOSE_MSC].properties.minObjectSize.height == -1)
-    {
-        cascades[CASCADE_NOSE_MSC].properties.minObjectSize = cvSize(faceCoords.width / 5, faceCoords.height / 6);
-    }
-
-    if(cascades[CASCADE_NOSE_MSC].properties.maxObjectSize.width == -1 ||
-            cascades[CASCADE_NOSE_MSC].properties.maxObjectSize.height == -1)
-    {
-        cascades[CASCADE_NOSE_MSC].properties.maxObjectSize = cvSize((int)(faceCoords.width / 3.5), (int)(faceCoords.height / 3.5));
-    }
-
-    if(cascades[CASCADE_MOUTH_MSC].properties.minObjectSize.width == -1 ||
-            cascades[CASCADE_MOUTH_MSC].properties.minObjectSize.height == -1)
-    {
-        cascades[CASCADE_MOUTH_MSC].properties.minObjectSize = cvSize(faceCoords.width / 5, faceCoords.height / 6);
-    }
-
-    if(cascades[CASCADE_MOUTH_MSC].properties.maxObjectSize.width == -1 ||
-            cascades[CASCADE_MOUTH_MSC].properties.maxObjectSize.height == -1)
-    {
-        cascades[CASCADE_MOUTH_MSC].properties.maxObjectSize = cvSize(faceCoords.width / 2, faceCoords.height / 2);
-    }
-    // End of setting defaults
-
-    // [TBD] Nikita resized image to image * 5 if width/height < 200. I do not.
-
-    cv::Mat imageFace(targetImageKappa, faceCoords);
-    TRACE_T("Detection started");
-
-    HumanFace humanFace;
-    bool leftEyeFound = false;
-    bool rightEyeFound = false;
-    bool noseFound = false;
-    bool mouthFound = false;
+    TRACE_T("All cascades are ready");
 
     // Try to detect eyes
     std::vector < cv::Rect > eyes;
     TRACE_T("Detecting eyes with CASCADE_EYE...");
-    cascades[CASCADE_EYE].cascade.detectMultiScale(imageFace, eyes,
+    cascades[CASCADE_EYE].cascade.detectMultiScale(image, eyes,
                                                     cascades[CASCADE_EYE].properties.scaleFactor,
                                                     cascades[CASCADE_EYE].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -218,16 +249,16 @@ FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFac
         TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
         if(eyes[0].x > eyes[1].x)
         {
-            humanFace.leftEye = eyes[0];
-            humanFace.rightEye = eyes[1];
+            faceParts->leftEye = eyes[0];
+            faceParts->rightEye = eyes[1];
         }
         else
         {
-            humanFace.rightEye = eyes[0];
-            humanFace.leftEye = eyes[1];
+            faceParts->rightEye = eyes[0];
+            faceParts->leftEye = eyes[1];
         }
-        leftEyeFound = true;
-        rightEyeFound = true;
+        faceParts->leftEyeFound = true;
+        faceParts->rightEyeFound = true;
         goto detect_nose;
     }
     TRACE_T("Failed to find 2 eyes with CASCADE_EYE");
@@ -235,7 +266,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFac
 
     eyes.clear();
     TRACE_T("Detecting eyes with CASCADE_EYE_WITH_GLASSES...");
-    cascades[CASCADE_EYE_WITH_GLASSES].cascade.detectMultiScale(imageFace, eyes,
+    cascades[CASCADE_EYE_WITH_GLASSES].cascade.detectMultiScale(image, eyes,
                                                     cascades[CASCADE_EYE_WITH_GLASSES].properties.scaleFactor,
                                                     cascades[CASCADE_EYE_WITH_GLASSES].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -249,16 +280,16 @@ FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFac
         TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
         if(eyes[0].x > eyes[1].x)
         {
-            humanFace.leftEye = eyes[0];
-            humanFace.rightEye = eyes[1];
+            faceParts->leftEye = eyes[0];
+            faceParts->rightEye = eyes[1];
         }
         else
         {
-            humanFace.rightEye = eyes[0];
-            humanFace.leftEye = eyes[1];
+            faceParts->rightEye = eyes[0];
+            faceParts->leftEye = eyes[1];
         }
-        leftEyeFound = true;
-        rightEyeFound = true;
+        faceParts->leftEyeFound = true;
+        faceParts->rightEyeFound = true;
         goto detect_nose;
     }
     TRACE_T("Failed to find 2 eyes with CASCADE_EYE_WITH_GLASSES");
@@ -266,7 +297,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFac
 
     eyes.clear();
     TRACE_T("Detecting left eye with CASCADE_EYE_LEFT...");
-    cascades[CASCADE_EYE_LEFT].cascade.detectMultiScale(imageFace, eyes,
+    cascades[CASCADE_EYE_LEFT].cascade.detectMultiScale(image, eyes,
                                                     cascades[CASCADE_EYE_LEFT].properties.scaleFactor,
                                                     cascades[CASCADE_EYE_LEFT].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -278,14 +309,14 @@ FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFac
         TRACE_S_T("Left eye was successfully detected with CASCADE_EYE_LEFT");
         // [TBD] Left eye is the left one or the one that is to the left on the photo?
         TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
-        humanFace.leftEye = eyes[0];
-        leftEyeFound = true;
+        faceParts->leftEye = eyes[0];
+        faceParts->leftEyeFound = true;
     }
     else
     {
         eyes.clear();
         TRACE_T("Detecting left eye with CASCADE_EYE_LEFT_SPLITTED...");
-        cascades[CASCADE_EYE_LEFT_SPLITTED].cascade.detectMultiScale(imageFace, eyes,
+        cascades[CASCADE_EYE_LEFT_SPLITTED].cascade.detectMultiScale(image, eyes,
                                                         cascades[CASCADE_EYE_LEFT_SPLITTED].properties.scaleFactor,
                                                         cascades[CASCADE_EYE_LEFT_SPLITTED].properties.minNeighbors,
                                                         0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -296,15 +327,15 @@ FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFac
             TRACE_S_T("Left eye was successfully detected with CASCADE_EYE_LEFT_SPLITTED");
             // [TBD] Left eye is the left one or the one that is to the left on the photo?
             TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
-            humanFace.leftEye = eyes[0];
-            leftEyeFound = true;
+            faceParts->leftEye = eyes[0];
+            faceParts->leftEyeFound = true;
         }
     }
 
 
     eyes.clear();
     TRACE_T("Detecting right eye with CASCADE_EYE_RIGHT...");
-    cascades[CASCADE_EYE_RIGHT].cascade.detectMultiScale(imageFace, eyes,
+    cascades[CASCADE_EYE_RIGHT].cascade.detectMultiScale(image, eyes,
                                                     cascades[CASCADE_EYE_RIGHT].properties.scaleFactor,
                                                     cascades[CASCADE_EYE_RIGHT].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -316,14 +347,14 @@ FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFac
         TRACE_S_T("Right eye was successfully detected with CASCADE_EYE_RIGHT");
         // [TBD] Left eye is the left one or the one that is to the left on the photo?
         TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
-        humanFace.rightEye = eyes[0];
-        rightEyeFound = true;
+        faceParts->rightEye = eyes[0];
+        faceParts->rightEyeFound = true;
     }
     else
     {
         eyes.clear();
         TRACE_T("Detecting right eye with CASCADE_EYE_RIGHT_SPLITTED...");
-        cascades[CASCADE_EYE_RIGHT_SPLITTED].cascade.detectMultiScale(imageFace, eyes,
+        cascades[CASCADE_EYE_RIGHT_SPLITTED].cascade.detectMultiScale(image, eyes,
                                                         cascades[CASCADE_EYE_RIGHT_SPLITTED].properties.scaleFactor,
                                                         cascades[CASCADE_EYE_RIGHT_SPLITTED].properties.minNeighbors,
                                                         0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -334,16 +365,16 @@ FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFac
             TRACE_S_T("Right eye was successfully detected with CASCADE_EYE_RIGHT_SPLITTED");
             // [TBD] Left eye is the left one or the one that is to the left on the photo?
             TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
-            humanFace.rightEye = eyes[0];
-            rightEyeFound = true;
+            faceParts->rightEye = eyes[0];
+            faceParts->rightEyeFound = true;
         }
     }
 
-    if(rightEyeFound == false && leftEyeFound == false)
+    if(faceParts->rightEyeFound == false && faceParts->leftEyeFound == false)
     {
         TRACE_F_T("Eyes detection failed");
     }
-    else if(rightEyeFound == false || leftEyeFound == false)
+    else if(faceParts->rightEyeFound == false || faceParts->leftEyeFound == false)
     {
         TRACE_F_T("Only one eye detected");
     }
@@ -354,7 +385,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFac
 detect_nose:
     std::vector < cv::Rect > nose;
     TRACE_T("Detecting eyes with CASCADE_NOSE_MSC...");
-    cascades[CASCADE_NOSE_MSC].cascade.detectMultiScale(imageFace, nose,
+    cascades[CASCADE_NOSE_MSC].cascade.detectMultiScale(image, nose,
                                                     cascades[CASCADE_NOSE_MSC].properties.scaleFactor,
                                                     cascades[CASCADE_NOSE_MSC].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -364,8 +395,8 @@ detect_nose:
     if(nose.size() == 1)
     {
         TRACE_S_T("Nose was successfully detected with CASCADE_NOSE_MSC");
-        humanFace.nose = nose[0];
-        noseFound = true;
+        faceParts->nose = nose[0];
+        faceParts->noseFound = true;
         goto detect_mouth;
     }
     TRACE_T("Failed to find nose with CASCADE_NOSE_MSC");
@@ -373,7 +404,7 @@ detect_nose:
 detect_mouth:
     std::vector < cv::Rect > mouth;
     TRACE_T("Detecting eyes with CASCADE_NOSE_MSC...");
-    cascades[CASCADE_MOUTH_MSC].cascade.detectMultiScale(imageFace, mouth,
+    cascades[CASCADE_MOUTH_MSC].cascade.detectMultiScale(image, mouth,
                                                     cascades[CASCADE_MOUTH_MSC].properties.scaleFactor,
                                                     cascades[CASCADE_MOUTH_MSC].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -383,21 +414,45 @@ detect_mouth:
     if(mouth.size() == 1)
     {
         TRACE_S_T("Mouth was successfully detected with CASCADE_MOUTH_MSC");
-        humanFace.mouth = mouth[0];
-        mouthFound = true;
+        faceParts->mouth = mouth[0];
+        faceParts->mouthFound = true;
         goto detect_finish;
     }
     TRACE_T("Failed to find mouth with CASCADE_MOUTH_MSC");
     TRACE_F_T("Mouth detection failed");
 
 detect_finish:
-    TRACE_S_T("Detection finished");
+    TRACE_T("finished");
+
+    return FROK_RESULT_SUCCESS;
+}
+
+FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &processedImage, cv::Mat &alignedFaceImage)
+{
+    TRACE_T("started...");
+    FrokResult result;
+
+    // [TBD] Nikita resized image to image * 5 if width/height < 200. I do not.
+
+    cv::Mat imageFace(processedImage, faceCoords);
+    TRACE_T("Detection started");
+
+    HumanFace humanFace;
+
+    TRACE_T("Calling GetHumanFaceParts ...");
+    if(FROK_RESULT_SUCCESS != (result = GetHumanFaceParts(imageFace, &humanFace)))
+    {
+        TRACE_F_T("GetHumanFaceParts failed");
+        return result;
+    }
+
+    TRACE_S_T("GetHumanFaceParts succeed");
 
     double radiansToDegrees = 360 / (2 * M_PI);
     cv::Mat transMat(2, 3, CV_32FC1);
 
     TRACE_T("Aligning started");
-    if(leftEyeFound && rightEyeFound)
+    if(humanFace.leftEyeFound && humanFace.rightEyeFound)
     {
         TRACE_T("Aligning by left and right eyes");
 
@@ -408,7 +463,7 @@ detect_finish:
 
         try
         {
-            cv::Mat temporaryImageForAlign(targetImageKappa);
+            cv::Mat temporaryImageForAlign(processedImage);
 
             transMat = cv::getRotationMatrix2D(centerImage, aligningAngle, aligningScaleFactor);
             cv::warpAffine(temporaryImageForAlign, temporaryImageForAlign, transMat, cv::Size(temporaryImageForAlign.cols, temporaryImageForAlign.rows));
@@ -417,11 +472,10 @@ detect_finish:
         catch(...)
         {
             TRACE_F_T("Opencv image rotation failed");
-            result = FROK_RESULT_OPENCV_ERROR;
-            goto align_finish;
+            return FROK_RESULT_OPENCV_ERROR;
         }
     }
-    else if(noseFound && mouthFound)
+    else if(humanFace.noseFound && humanFace.mouthFound)
     {
         TRACE_T("aligning by mouth and nose");
 
@@ -433,15 +487,15 @@ detect_finish:
         // [TBD] Why 30?
         if (aligningAngle > 30.0)
         {
-            result = FROK_RESULT_NOT_A_FACE;
-            goto align_finish;
+            TRACE_F_T("Invalid aligningAngle detected. Rejecting image");
+            return FROK_RESULT_NOT_A_FACE;
         }
         if (aligningAngle > 0)          aligningAngle -= 90;
         else if (aligningAngle <= 0)     aligningAngle += 90;
 
         try
         {
-            cv::Mat temporaryImageForAlign(targetImageKappa);
+            cv::Mat temporaryImageForAlign(processedImage);
 
             transMat = cv::getRotationMatrix2D(centerImage, aligningAngle, aligningScaleFactor);
             cv::warpAffine(temporaryImageForAlign, temporaryImageForAlign, transMat, cv::Size(temporaryImageForAlign.cols, temporaryImageForAlign.rows));
@@ -450,23 +504,19 @@ detect_finish:
         catch(...)
         {
             TRACE_F_T("Opencv image rotation failed");
-            result = FROK_RESULT_OPENCV_ERROR;
-            goto align_finish;
+            return FROK_RESULT_OPENCV_ERROR;
         }
     }
     else
     {
         TRACE_F_T("Not enaugh information for aligning");
-        result = FROK_RESULT_NOT_A_FACE;
-        goto align_finish;
+        return FROK_RESULT_NOT_A_FACE;
     }
 
     TRACE_S_T("Aligning succeed");
 
-    result = FROK_RESULT_SUCCESS;
-align_finish:
     TRACE_T("finished");
-    return result;
+    return FROK_RESULT_SUCCESS;
 }
 
 FrokResult FaceDetector::RemoveDrowbackFrokImage(cv::Mat &image)
