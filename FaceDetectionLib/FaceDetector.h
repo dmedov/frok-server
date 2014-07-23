@@ -64,6 +64,8 @@ class FaceDetector
 private:
     std::map <EnumCascades, Cascade> cascades;
     cv::Mat         targetImageKappa;
+    cv::CLAHE *normalizerClahe;
+    double aligningScaleFactor;
 
 public:
     FaceDetector();
@@ -73,10 +75,11 @@ public:
     FrokResult SetTargetImage(cv::Mat &image);
     FrokResult GetFacesFromPhoto(std::vector< cv::Rect > &faces);
     FrokResult GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages);
+    FrokResult GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages);
 
-    FrokResult AlignFaceImage(cv::Mat &image);      // shall be private
 private:
-    FrokResult NormalizeFace(cv::Mat &normalizedFaceImage);
+    FrokResult AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFaceImage);
+    FrokResult NormalizeFace(cv::Rect &normalizedFaceImage);
     FrokResult RemoveDrowbackFrokImage(cv::Mat &image);
 
 };

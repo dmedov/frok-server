@@ -1,5 +1,7 @@
 #include "FaceDetector.h"
 
+#include <math.h>
+
 #define MODULE_NAME         "FACE_DETECTOR"
 
 FaceDetector::FaceDetector()
@@ -45,6 +47,10 @@ FaceDetector::FaceDetector()
     cascade.properties.minObjectSize = cvSize(-1, -1);
     cascades[CASCADE_MOUTH_MSC] = cascade;
     cascades[CASCADE_MOUTH_MSC].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_mouth.xml");
+
+    normalizerClahe = cv::createCLAHE(2, cv::Size(8, 8));
+
+    aligningScaleFactor = 1;
 
     TRACE("new FaceDetector");
 }
@@ -92,7 +98,7 @@ FrokResult FaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
     catch(...)
     {
         TRACE_F_T("detectMultiScale Failed");
-        return FROK_RESULT_CASCADE_ERROR;
+        return FROK_RESULT_NOT_A_FACE;
     }
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
@@ -115,27 +121,34 @@ FrokResult FaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std::vec
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceDetector::NormalizeFace(cv::Mat &normalizedFaceImage)
+FrokResult FaceDetector::NormalizeFace(cv::Rect &normalizedFaceImage)
 {
     TRACE_T("started...");
     FrokResult res;
-    if(FROK_RESULT_SUCCESS != (res = AlignFaceImage(normalizedFaceImage)))
+
+    //normalizerClahe->apply(normalizedFaceImage, normalizedFaceImage);
+    //cv::normalize()  cvNormalize(image, image, 10, 250, CV_MINMAX);
+
+
+    if(FROK_RESULT_SUCCESS != (res = AlignFaceImage(normalizedFaceImage, targetImageKappa)))
     {
         TRACE_F_T("RotateImage failed on result %x", res);
         return res;
     }
 
-    if(FROK_RESULT_SUCCESS != (res = RemoveDrowbackFrokImage(normalizedFaceImage)))
+    /*if(FROK_RESULT_SUCCESS != (res = RemoveDrowbackFrokImage(normalizedFaceImage)))
     {
         TRACE_F_T("RemoveDrowbackFrokImage failed on result %x", res);
         return res;
-    }
+    }*/
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceDetector::AlignFaceImage(cv::Mat &image)
+FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, cv::Mat &alignedFaceImage)
 {
+    TRACE_T("started...");
+    FrokResult result;
     // If no value specified for cascades - set default
     for(int i = CASCADE_EYES_BEGIN; i <= CASCADE_EYES_END; i++)
     {
@@ -143,41 +156,44 @@ FrokResult FaceDetector::AlignFaceImage(cv::Mat &image)
                 cascades[(EnumCascades)i].properties.minObjectSize.height == -1)
         {
             // TBD Resolve magic numbers problem
-            cascades[(EnumCascades)i].properties.minObjectSize = cvSize(image.cols / 6, image.rows / 7);
+            cascades[(EnumCascades)i].properties.minObjectSize = cvSize(faceCoords.width / 6, faceCoords.height / 7);
         }
         if(cascades[(EnumCascades)i].properties.maxObjectSize.width == -1 ||
                 cascades[(EnumCascades)i].properties.maxObjectSize.height == -1)
         {
-            cascades[(EnumCascades)i].properties.maxObjectSize = cvSize(image.cols / 3, image.rows / 4);
+            cascades[(EnumCascades)i].properties.maxObjectSize = cvSize(faceCoords.width / 3, faceCoords.height / 4);
         }
     }
 
     if(cascades[CASCADE_NOSE_MSC].properties.minObjectSize.width == -1 ||
             cascades[CASCADE_NOSE_MSC].properties.minObjectSize.height == -1)
     {
-        cascades[CASCADE_NOSE_MSC].properties.minObjectSize = cvSize(image.cols / 5, image.rows / 6);
+        cascades[CASCADE_NOSE_MSC].properties.minObjectSize = cvSize(faceCoords.width / 5, faceCoords.height / 6);
     }
 
     if(cascades[CASCADE_NOSE_MSC].properties.maxObjectSize.width == -1 ||
             cascades[CASCADE_NOSE_MSC].properties.maxObjectSize.height == -1)
     {
-        cascades[CASCADE_NOSE_MSC].properties.maxObjectSize = cvSize((int)(image.cols / 3.5), (int)(image.rows / 3.5));
+        cascades[CASCADE_NOSE_MSC].properties.maxObjectSize = cvSize((int)(faceCoords.width / 3.5), (int)(faceCoords.height / 3.5));
     }
 
     if(cascades[CASCADE_MOUTH_MSC].properties.minObjectSize.width == -1 ||
             cascades[CASCADE_MOUTH_MSC].properties.minObjectSize.height == -1)
     {
-        cascades[CASCADE_MOUTH_MSC].properties.minObjectSize = cvSize(image.cols / 5, image.rows / 6);
+        cascades[CASCADE_MOUTH_MSC].properties.minObjectSize = cvSize(faceCoords.width / 5, faceCoords.height / 6);
     }
 
     if(cascades[CASCADE_MOUTH_MSC].properties.maxObjectSize.width == -1 ||
             cascades[CASCADE_MOUTH_MSC].properties.maxObjectSize.height == -1)
     {
-        cascades[CASCADE_MOUTH_MSC].properties.maxObjectSize = cvSize(image.cols / 2, image.rows / 2);
+        cascades[CASCADE_MOUTH_MSC].properties.maxObjectSize = cvSize(faceCoords.width / 2, faceCoords.height / 2);
     }
     // End of setting defaults
 
     // [TBD] Nikita resized image to image * 5 if width/height < 200. I do not.
+
+    cv::Mat imageFace(targetImageKappa, faceCoords);
+    TRACE_T("Detection started");
 
     HumanFace humanFace;
     bool leftEyeFound = false;
@@ -188,7 +204,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Mat &image)
     // Try to detect eyes
     std::vector < cv::Rect > eyes;
     TRACE_T("Detecting eyes with CASCADE_EYE...");
-    cascades[CASCADE_EYE].cascade.detectMultiScale(image, eyes,
+    cascades[CASCADE_EYE].cascade.detectMultiScale(imageFace, eyes,
                                                     cascades[CASCADE_EYE].properties.scaleFactor,
                                                     cascades[CASCADE_EYE].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -219,7 +235,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Mat &image)
 
     eyes.clear();
     TRACE_T("Detecting eyes with CASCADE_EYE_WITH_GLASSES...");
-    cascades[CASCADE_EYE_WITH_GLASSES].cascade.detectMultiScale(image, eyes,
+    cascades[CASCADE_EYE_WITH_GLASSES].cascade.detectMultiScale(imageFace, eyes,
                                                     cascades[CASCADE_EYE_WITH_GLASSES].properties.scaleFactor,
                                                     cascades[CASCADE_EYE_WITH_GLASSES].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -250,7 +266,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Mat &image)
 
     eyes.clear();
     TRACE_T("Detecting left eye with CASCADE_EYE_LEFT...");
-    cascades[CASCADE_EYE_LEFT].cascade.detectMultiScale(image, eyes,
+    cascades[CASCADE_EYE_LEFT].cascade.detectMultiScale(imageFace, eyes,
                                                     cascades[CASCADE_EYE_LEFT].properties.scaleFactor,
                                                     cascades[CASCADE_EYE_LEFT].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -269,7 +285,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Mat &image)
     {
         eyes.clear();
         TRACE_T("Detecting left eye with CASCADE_EYE_LEFT_SPLITTED...");
-        cascades[CASCADE_EYE_LEFT_SPLITTED].cascade.detectMultiScale(image, eyes,
+        cascades[CASCADE_EYE_LEFT_SPLITTED].cascade.detectMultiScale(imageFace, eyes,
                                                         cascades[CASCADE_EYE_LEFT_SPLITTED].properties.scaleFactor,
                                                         cascades[CASCADE_EYE_LEFT_SPLITTED].properties.minNeighbors,
                                                         0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -288,7 +304,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Mat &image)
 
     eyes.clear();
     TRACE_T("Detecting right eye with CASCADE_EYE_RIGHT...");
-    cascades[CASCADE_EYE_RIGHT].cascade.detectMultiScale(image, eyes,
+    cascades[CASCADE_EYE_RIGHT].cascade.detectMultiScale(imageFace, eyes,
                                                     cascades[CASCADE_EYE_RIGHT].properties.scaleFactor,
                                                     cascades[CASCADE_EYE_RIGHT].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -307,7 +323,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Mat &image)
     {
         eyes.clear();
         TRACE_T("Detecting right eye with CASCADE_EYE_RIGHT_SPLITTED...");
-        cascades[CASCADE_EYE_RIGHT_SPLITTED].cascade.detectMultiScale(image, eyes,
+        cascades[CASCADE_EYE_RIGHT_SPLITTED].cascade.detectMultiScale(imageFace, eyes,
                                                         cascades[CASCADE_EYE_RIGHT_SPLITTED].properties.scaleFactor,
                                                         cascades[CASCADE_EYE_RIGHT_SPLITTED].properties.minNeighbors,
                                                         0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -338,7 +354,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Mat &image)
 detect_nose:
     std::vector < cv::Rect > nose;
     TRACE_T("Detecting eyes with CASCADE_NOSE_MSC...");
-    cascades[CASCADE_NOSE_MSC].cascade.detectMultiScale(image, nose,
+    cascades[CASCADE_NOSE_MSC].cascade.detectMultiScale(imageFace, nose,
                                                     cascades[CASCADE_NOSE_MSC].properties.scaleFactor,
                                                     cascades[CASCADE_NOSE_MSC].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -357,7 +373,7 @@ detect_nose:
 detect_mouth:
     std::vector < cv::Rect > mouth;
     TRACE_T("Detecting eyes with CASCADE_NOSE_MSC...");
-    cascades[CASCADE_MOUTH_MSC].cascade.detectMultiScale(image, mouth,
+    cascades[CASCADE_MOUTH_MSC].cascade.detectMultiScale(imageFace, mouth,
                                                     cascades[CASCADE_MOUTH_MSC].properties.scaleFactor,
                                                     cascades[CASCADE_MOUTH_MSC].properties.minNeighbors,
                                                     0 | CV_HAAR_DO_CANNY_PRUNING,  // This is marked as legacy
@@ -375,212 +391,82 @@ detect_mouth:
     TRACE_F_T("Mouth detection failed");
 
 detect_finish:
-
-    if(leftEyeFound) cv::imwrite("/home/zda/faces/LE.jpg", cv::Mat(image, humanFace.leftEye));
-    if(rightEyeFound) cv::imwrite("/home/zda/faces/RE.jpg", cv::Mat(image, humanFace.rightEye));
-    if(leftEyeFound) cv::imwrite("/home/zda/faces/nose.jpg", cv::Mat(image, humanFace.nose));
-    if(leftEyeFound) cv::imwrite("/home/zda/faces/mouth.jpg", cv::Mat(image, humanFace.mouth));
-
-
     TRACE_S_T("Detection finished");
-    /*
 
-    cscd->detectMultiScale((Mat)dst, objects,scale_factor, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, minSize, maxSize);
-    //objects = cvHaarDetectObjects(dst, cscd, strg, scale_factor, 3, 0 | CV_HAAR_DO_CANNY_PRUNING, minSize, maxSize);
+    double radiansToDegrees = 360 / (2 * M_PI);
+    cv::Mat transMat(2, 3, CV_32FC1);
 
-    for(vector<Rect>::iterator it = objects.begin(); it != objects.end(); ++it)
+    TRACE_T("Aligning started");
+    if(leftEyeFound && rightEyeFound)
     {
-        int x = cvRound(((Rect)(*it)).x) / k;
-        int y = cvRound(((Rect)(*it)).y) / k;
-        int w = cvRound(((Rect)(*it)).width) / k;
-        int h = cvRound(((Rect)(*it)).height) / k;
+        TRACE_T("Aligning by left and right eyes");
 
-        //CvPoint p1 = cvPoint(x + pointFace.x, y + pointFace.y), p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
-        ImageCoordinats pointKeyFace, facePointCoordinates;
+        CvPoint centerLeftEye = cvPoint(humanFace.leftEye.x + humanFace.leftEye.width / 2, humanFace.leftEye.y + humanFace.leftEye.height / 2);
+        CvPoint centerRightEye = cvPoint(humanFace.rightEye.x + humanFace.rightEye.width / 2, humanFace.rightEye.y + humanFace.rightEye.height / 2);
+        cv::Point2f centerImage(faceCoords.x + faceCoords.width / 2, faceCoords.y + faceCoords.height / 2);
+        double aligningAngle = atan(((double)centerRightEye.y - centerLeftEye.y) / ((double)centerRightEye.x - centerLeftEye.x)) * radiansToDegrees;
 
-        pointKeyFace.p1 = cvPoint(x + pointFace.x, y + pointFace.y);
-        pointKeyFace.p2 = cvPoint(x + w + pointFace.x, y + h + pointFace.y);
-        facePointCoordinates.p1 = pointFace;
-        facePointCoordinates.p2 = cvPoint(pointFace.x + width / k, pointFace.y + height / k);
-
-
-        writeFacePoints(pointKeyFace, facePointCoordinates, type);
-    }
-
-    cvReleaseImage(&dst);
-    objects.clear();
-
-    // NORMALIZE
-
-    Ptr<CLAHE> clahe = createCLAHE(2, Size(8, 8));
-    clahe->apply(Mat(face_img), Mat(face_img));
-    cvNormalize(face_img, face_img, 10, 250, CV_MINMAX);
-
-
-    // DRAW EVIDENCE
-
-    const CvPoint p1 = pointFace.p1;
-    const CvPoint p2 = pointFace.p2;
-
-    int count = 0;
-    for (int i = 0; i < 8; i++)
-    {
-        if (facePoints[i].x >= 0 && facePoints[i].y >= 0)
+        try
         {
-            count++;
+            cv::Mat temporaryImageForAlign(targetImageKappa);
+
+            transMat = cv::getRotationMatrix2D(centerImage, aligningAngle, aligningScaleFactor);
+            cv::warpAffine(temporaryImageForAlign, temporaryImageForAlign, transMat, cv::Size(temporaryImageForAlign.cols, temporaryImageForAlign.rows));
+            alignedFaceImage = cv::Mat(temporaryImageForAlign, faceCoords);
+        }
+        catch(...)
+        {
+            TRACE_F_T("Opencv image rotation failed");
+            result = FROK_RESULT_OPENCV_ERROR;
+            goto align_finish;
         }
     }
-
-    if (count >= 4){        //[TBD] Why 4?
-        return true;
-    }
-    return false;
-
-    // DEFINE ROTATE
-
-    double rad = 57.295779513;
-    CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
-
-    if ((facePoints[0].x > 0 && facePoints[0].y > 0) && (facePoints[1].x > 0 && facePoints[1].y > 0))
+    else if(noseFound && mouthFound)
     {
-        CvPoint pa = cvPoint((facePoints[0].x + facePoints[4].x) / 2, (facePoints[0].y + facePoints[4].y) / 2);
-        CvPoint pb = cvPoint((facePoints[1].x + facePoints[5].x) / 2, (facePoints[1].y + facePoints[5].y) / 2);
+        TRACE_T("aligning by mouth and nose");
 
-        double x = (pb.x - pa.x);
-        double y = (pb.y - pa.y);
-        CvPoint2D32f center;
+        CvPoint centerNose = cvPoint(humanFace.nose.x + humanFace.nose.width / 2, humanFace.nose.y + humanFace.nose.height / 2);
+        CvPoint centerMouth = cvPoint(humanFace.mouth.x + humanFace.mouth.width / 2, humanFace.mouth.y + humanFace.mouth.height / 2);
+        cv::Point2f centerImage(faceCoords.x + faceCoords.width / 2, faceCoords.y + faceCoords.height / 2);
+        double aligningAngle = atan(((double)centerMouth.y - centerNose.y) / ((double)centerMouth.x - centerNose.x)) * radiansToDegrees;
 
-        center = cvPoint2D32f(face_img->width / 2, face_img->height / 2);
-
-        double angle = atan(y / x)*rad;
-
-        cv2DRotationMatrix(center, angle, 1, transmat);
-        cvWarpAffine(face_img, face_img, transmat);
-        cvReleaseMat(&transmat);
-        return 0;
-    }
-    else if ((facePoints[2].x > 0 && facePoints[2].y > 0) && (facePoints[3].x > 0 && facePoints[3].y > 0))
-    {
-        CvPoint pa = cvPoint((facePoints[2].x + facePoints[6].x) / 2, (facePoints[2].y + facePoints[6].y) / 2);
-        CvPoint pb = cvPoint((facePoints[3].x + facePoints[7].x) / 2, (facePoints[3].y + facePoints[7].y) / 2);
-
-        CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
-        double x = (pb.x - pa.x);
-        double y = (pb.y - pa.y);
-        CvPoint2D32f center;
-
-        center = cvPoint2D32f(face_img->width / 2, face_img->height / 2);
-        double angle = 0;
-        angle = atan(y / x)*rad;
-
-        if (abs(angle) > 30){
-            cvReleaseMat(&transmat);
-            return -1;
+        // [TBD] Why 30?
+        if (aligningAngle > 30.0)
+        {
+            result = FROK_RESULT_NOT_A_FACE;
+            goto align_finish;
         }
-        if (angle > 0)  angle -= 90;
-        else if (angle < 0) angle += 90;
-        else angle = 90;
+        if (aligningAngle > 0)          aligningAngle -= 90;
+        else if (aligningAngle <= 0)     aligningAngle += 90;
 
-        cv2DRotationMatrix(center, angle, 1, transmat);
-        cvWarpAffine(face_img, face_img, transmat);
-        cvReleaseMat(&transmat);
-        return 0;
-    }
-    return -1;
+        try
+        {
+            cv::Mat temporaryImageForAlign(targetImageKappa);
 
-    // IMPOSE MASK
-
-    int x, y, width, height, width_roi, height_roi;
-
-    width = face_img->width;
-    height = face_img->height;
-
-    x = (int)(width / 5);
-    y = (int)(height / 4);
-    width_roi = width - x * 2;
-    height_roi = height;
-
-    IplImage *img = cvCreateImage(cvSize(width - x * 2, height - y), face_img->depth, face_img->nChannels);
-
-    cvSetImageROI(face_img, cvRect(x, y, width_roi, height_roi));
-    cvCopy(face_img, img, NULL);
-    cvResetImageROI(face_img);
-
-    return img;
-
-    //MAIN
-
-    for (int j = 0; j < 8; j++)
-        facePoints[j] = cvPoint(-1, -1);
-
-    allKeysFaceDetection(points.p1);
-    normalizateHistFace();
-
-    if (!drawEvidence(points)){
-        return false;
-    }
-    if (defineRotate() != 0){
-        return false;
-    }
-
-    face_img = imposeMask(points.p1);
-    IplImage *temporary = new IplImage(eigenDetector->MaskFace(face_img));
-    face_img
-
-    /*double rad = 57.295779513;
-   CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
-
-    if ((facePoints[0].x > 0 && facePoints[0].y > 0) && (facePoints[1].x > 0 && facePoints[1].y > 0))
-    {
-        int w = face_img->width;
-        int h = face_img->height;
-
-        CvPoint pa = cvPoint((facePoints[0].x + facePoints[4].x) / 2, (facePoints[0].y + facePoints[4].y) / 2);
-        CvPoint pb = cvPoint((facePoints[1].x + facePoints[5].x) / 2, (facePoints[1].y + facePoints[5].y) / 2);
-
-        double x = (pb.x - pa.x);
-        double y = (pb.y - pa.y);
-        CvPoint2D32f center;
-
-        center = cvPoint2D32f(face_img->width / 2, face_img->height / 2);
-
-        double angle = atan(y / x)*rad;
-
-        cv2DRotationMatrix(center, angle, 1, transmat);
-        cvWarpAffine(face_img, face_img, transmat);
-        cvReleaseMat(&transmat);
-        return 0;
-    }
-    else if ((facePoints[2].x > 0 && facePoints[2].y > 0) && (facePoints[3].x > 0 && facePoints[3].y > 0)){
-
-        int w = face_img->width;
-        int h = face_img->height;
-
-        CvPoint pa = cvPoint((facePoints[2].x + facePoints[6].x) / 2, (facePoints[2].y + facePoints[6].y) / 2);
-        CvPoint pb = cvPoint((facePoints[3].x + facePoints[7].x) / 2, (facePoints[3].y + facePoints[7].y) / 2);
-
-        CvMat *transmat = cvCreateMat(2, 3, CV_32FC1);
-        double x = (pb.x - pa.x);
-        double y = (pb.y - pa.y);
-        CvPoint2D32f center;
-
-        center = cvPoint2D32f(face_img->width / 2, face_img->height / 2);
-        double angle = 0;
-        angle = atan(y / x)*rad;
-
-        if (abs(angle) > 30){
-            cvReleaseMat(&transmat);
-            return -1;
+            transMat = cv::getRotationMatrix2D(centerImage, aligningAngle, aligningScaleFactor);
+            cv::warpAffine(temporaryImageForAlign, temporaryImageForAlign, transMat, cv::Size(temporaryImageForAlign.cols, temporaryImageForAlign.rows));
+            alignedFaceImage = cv::Mat(temporaryImageForAlign, faceCoords);
         }
-        if (angle > 0)  angle -= 90;
-        else if (angle < 0) angle += 90;
-        else angle = 90;
+        catch(...)
+        {
+            TRACE_F_T("Opencv image rotation failed");
+            result = FROK_RESULT_OPENCV_ERROR;
+            goto align_finish;
+        }
+    }
+    else
+    {
+        TRACE_F_T("Not enaugh information for aligning");
+        result = FROK_RESULT_NOT_A_FACE;
+        goto align_finish;
+    }
 
-        cv2DRotationMatrix(center, angle, 1, transmat);
-        cvWarpAffine(face_img, face_img, transmat);
-        cvReleaseMat(&transmat);
-        return 0;
-    }*/
+    TRACE_S_T("Aligning succeed");
+
+    result = FROK_RESULT_SUCCESS;
+align_finish:
+    TRACE_T("finished");
+    return result;
 }
 
 FrokResult FaceDetector::RemoveDrowbackFrokImage(cv::Mat &image)

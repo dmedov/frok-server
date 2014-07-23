@@ -19,16 +19,16 @@ int main(void)
     FaceDetector detector;
     detector.SetTargetImage("/home/zda/faces/1.jpg");
     std::vector<cv::Rect> faces;
-    std::vector<cv::Mat> images;
+    //std::vector<cv::Mat> images;
     detector.GetFacesFromPhoto(faces);
-    detector.GetFaceImages(faces, images);
+    //detector.GetFaceImages(faces, images);
 
 
-    for(std::vector<cv::Mat>::iterator it = images.begin(); it != images.end(); ++it)
+    for(std::vector<cv::Rect>::iterator it = faces.begin(); it != faces.end(); ++it)
     {
-        cv::Mat face = (cv::Mat)*it;
-        detector.AlignFaceImage(face);
-        cv::imwrite("/home/zda/faces/face.jpg", (cv::Mat)*it);
+        cv::Mat face;
+        detector.AlignFaceImage(*it, face);
+        cv::imwrite("/home/zda/faces/face.jpg", face);
         //cv::imshow("image",);
     }
     getchar();
