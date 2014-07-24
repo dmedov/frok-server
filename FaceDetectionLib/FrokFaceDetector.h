@@ -1,5 +1,5 @@
-#ifndef FACEDETECTOR_H
-#define FACEDETECTOR_H
+#ifndef FrokFaceDetector_H
+#define FrokFaceDetector_H
 // FaceServer defaults
 #define MAX_SOCKET_BUFF_SIZE            (163840)
 
@@ -69,7 +69,7 @@ typedef struct HumanFace
     bool mouthFound;
 }HumanFace;
 
-class FaceDetector
+class FrokFaceDetector
 {
 private:
     std::map <EnumCascades, Cascade> cascades;
@@ -78,8 +78,8 @@ private:
     double aligningScaleFactor;
 
 public:
-    FaceDetector();
-    ~FaceDetector();
+    FrokFaceDetector();
+    ~FrokFaceDetector();
     FrokResult SetCascadeParameters(EnumCascades cascade, CascadeProperties params);
     FrokResult SetDefaultCascadeParameters(EnumCascades cascade, cv::Mat &imageWithObjects);
     FrokResult SetTargetImage(const char *imagePath);

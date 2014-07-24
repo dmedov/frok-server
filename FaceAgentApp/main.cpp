@@ -2,7 +2,7 @@
 
 #include "FaceAgent.h"
 #include "activities.h"
-#include "FaceDetector.h"
+#include "FrokFaceDetector.h"
 
 void usage()
 {
@@ -16,7 +16,7 @@ int main(void)
     {
         return -1;
     }
-    FaceDetector detector;
+    FrokFaceDetector detector;
     detector.SetTargetImage("/home/zda/faces/1.jpg");
     std::vector<cv::Rect> faces;
     std::vector<cv::Mat> images;

@@ -24,8 +24,8 @@ INCLUDEPATH += ../FaceCommonLib/
 
 HEADERS +=                  \
     EigenDetector.h         \
-    FaceUserModel.h         \
-    FaceRecognizer.h
+    FrokFaceRecognizer.h \
+    FaceUserModel.h
 
 SOURCES +=                  \
     EigenDetector.cpp       \

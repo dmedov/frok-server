@@ -1,11 +1,11 @@
-#ifndef FACERECOGNIZER_H
-#define FACERECOGNIZER_H
+#ifndef FrokFaceRecognizer_H
+#define FrokFaceRecognizer_H
 
 // include dependencies
 #include "FaceUserModel.h"
 #include "faceCommonLib.h"
 
-class FaceRecognizer
+class FrokFaceRecognizer
 {
 public:
 private:
@@ -18,4 +18,4 @@ public:
 private:
 };
 
-#endif // FACERECOGNIZER_H
+#endif // FrokFaceRecognizer_H

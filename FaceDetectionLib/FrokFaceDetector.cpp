@@ -1,66 +1,82 @@
-#include "FaceDetector.h"
+#include "FrokFaceDetector.h"
 
 #include <math.h>
 
 #define MODULE_NAME         "FACE_DETECTOR"
 
-FaceDetector::FaceDetector()
+FrokFaceDetector::FrokFaceDetector()
 {
     StructCascade cascade;
 // Set Face cascade defaults
-    cascade.properties.maxObjectSize = cvSize(-1, -1);
-    cascade.properties.minObjectSize = cvSize(40, 50);
-    cascade.properties.minNeighbors = 3;
-    cascade.properties.scaleFactor = 1.1;
-    cascades[CASCADE_FACE] = cascade;
-    cascades[CASCADE_FACE].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml");
-
-// Set Eyes cascade defaults
-    cascade.properties.scaleFactor = 1.01;
-    cascade.properties.minNeighbors = 3;
-    cascade.properties.maxObjectSize = cvSize(-1, -1);
-    cascade.properties.minObjectSize = cvSize(-1, -1);
-
-    for(unsigned i = CASCADE_EYES_BEGIN; i <= CASCADE_EYES_END; i++)
+    try
     {
-        cascades[(EnumCascades)i] = cascade;
+        cascade.properties.maxObjectSize = cvSize(-1, -1);
+        cascade.properties.minObjectSize = cvSize(40, 50);
+        cascade.properties.minNeighbors = 3;
+        cascade.properties.scaleFactor = 1.1;
+        cascades[CASCADE_FACE] = cascade;
+        cascades[CASCADE_FACE].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml");
+
+    // Set Eyes cascade defaults
+        cascade.properties.scaleFactor = 1.01;
+        cascade.properties.minNeighbors = 3;
+        cascade.properties.maxObjectSize = cvSize(-1, -1);
+        cascade.properties.minObjectSize = cvSize(-1, -1);
+
+        for(unsigned i = CASCADE_EYES_BEGIN; i <= CASCADE_EYES_END; i++)
+        {
+            cascades[(EnumCascades)i] = cascade;
+        }
+        cascades[CASCADE_EYE].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye.xml");
+        cascades[CASCADE_EYE_WITH_GLASSES].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye_tree_eyeglasses.xml");
+        cascades[CASCADE_EYE_RIGHT].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_righteye.xml");
+        cascades[CASCADE_EYE_LEFT].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_lefteye.xml");
+        cascades[CASCADE_EYE_RIGHT_SPLITTED].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_righteye_2splits.xml");
+        cascades[CASCADE_EYE_LEFT_SPLITTED].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_lefteye_2splits.xml");
+
+    // Set Nose cascade defaults
+        cascade.properties.scaleFactor = 1.2;
+        cascade.properties.minNeighbors = 3;
+        cascade.properties.maxObjectSize = cvSize(-1, -1);
+        cascade.properties.minObjectSize = cvSize(-1, -1);
+        cascades[CASCADE_NOSE_MSC] = cascade;
+        cascades[CASCADE_NOSE_MSC].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_nose.xml");
+
+    // Set Mouth cascade defaults
+        cascade.properties.scaleFactor = 1.4;
+        cascade.properties.minNeighbors = 3;
+        cascade.properties.maxObjectSize = cvSize(-1, -1);
+        cascade.properties.minObjectSize = cvSize(-1, -1);
+        cascades[CASCADE_MOUTH_MSC] = cascade;
+        cascades[CASCADE_MOUTH_MSC].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_mouth.xml");
     }
-    cascades[CASCADE_EYE].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye.xml");
-    cascades[CASCADE_EYE_WITH_GLASSES].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_eye_tree_eyeglasses.xml");
-    cascades[CASCADE_EYE_RIGHT].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_righteye.xml");
-    cascades[CASCADE_EYE_LEFT].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_lefteye.xml");
-    cascades[CASCADE_EYE_RIGHT_SPLITTED].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_righteye_2splits.xml");
-    cascades[CASCADE_EYE_LEFT_SPLITTED].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_lefteye_2splits.xml");
+    catch(...)
+    {
+        TRACE_F("Failed to load some of cascades");
+        throw FROK_RESULT_CASCADE_ERROR;
+    }
 
-// Set Nose cascade defaults
-    cascade.properties.scaleFactor = 1.2;
-    cascade.properties.minNeighbors = 3;
-    cascade.properties.maxObjectSize = cvSize(-1, -1);
-    cascade.properties.minObjectSize = cvSize(-1, -1);
-    cascades[CASCADE_NOSE_MSC] = cascade;
-    cascades[CASCADE_NOSE_MSC].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_nose.xml");
-
-// Set Mouth cascade defaults
-    cascade.properties.scaleFactor = 1.4;
-    cascade.properties.minNeighbors = 3;
-    cascade.properties.maxObjectSize = cvSize(-1, -1);
-    cascade.properties.minObjectSize = cvSize(-1, -1);
-    cascades[CASCADE_MOUTH_MSC] = cascade;
-    cascades[CASCADE_MOUTH_MSC].cascade.load("/opt/opencv-2.4.9/static/share/OpenCV/haarcascades/haarcascade_mcs_mouth.xml");
-
-    normalizerClahe = cv::createCLAHE(2, cv::Size(8, 8));
+    try
+    {
+        normalizerClahe = cv::createCLAHE(2, cv::Size(8, 8));
+    }
+    catch(...)
+    {
+        TRACE_F("Opencv failed to create CLAHE normalizer");
+        throw FROK_RESULT_OPENCV_ERROR;
+    }
 
     aligningScaleFactor = 1;
 
-    TRACE("new FaceDetector");
+    TRACE("new FrokFaceDetector");
 }
 
-FaceDetector::~FaceDetector()
+FrokFaceDetector::~FrokFaceDetector()
 {
-    TRACE("~FaceDetector");
+    TRACE("~FrokFaceDetector");
 }
 
-FrokResult FaceDetector::SetCascadeParameters(EnumCascades cascade, CascadeProperties params)
+FrokResult FrokFaceDetector::SetCascadeParameters(EnumCascades cascade, CascadeProperties params)
 {
     if(cascades.find(cascade) == cascades.end())
     {
@@ -71,7 +87,7 @@ FrokResult FaceDetector::SetCascadeParameters(EnumCascades cascade, CascadePrope
     cascades[cascade].properties = params;
     cascades[cascade].nonDefaultParameters = true;
 }
-FrokResult FaceDetector::SetDefaultCascadeParameters(EnumCascades cascade, cv::Mat &imageWithObjects)
+FrokResult FrokFaceDetector::SetDefaultCascadeParameters(EnumCascades cascade, cv::Mat &imageWithObjects)
 {
     switch(cascade)
     {
@@ -114,7 +130,7 @@ FrokResult FaceDetector::SetDefaultCascadeParameters(EnumCascades cascade, cv::M
     cascades[cascade].nonDefaultParameters = false;
     return FROK_RESULT_SUCCESS;
 }
-FrokResult FaceDetector::SetTargetImage(const char *imagePath)
+FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath)
 {
     TRACE_T("started...");
     targetImageKappa = cv::imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE);
@@ -128,7 +144,7 @@ FrokResult FaceDetector::SetTargetImage(const char *imagePath)
     TRACE_T("finished");
 }
 
-FrokResult FaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
+FrokResult FrokFaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
 {
     TRACE_T("started...");
     try
@@ -146,7 +162,7 @@ FrokResult FaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
-FrokResult FaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
+FrokResult FrokFaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
 {
     TRACE_T("started...");
 
@@ -165,7 +181,7 @@ FrokResult FaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std::vec
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
+FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
 {
     TRACE_T("started...");
 
@@ -208,7 +224,7 @@ FrokResult FaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &coords
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *faceParts)
+FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *faceParts)
 {
     TRACE_T("started");
 
@@ -427,7 +443,7 @@ detect_finish:
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &processedImage, cv::Mat &alignedFaceImage)
+FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &processedImage, cv::Mat &alignedFaceImage)
 {
     TRACE_T("started...");
     FrokResult result;
@@ -452,6 +468,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &proc
     cv::Mat transMat(2, 3, CV_32FC1);
 
     TRACE_T("Aligning started");
+    // [TBD] aligning by one eye?
     if(humanFace.leftEyeFound && humanFace.rightEyeFound)
     {
         TRACE_T("Aligning by left and right eyes");
@@ -519,7 +536,7 @@ FrokResult FaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &proc
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceDetector::RemoveDrowbackFrokImage(cv::Mat &image)
+FrokResult FrokFaceDetector::RemoveDrowbackFrokImage(cv::Mat &image)
 {
     TRACE_T("started");
     try

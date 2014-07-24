@@ -25,6 +25,7 @@ FaceServer::FaceServer(std::vector<AgentInfo*> &agentsInfo, unsigned short local
     localPortNumber = localPort;
 
     pthread_mutexattr_t mAttr;
+    pthread_mutexattr_init(&mAttr);
     pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
     pthread_mutex_init(&faceServer_cs, &mAttr);
     pthread_mutex_init(&faceServer_trace_cs, &mAttr);

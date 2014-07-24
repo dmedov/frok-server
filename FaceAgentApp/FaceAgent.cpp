@@ -23,6 +23,7 @@ FaceAgent::FaceAgent(unsigned short localPort, const char *photoBasePath, const 
     strcpy(this->photoBasePath, photoBasePath);
 
     pthread_mutexattr_t mAttr;
+    pthread_mutexattr_init(&mAttr);
     pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
     pthread_mutex_init(&faceAgent_trace_cs, &mAttr);
     pthread_mutex_init(&faceAgent_cs, &mAttr);
