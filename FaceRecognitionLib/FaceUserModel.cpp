@@ -3,6 +3,10 @@
 
 #define MODULE_NAME         "FACE_MODEL"
 
+FaceUserModel::FaceUserModel()
+{}
+FaceUserModel::~FaceUserModel()
+{}
 FaceUserModel::FaceUserModel(std::string userId, EnumFaceRecognizer recognizer)
 {\
     this->userId = userId;
@@ -240,6 +244,34 @@ FrokResult FaceUserModel::SaveUserModel(const char *userPath)
         return FROK_RESULT_OPENCV_ERROR;
     }
     TRACE_S_T("Saving succeed");
+
+    TRACE_T("finished");
+    return FROK_RESULT_SUCCESS;
+}
+
+FrokResult FaceUserModel::GetPredictedFace(cv::Mat &targetFace, cv::Mat &predictedFace)
+{
+    TRACE_T("started");
+    try
+    {
+        // Get some required data from the FaceRecognizer model.
+        cv::Mat eigenvectors = model->get<cv::Mat>("eigenvectors");
+        cv::Mat averageFaceRow = model->get<cv::Mat>("mean");
+        // Project the input image onto the eigenspace.
+        cv::Mat projection = subspaceProject(eigenvectors, averageFaceRow, targetFace.reshape(1, 1));
+        // Generate the reconstructed face back from the eigenspace.
+        cv::Mat reconstructionRow = subspaceReconstruct(eigenvectors, averageFaceRow, projection);
+        // Make it a rectangular shaped image instead of a single row.
+        cv::Mat reconstructionMat = reconstructionRow.reshape(1, targetFace.rows);
+        // Convert the floating-point pixels to regular 8-bit uchar.
+        predictedFace = cv::Mat(reconstructionMat.size(), CV_8U);
+        reconstructionMat.convertTo(predictedFace, CV_8U);
+    }
+    catch(...)
+    {
+        TRACE_F_T("Opencv failed to get predicted face");
+        return FROK_RESULT_OPENCV_ERROR;
+    }
 
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;

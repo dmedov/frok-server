@@ -28,8 +28,10 @@ private:
     std::vector<cv::Mat>        userKappaFaces;
     std::vector<std::string>    labels;
 public:
+    FaceUserModel();
     FaceUserModel(std::string userId, EnumFaceRecognizer recognizer);
     ~FaceUserModel();
+    FrokResult GetPredictedFace(cv::Mat &targetFace, cv::Mat &predictedFace);
     FrokResult GenerateUserModel(const char *kappaFacesPath);
     FrokResult GenerateUserModel(std::vector<cv::Mat> kappaFaces);
     FrokResult AddFaceToModel(cv::Mat kappaFace);

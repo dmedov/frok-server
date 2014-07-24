@@ -29,5 +29,6 @@ HEADERS +=                  \
 
 SOURCES +=                  \
     EigenDetector.cpp       \
-    FaceUserModel.cpp
+    FaceUserModel.cpp \
+    FrokFaceRecognizer.cpp
 
