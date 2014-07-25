@@ -6,6 +6,20 @@ FrokFaceRecognizer::FrokFaceRecognizer()
 {
     // Set defaults
     maxHammingDistance = 18;
+    TRACE("new FrokFaceRecognizer");
+}
+
+FrokFaceRecognizer::~FrokFaceRecognizer()
+{
+    TRACE("~FrokFaceRecognizer");
+}
+
+FrokResult FrokFaceRecognizer::AddFrokUserModel(std::string userId, FaceUserModel &model)
+{
+    TRACE_T("started");
+    models[userId] = model;
+    TRACE_T("finished");
+    return FROK_RESULT_SUCCESS;
 }
 
 double FrokFaceRecognizer::GetSimilarity_FirstMethod(const cv::Mat firstImage, const cv::Mat secondImage)
@@ -69,13 +83,15 @@ double FrokFaceRecognizer::GetSimilarity_SecondMethod(const cv::Mat firstImage, 
 
 double FrokFaceRecognizer::GetSimilarity_ThirdMethod(const cv::Mat &firstImage, const cv::Mat &secondImage)
 {
+    TRACE_T("started");
     // Calculate the L2 relative error between the 2 images.
     double errorL2 = cv::norm(firstImage, secondImage, CV_L2);
     // Convert to a reasonable scale, since L2 error is summed across all pixels of the image.
+    TRACE_T("finished");
     return errorL2 / (firstImage.rows * firstImage.cols);
 }
 
-FrokResult FrokFaceRecognizer::SetUserIdsVector(std::vector<std::string> usedUserIds)
+FrokResult FrokFaceRecognizer::SetUserIdsVector(std::vector<std::string> &usedUserIds)
 {
     TRACE_T("started");
     if(models.empty())

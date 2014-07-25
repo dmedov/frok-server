@@ -18,8 +18,8 @@ private:
 public:
     FrokFaceRecognizer();
     ~FrokFaceRecognizer();
-    FrokResult SetUserIdsVector(std::vector<std::string> usedUserIds);
-
+    FrokResult SetUserIdsVector(std::vector<std::string> &usedUserIds);
+    FrokResult AddFrokUserModel(std::string userId, FaceUserModel &model);
     FrokResult GetSimilarityOfFaceWithModels(cv::Mat &targetFace, std::map<std::string, double> &similarities);
 private:
     double GetSimilarity_FirstMethod(const cv::Mat firstImage, const cv::Mat secondImage);

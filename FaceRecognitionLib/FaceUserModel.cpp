@@ -3,10 +3,8 @@
 
 #define MODULE_NAME         "FACE_MODEL"
 
-FaceUserModel::FaceUserModel()
-{}
-FaceUserModel::~FaceUserModel()
-{}
+FaceUserModel::FaceUserModel() {}
+FaceUserModel::~FaceUserModel() {}
 FaceUserModel::FaceUserModel(std::string userId, EnumFaceRecognizer recognizer)
 {\
     this->userId = userId;
@@ -66,7 +64,7 @@ FrokResult FaceUserModel::GenerateUserModel(const char *kappaFacesPath)
                 TRACE_F_T("Failed to load image %s", imageName.c_str());
                 continue;
             }
-            labels.push_back(userId);
+            labels.push_back(0);
             userKappaFaces.push_back(newFace);
         }
 
@@ -88,7 +86,7 @@ FrokResult FaceUserModel::GenerateUserModel(const char *kappaFacesPath)
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
-FrokResult FaceUserModel::GenerateUserModel(std::vector<cv::Mat> kappaFaces)
+FrokResult FaceUserModel::GenerateUserModel(std::vector<cv::Mat> &kappaFaces)
 {
     TRACE_T("started");
     if(kappaFaces.empty())
@@ -103,7 +101,7 @@ FrokResult FaceUserModel::GenerateUserModel(std::vector<cv::Mat> kappaFaces)
 
     for(unsigned i = 0; i < kappaFaces.size(); i++)
     {
-        labels.push_back(userId);
+        labels.push_back(0);
     }
 
     TRACE_T("Model training started");
@@ -121,14 +119,14 @@ FrokResult FaceUserModel::GenerateUserModel(std::vector<cv::Mat> kappaFaces)
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceUserModel::AddFaceToModel(cv::Mat kappaFace)
+FrokResult FaceUserModel::AddFaceToModel(cv::Mat &kappaFace)
 {
     TRACE_T("started");
     switch(modelType)
     {
     case RECOGNIZER_EIGENFACES:
     {
-        labels.push_back(userId);
+        labels.push_back(0);
         userKappaFaces.push_back(kappaFace);
         TRACE_T("Updating model started");
         try
@@ -254,13 +252,15 @@ FrokResult FaceUserModel::GetPredictedFace(cv::Mat &targetFace, cv::Mat &predict
     TRACE_T("started");
     try
     {
+        cv::Mat tempTargetFace = targetFace;
         // Get some required data from the FaceRecognizer model.
         cv::Mat eigenvectors = model->get<cv::Mat>("eigenvectors");
         cv::Mat averageFaceRow = model->get<cv::Mat>("mean");
         // Project the input image onto the eigenspace.
-        cv::Mat projection = subspaceProject(eigenvectors, averageFaceRow, targetFace.reshape(1, 1));
+        //cv::Mat projection = cv::subspaceProject(eigenvectors, averageFaceRow, targetFace.reshape(1, 1));
+        cv::Mat projection = cv::subspaceProject(eigenvectors, averageFaceRow, tempTargetFace.reshape(1, 1));
         // Generate the reconstructed face back from the eigenspace.
-        cv::Mat reconstructionRow = subspaceReconstruct(eigenvectors, averageFaceRow, projection);
+        cv::Mat reconstructionRow = cv::subspaceReconstruct(eigenvectors, averageFaceRow, projection);
         // Make it a rectangular shaped image instead of a single row.
         cv::Mat reconstructionMat = reconstructionRow.reshape(1, targetFace.rows);
         // Convert the floating-point pixels to regular 8-bit uchar.

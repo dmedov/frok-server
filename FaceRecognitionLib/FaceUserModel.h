@@ -26,15 +26,15 @@ private:
     std::string                 userId;
     // [TBD] needed for Eigenfaces AddFaceToModel function
     std::vector<cv::Mat>        userKappaFaces;
-    std::vector<std::string>    labels;
+    std::vector<int>    labels;
 public:
     FaceUserModel();
     FaceUserModel(std::string userId, EnumFaceRecognizer recognizer);
     ~FaceUserModel();
     FrokResult GetPredictedFace(cv::Mat &targetFace, cv::Mat &predictedFace);
     FrokResult GenerateUserModel(const char *kappaFacesPath);
-    FrokResult GenerateUserModel(std::vector<cv::Mat> kappaFaces);
-    FrokResult AddFaceToModel(cv::Mat kappaFace);
+    FrokResult GenerateUserModel(std::vector<cv::Mat> &kappaFaces);
+    FrokResult AddFaceToModel(cv::Mat &kappaFace);
     FrokResult LoadUserModel(const char *userPath);
     FrokResult SaveUserModel(const char *userPath);
 };
