@@ -20,24 +20,34 @@ int main(void)
     FrokFaceRecognizer recognizer;
     FrokFaceDetector detector;
     FaceUserModel model((std::string)"1", RECOGNIZER_EIGENFACES);
-    cv::Mat targetForRecognize = cv::imread("/home/zda/faces/1.jpg", cv::IMREAD_GRAYSCALE);
-    detector.SetTargetImage("/home/zda/faces/1.jpg");
+
     std::vector<cv::Rect> faces;
     std::vector<cv::Mat> images;
+
+// Train Base
+    detector.SetTargetImage("/home/zda/faces/1/photos/1.jpg");
+    detector.GetFacesFromPhoto(faces);
+    detector.GetNormalizedFaceImages(faces, images);
+
+    detector.SetTargetImage("/home/zda/faces/1/photos/2.jpg");
     detector.GetFacesFromPhoto(faces);
     detector.GetNormalizedFaceImages(faces, images);
 
     model.GenerateUserModel(images);
-
     recognizer.AddFrokUserModel((std::string)"1", model);
+// Train Base finished
+
+// Get recigized face
+    detector.SetTargetImage("/home/zda/faces/1/photos/3.jpg");
+    detector.GetFacesFromPhoto(faces);
+    detector.GetNormalizedFaceImages(faces, images);
+
+// Recognize
     std::vector<std::string> ids;
     ids.push_back("1");
     recognizer.SetUserIdsVector(ids);
-
     std::map<std::string, double> similarities;
-
-    recognizer.GetSimilarityOfFaceWithModels(images[0], similarities);
-
+    recognizer.GetSimilarityOfFaceWithModels(images[2], similarities);
     printf("done\n");
 
     /*for(std::vector<cv::Mat>::iterator it = images.begin(); it != images.end(); ++it)

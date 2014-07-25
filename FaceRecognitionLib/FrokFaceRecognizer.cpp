@@ -85,10 +85,13 @@ double FrokFaceRecognizer::GetSimilarity_ThirdMethod(const cv::Mat &firstImage, 
 {
     TRACE_T("started");
     // Calculate the L2 relative error between the 2 images.
-    double errorL2 = cv::norm(firstImage, secondImage, CV_L2);
+    double err = cv::norm(firstImage, secondImage, CV_L2);
     // Convert to a reasonable scale, since L2 error is summed across all pixels of the image.
+    TRACE_T("Calculated error = %lf", err);
+    err /= (firstImage.rows * firstImage.cols);
+    TRACE_T("Normalized error = %lf", err);
     TRACE_T("finished");
-    return errorL2 / (firstImage.rows * firstImage.cols);
+    return 1 - err;
 }
 
 FrokResult FrokFaceRecognizer::SetUserIdsVector(std::vector<std::string> &usedUserIds)
