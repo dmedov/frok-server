@@ -68,6 +68,8 @@ FrokFaceDetector::FrokFaceDetector()
 
     aligningScaleFactor = 1;
 
+    faceSize = cv::Size(158, 190);
+
     TRACE("new FrokFaceDetector");
 }
 
@@ -210,6 +212,9 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
             TRACE_F_T("RemoveDrowbackFrokImage failed on result %x", res);
             return res;
         }
+
+        // Resize image to standart meanings
+        cv::resize(faceImage, faceImage, faceSize);
 
         faceImages.push_back(faceImage);
     }

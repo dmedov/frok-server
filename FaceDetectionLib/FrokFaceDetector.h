@@ -76,7 +76,7 @@ private:
     cv::Mat         targetImageKappa;
     cv::Ptr<cv::CLAHE> normalizerClahe;
     double aligningScaleFactor;
-
+    cv::Size faceSize;
 public:
     FrokFaceDetector();
     ~FrokFaceDetector();
