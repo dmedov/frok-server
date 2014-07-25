@@ -80,6 +80,8 @@ bool CommonThread::startThread(void *(*function) (void *), void *functionParams,
         return false;
     }
 
+    // [TBD] bug found - this is workaround. Solution is adding void*object to startRoutineParams.
+    usleep(100000);
     threadState = COMMON_THREAD_STARTED;
     return true;
 }

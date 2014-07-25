@@ -5,6 +5,7 @@
 #include <time.h>
 #include <stdio.h>
 
+#ifdef TRACE_DEBUG
 // Colored print defines
 #define _FAIL(__x__, ...)    "[%s->%s] \x1b[1;91m[FAIL] "   __x__ "\n\x1b[0m", MODULE_NAME, __FUNCTION__, ##__VA_ARGS__
 #define _WARN(__x__, ...)    "[%s->%s] \x1b[1;93m[WARN] "   __x__ "\n\x1b[0m", MODULE_NAME, __FUNCTION__, ##__VA_ARGS__
@@ -31,4 +32,16 @@
                                         set_time_stamp(&sec, &usec);                \
                                         fprintf(stdout, "[%5u.%06u]", sec, usec);   \
                                         fprintf(stdout, ##format);}while(0)
+#else
+#define TRACE_F_T(__x__, ...)
+#define TRACE_W_T(__x__, ...)
+#define TRACE_S_T(__x__, ...)
+#define TRACE_R_T(__x__, ...)
+#define TRACE_T(__x__, ...)
+#define TRACE_F(__x__, ...)
+#define TRACE_W(__x__, ...)
+#define TRACE_S(__x__, ...)
+#define TRACE_R(__x__, ...)
+#define TRACE(__x__, ...)
+#endif //TRACE_DEBUG
 #endif // TRACE_H

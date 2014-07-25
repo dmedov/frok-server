@@ -87,3 +87,17 @@ void set_time_stamp(unsigned *sec, unsigned *usec)
         (*usec) += 1e6;
     }
 }
+
+void print_time(timespec &startTime, timespec &endTime)
+{
+    unsigned sec  = endTime.tv_sec - startTime.tv_sec;
+    unsigned nsec = endTime.tv_nsec - startTime.tv_nsec;
+
+    if (startTime.tv_nsec > endTime.tv_nsec)
+    {
+        sec--;
+        nsec += 1e9;
+    }
+
+    fprintf(stdout, "Time elapsed: %u.%09u\n", sec, nsec);
+}

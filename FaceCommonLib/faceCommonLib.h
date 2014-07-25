@@ -38,5 +38,6 @@ enum FrokResult
 bool InitFaceCommonLib(const char *logFileName = DEFAULT_LOG_FILE_NAME);
 bool DeinitFaceCommonLib();
 void set_time_stamp(unsigned *sec, unsigned *usec);
+void print_time(timespec &startTime, timespec &endTime);
 
 #endif // FACECOMMONLIB_H

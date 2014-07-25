@@ -23,12 +23,10 @@ INCLUDEPATH += /opt/opencv-2.4.9/install/include
 INCLUDEPATH += ../FaceCommonLib/
 
 HEADERS +=                  \
-    EigenDetector.h         \
     FrokFaceRecognizer.h \
     FaceUserModel.h
 
 SOURCES +=                  \
-    EigenDetector.cpp       \
     FaceUserModel.cpp \
     FrokFaceRecognizer.cpp
 

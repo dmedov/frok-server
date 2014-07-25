@@ -58,7 +58,7 @@ int getFilesFromDir(const char *dir, std::vector<std::string> &files)
 {
     if(dir == NULL)
     {
-        FilePrintMessage(_FAIL("Invalid parameter dir == NULL in getFilesFromDir\n"));
+        TRACE_F("Invalid parameter dir == NULL in getFilesFromDir\n");
         return -1;
     }
 
@@ -67,7 +67,7 @@ int getFilesFromDir(const char *dir, std::vector<std::string> &files)
     struct stat     fileInfo;
     if(NULL == (dirStream = opendir(dir)))
     {
-        FilePrintMessage(_FAIL("failed to load dir stream on error %s\n"), strerror(errno));
+        TRACE_F("failed to load dir stream on error %s\n", strerror(errno));
         return -1;
     }
 
@@ -79,7 +79,7 @@ int getFilesFromDir(const char *dir, std::vector<std::string> &files)
         memcpy(fullname + strlen(dir), file->d_name, strlen(file->d_name));
         if(-1 == stat(fullname, &fileInfo))
         {
-            FilePrintMessage(_WARN("failed to get %s stats on error %s\n"), file->d_name, strerror(errno));
+            TRACE_W("failed to get %s stats on error %s\n", file->d_name, strerror(errno));
             continue;
         }
 
@@ -92,7 +92,7 @@ int getFilesFromDir(const char *dir, std::vector<std::string> &files)
     }
     if(-1 == closedir(dirStream))
     {
-        FilePrintMessage(_FAIL("failed to close dir stream on error %s\n"), strerror(errno));
+        TRACE_F("failed to close dir stream on error %s\n", strerror(errno));
         return -1;
     }
     return 0;
@@ -102,7 +102,7 @@ int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs)
 {
     if(dir == NULL)
     {
-        FilePrintMessage(_FAIL("Invalid parameter dir == NULL in getFilesFromDir\n"));
+        TRACE_F("Invalid parameter dir == NULL in getFilesFromDir\n");
         return -1;
     }
 
@@ -111,7 +111,7 @@ int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs)
     struct stat     fileInfo;
     if(NULL == (dirStream = opendir(dir)))
     {
-        FilePrintMessage(_FAIL("failed to load dir stream on error %s\n"), strerror(errno));
+        TRACE_F("failed to load dir stream on error %s\n", strerror(errno));
         return -1;
     }
 
@@ -127,7 +127,7 @@ int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs)
         memcpy(fullname + strlen(dir), file->d_name, strlen(file->d_name));
         if(-1 == stat(fullname, &fileInfo))
         {
-            FilePrintMessage(_WARN("failed to get %s stats on error %s\n"), file->d_name, strerror(errno));
+            TRACE_W("failed to get %s stats on error %s\n", file->d_name, strerror(errno));
             continue;
         }
 
@@ -140,7 +140,7 @@ int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs)
     }
     if(-1 == closedir(dirStream))
     {
-        FilePrintMessage(_FAIL("failed to close dir stream on error %s\n"), strerror(errno));
+        TRACE_F("failed to close dir stream on error %s\n", strerror(errno));
         return -1;
     }
     return 0;
