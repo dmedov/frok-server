@@ -182,8 +182,31 @@ FrokResult Recognize(void *pContext)
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult TrainUserModel(void *pContext)
+FrokResult TrainUserModel(std::vector<std::string> ids)
 {
+    if(ids.empty())
+    {
+        TRACE_F_T("Invalid parameter: ids vector is empty");
+        return FROK_RESULT_INVALID_PARAMETER;
+    }
+    for(std::vector<std::string>::const_iterator it = ids.begin(); it != ids.end(); ++it)
+    {
+        std::string currentUserFolder = DEFAULT_PHOTO_BASE_PATH;
+        currentUserFolder.append(*it).append("/photos/");
+
+        std::vector<std::string> userPhotos;
+
+        if(-1 == getFilesFromDir(currentUserFolder.c_str(), userPhotos))
+        {
+            TRACE_F("Failed to get photos from directory %s", currentUserFolder.c_str());
+            continue;
+        }
+
+        for(std::vector<std::string>::iterator iterImage = userPhotos.begin(); iterImage != userPhotos.end(); ++iterImage)
+        {
+            cv::Mat currentImage = cv::imread(iterImage, cv::
+        }
+    }
 /*    pContext = pContext;
     double startTime = clock();
 

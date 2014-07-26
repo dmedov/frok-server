@@ -1,10 +1,6 @@
 #ifndef FACESERVER_H
 #define FACESERVER_H
 
-// FaceAgent defaults
-const char DEFAULT_PHOTO_BASE_PATH [] = "/home/zda/faces/";
-const char DEFAULT_TARGETS_FOLDER_PATH [] = "/home/zda/faces/";
-
 #define DEFAULT_PORT                28015
 #define MAX_SOCKET_BUFF_SIZE            (163840)
 

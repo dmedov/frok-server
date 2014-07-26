@@ -13,8 +13,8 @@ private:
     std::map<std::string, FaceUserModel> models;
     std::map<std::string, FaceUserModel> usedModels;
     cv::Mat targetImageKappa;
-
     unsigned maxHammingDistance;
+
 public:
     FrokFaceRecognizer();
     ~FrokFaceRecognizer();

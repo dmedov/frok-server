@@ -8,6 +8,8 @@ SUBDIRS =               \
     FaceDetectionLib    \
     FaceRecognitionLib  \
     FaceCommonLib       \
+    FrokAPILib          \
 
-FaceDetectionApp.depends = FaceDetectionLib FaceRecognitionLib FaceCommonLib
+FaceServerApp.depends = FaceDetectionLib FaceRecognitionLib FaceCommonLib
+FaceAgentApp.depends = FaceDetectionLib FaceRecognitionLib FaceCommonLib FrokAPILib
 
