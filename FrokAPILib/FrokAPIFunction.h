@@ -34,7 +34,7 @@ public:
 #pragma pack(pop)
 
 FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath, FrokFaceDetector &detector, FrokFaceRecognizer &recognizer);
-FrokResult TrainUserModel(void *pContext);
+FrokResult Recognize(std::vector< std::map<std::string, double> > &similarities, std::vector<std::string> ids, const char *userBasePath, std::string photoName, const char *targetPhotosPath, FrokFaceDetector &detector, FrokFaceRecognizer &recognizer);
 FrokResult GetFacesFromPhoto(void *pContext);
 FrokResult AddFaceFromPhoto(void *pContext);
 

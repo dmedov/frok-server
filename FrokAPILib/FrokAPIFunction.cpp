@@ -91,91 +91,95 @@ FrokResult AddFaceFromPhoto(void *pContext)
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult Recognize(void *pContext)
+FrokResult Recognize(std::vector< std::map<std::string, double> > &similarities, std::vector<std::string> ids, const char *userBasePath, std::string photoName, const char *targetPhotosPath, FrokFaceDetector &detector, FrokFaceRecognizer &recognizer)
 {
-    UNREFERENCED_PARAMETER(pContext);
-/*    double startTime = clock();
-    ContextForRecognize *psContext = (ContextForRecognize*)pContext;
-    //CvMemStorage* storage = NULL;
-    IplImage *img = NULL;
-    ViolaJonesDetection *violaJonesDetection = new ViolaJonesDetection(cascades);
-    map < string, Ptr<FaceRecognizer> > currentModels;
+    timespec startTime;
+    timespec endTime;
 
-    for (unsigned long i = 0; i < psContext->arrFrinedsList.size(); i++)
+    TRACE_T("Recognizing started");
+    similarities.clear();
+    if(ids.empty())
     {
-        map < string, Ptr<FaceRecognizer> >::iterator it;
-        it = models.find(psContext->arrFrinedsList[i].ToString());
-        if (it != models.end())
+        TRACE_F_T("Invalid parameter: ids vector is empty");
+        return FROK_RESULT_INVALID_PARAMETER;
+    }
+
+    if((userBasePath == NULL) || (targetPhotosPath == NULL))
+    {
+        TRACE_F_T("Invalid parameter: userBasePath = %p, targetPhotoPath = %p", userBasePath, targetPhotosPath);
+        return FROK_RESULT_INVALID_PARAMETER;
+    }
+    FrokResult res;
+
+    memset(&startTime, 0, sizeof(startTime));
+    memset(&endTime, 0, sizeof(endTime));
+
+    printf("Starting recognition\n");
+    clock_gettime(CLOCK_REALTIME, &startTime);
+
+    TRACE_T("Loading models for requested ids");
+
+    if(FROK_RESULT_SUCCESS != (res = recognizer.SetUserIdsVector(ids)))
+    {
+        TRACE_W_T("Failed to SetUserIdsVector on error %s", FrokResultToString(res));
+        return res;
+    }
+
+    TRACE_S_T("Loading models succeed");
+
+    std::string targetImageFullPath = targetPhotosPath;
+    targetImageFullPath.append(photoName);
+
+    TRACE_T("Detecting faces on target photo %s", targetImageFullPath.c_str());
+
+    if(FROK_RESULT_SUCCESS != (res = detector.SetTargetImage(targetImageFullPath.c_str())))
+    {
+        TRACE_F_T("Failed to SetTargetImage on result %s", FrokResultToString(res));
+        return res;
+    }
+
+    std::vector<cv::Rect> faces;
+
+    if(FROK_RESULT_SUCCESS != (res = detector.GetFacesFromPhoto(faces)))
+    {
+        TRACE_F_T("Failed to GetFacesFromPhoto on result %s", FrokResultToString(res));
+        return res;
+    }
+
+    std::vector<cv::Mat> faceImages;
+
+    if(FROK_RESULT_SUCCESS != (res = detector.GetNormalizedFaceImages(faces, faceImages)))
+    {
+        TRACE_F_T("Failed to GetNormalizedFaceImages on result %s", FrokResultToString(res));
+        return res;
+    }
+
+    for(std::vector<cv::Mat>::iterator it = faceImages.begin(); it != faceImages.end(); ++it)
+    {
+        TRACE_T("Recognizing users on new face");
+        cv::Mat currentFace = (cv::Mat)*it;
+        std::map<std::string, double> currenFaceSimilarities;
+        if(FROK_RESULT_SUCCESS != (res = recognizer.GetSimilarityOfFaceWithModels(currentFace, currenFaceSimilarities)))
         {
-            currentModels[psContext->arrFrinedsList[i].ToString()] = models[psContext->arrFrinedsList[i].ToString()];
+            TRACE_F_T("Failed to GetSimilarityOfFaceWithModels on result %s", FrokResultToString(res));
+            continue;
         }
-        else
-        {
-            FilePrintMessage(_WARN("No model found for user %s"), psContext->arrFrinedsList[i].ToString().c_str());
-        }
+        similarities.push_back(currenFaceSimilarities);
     }
 
-    if (currentModels.empty())
+    clock_gettime(CLOCK_REALTIME, &endTime);
+
+    printf("Recognition finished\n");
+    print_time(startTime, endTime);
+
+    if(similarities.size() == 0)
     {
-        FilePrintMessage(_FAIL("No models loaded."));
-        net.SendData(psContext->sock, "{ \"error\":\"training was not called\" }\n\0", strlen("{ \"error\":\"training was not called\" }\n\0"));
-        delete violaJonesDetection;
-        return;
+        TRACE_F_T("Nothing similar to requested users was found on picture");
+        return FROK_RESULT_UNSPECIFIED_ERROR;
     }
 
-    try
-    {
-        img = cvLoadImage(((string)TARGET_PATH).append(psContext->targetImg).append(".jpg").c_str());
-    }
-    catch (...)
-    {
-        FilePrintMessage(_FAIL("Failed to load image %s"), ((string)(TARGET_PATH)).append(psContext->targetImg).append(".jpg").c_str());
-        net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
-        delete violaJonesDetection;
-        return;
-    }
+    TRACE_T("Recognition finished");
 
-    if (!img)
-    {
-        FilePrintMessage(_FAIL("Failed to load image %s"), (((string)(TARGET_PATH)).append(psContext->targetImg)).c_str());
-        net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
-        delete violaJonesDetection;
-        return;
-    }
-
-    //storage = cvCreateMemStorage();
-    try
-    {
-        if (!violaJonesDetection->faceDetect(img, currentModels, psContext->sock))
-        {
-            FilePrintMessage(_FAIL("Some error occured during recognze call"));
-            net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
-            delete violaJonesDetection;
-            return;
-        }
-    }
-    catch (...)
-    {
-        FilePrintMessage(_FAIL("Some error occured during recognze call"));
-        net.SendData(psContext->sock, "{ \"error\":\"Recognize failed\" }\n\0", strlen("{ \"error\":\"Recognize failed\" }\n\0"));
-        delete violaJonesDetection;
-        return;
-    }
-
-#ifdef SHOW_IMAGE
-    while (1){
-        if (cvWaitKey(0) == 27)
-            break;
-    }
-#endif
-
-    net.SendData(psContext->sock, "{ \"success\":\"recognize faces succeed\" }\n\0", strlen("{ \"success\":\"recognize faces succeed\" }\n\0"));
-
-    FilePrintMessage(_SUCC("Recognize finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
-    cvReleaseImage(&img);
-    //cvClearMemStorage(storage);
-    cvDestroyAllWindows();
-    delete violaJonesDetection;*/
     return FROK_RESULT_SUCCESS;
 }
 
@@ -191,6 +195,12 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
         return FROK_RESULT_INVALID_PARAMETER;
     }
 
+    if(userBasePath == NULL)
+    {
+        TRACE_F_T("Invalid parameter: userBasePath = %p", userBasePath);
+        return FROK_RESULT_INVALID_PARAMETER;
+    }
+
     FrokResult res;
 
     for(std::vector<std::string>::const_iterator it = ids.begin(); it != ids.end(); ++it)
@@ -202,17 +212,17 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
         clock_gettime(CLOCK_REALTIME, &startTime);
 
         std::string currentUserFolder = userBasePath;
-        currentUserFolder.append(*it).append("/photos/");
+        currentUserFolder.append(*it);
 
         std::vector<std::string> userPhotos;
 
-        if(-1 == getFilesFromDir(currentUserFolder.c_str(), userPhotos))
+        if(-1 == getFilesFromDir(currentUserFolder.append("/photos/").c_str(), userPhotos))
         {
             TRACE_F_T("Failed to get photos from directory %s", currentUserFolder.c_str());
             continue;
         }
 
-        TRACE_T("Found %d photos for user %s", userPhotos.size(), ((std::string)*it).c_str());
+        TRACE_T("Found %u photos for user %s", (unsigned)userPhotos.size(), ((std::string)*it).c_str());
 
         if(!userPhotos.empty())
         {
