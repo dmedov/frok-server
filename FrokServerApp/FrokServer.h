@@ -1,5 +1,5 @@
-#ifndef FACESERVER_H
-#define FACESERVER_H
+#ifndef FROKSERVER_H
+#define FROKSERVER_H
 
 // FaceServer defaults
 #define DEFAULT_PORT                    (27015)
@@ -7,11 +7,11 @@
 
 // include dependencies
 #include "faceCommonLib.h"
-#include "FaceAgentConnector.h"
+#include "FrokAgentConnector.h"
 
 #pragma pack(push, 1)
 
-typedef struct StructFaceRequest
+typedef struct StructFrokRequest
 {
     SOCKET      replySocket;
     unsigned    dataLength;
@@ -28,21 +28,21 @@ typedef struct StructSocketListenerData
 
 #pragma pack(pop)
 
-class FaceServer
+class FrokServer
 {
 private:
     unsigned short                      localPortNumber;
     SOCKET                              localSock;
-    std::vector < FaceAgentConnector* > agents;
+    std::vector < FrokAgentConnector* > agents;
     std::vector < CommonThread* >       threadVecSocketListener;
     CommonThread                       *threadAcceptConnection;
 
 public:
-    FaceServer(std::vector<AgentInfo*> &agentsInfo, unsigned short localPort = DEFAULT_PORT);
-    ~FaceServer();
+    FrokServer(std::vector<AgentInfo*> &agentsInfo, unsigned short localPort = DEFAULT_PORT);
+    ~FrokServer();
 
-    bool StartFaceServer();
-    bool StopFaceServer();
+    bool StartFrokServer();
+    bool StopFrokServer();
 protected:
     NetResult StartNetworkServer();
     NetResult StopNetworkServer();
@@ -52,4 +52,4 @@ private:
     static void SocketListener(void* param);
 };
 
-#endif // FACESERVER_H
+#endif // FROKSERVER_H

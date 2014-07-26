@@ -3,13 +3,13 @@ TEMPLATE = subdirs
 btmtest.pro
 
 SUBDIRS =               \
-    FaceServerApp       \
-    FaceAgentApp        \
+    FrokServerApp       \
+    FrokAgentApp        \
+    FrokAPILib          \
     FaceDetectionLib    \
     FaceRecognitionLib  \
     FaceCommonLib       \
-    FrokAPILib          \
 
-FaceServerApp.depends = FaceDetectionLib FaceRecognitionLib FaceCommonLib
-FaceAgentApp.depends = FaceDetectionLib FaceRecognitionLib FaceCommonLib FrokAPILib
+FrokServerApp.depends = FaceDetectionLib FaceRecognitionLib FaceCommonLib
+FrokAgentApp.depends = FaceDetectionLib FaceRecognitionLib FaceCommonLib FrokAPILib
 

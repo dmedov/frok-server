@@ -1,5 +1,5 @@
-#ifndef FACEAGENTCONNECTOR_H
-#define FACEAGENTCONNECTOR_H
+#ifndef FROKAGENTCONNECTOR_H
+#define FROKAGENTCONNECTOR_H
 
 // FaceServer defaults
 #define MAX_SOCKET_BUFF_SIZE            (163840)
@@ -20,13 +20,13 @@ typedef enum NetResult
     //...
 } NetResult;
 
-typedef enum FaceActivityAgentState
+typedef enum FrokActivityAgentState
 {
-    FACE_AGENT_NOT_STARTED,
-    FACE_AGENT_FREE,
-    FACE_AGENT_BUSY,
-    FACE_AGENT_STOPPED,
-    FACE_AGENT_ERROR
+    FROK_AGENT_NOT_STARTED,
+    FROK_AGENT_FREE,
+    FROK_AGENT_BUSY,
+    FROK_AGENT_STOPPED,
+    FROK_AGENT_ERROR
 } AgentState;
 
 #pragma pack(push, 1)
@@ -49,10 +49,10 @@ typedef struct AgentInfo
 
 typedef enum FaceAgentCommand
 {
-    FACE_AGENT_RECOGNIZE,
+/*    FACE_AGENT_RECOGNIZE,
     FACE_AGENT_TRAIN_MODEL,
     FACE_AGENT_GET_FACES_FROM_PHOTO,
-    FACE_AGENT_ADD_FACE_FROM_PHOTO
+    FACE_AGENT_ADD_FACE_FROM_PHOTO*/
 } AgentCommand;
 
 struct ParamForRecognize
@@ -93,7 +93,7 @@ typedef struct FaceAgentCommandParam
 
 #pragma pack(pop)
 
-class FaceAgentConnector
+class FrokAgentConnector
 {
 private:
     AgentInfo           netInfo;
@@ -102,8 +102,8 @@ private:
     CommonThread       *threadAgentListener;
 
 public:
-    FaceAgentConnector(AgentInfo &info);
-    ~FaceAgentConnector();
+    FrokAgentConnector(AgentInfo &info);
+    ~FrokAgentConnector();
 
     bool ConnectToAgent();
     bool DisconnectFromAgent();
@@ -118,4 +118,4 @@ private:
 private:
 };
 
-#endif // FACEAGENTCONNECTOR_H
+#endif // FROKAGENTCONNECTOR_H

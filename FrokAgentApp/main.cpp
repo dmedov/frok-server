@@ -1,10 +1,9 @@
 #include <stdio.h>
 
-#include "FaceAgent.h"
-#include "activities.h"
-#include "FrokFaceDetector.h"
-#include "FrokFaceRecognizer.h"
-#include "FaceUserModel.h"
+#include "FrokAgent.h"
+//#include "FrokFaceDetector.h"
+//#include "FrokFaceRecognizer.h"
+//#include "FaceUserModel.h"
 void usage()
 {
     printf("FaceDetectionApp <Local port number>");
@@ -13,7 +12,7 @@ void usage()
 
 int main(void)
 {
-    if(!InitFaceCommonLib())
+    /*if(!InitFaceCommonLib())
     {
         return -1;
     }
@@ -80,7 +79,7 @@ int main(void)
     recognizer.GetSimilarityOfFaceWithModels(images[2], similarities);
     clock_gettime(CLOCK_REALTIME, &endTime);
     print_time(startTime, endTime);
-    printf("done\n");
+    printf("done\n");*/
 
     /*for(std::vector<cv::Mat>::iterator it = images.begin(); it != images.end(); ++it)
     {

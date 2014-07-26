@@ -1,7 +1,7 @@
 QT -= core gui
 CONFIG -= qt
 
-TARGET = FaceDetectionApp
+TARGET = FrokDetectionApp
 TEMPLATE = app
 
 DESTDIR = ./bin
@@ -19,10 +19,10 @@ QMAKE_CXXFLAGS +=   -Werror -Wall -Wno-unused-function -Wno-write-strings -Wno-u
 QMAKE_CFLAGS_DEBUG +=     -Werror -Wall -Wno-unused-function -Wno-write-strings -Wno-unused-result -Wno-unknown-pragmas
 
 HEADERS +=          \
-    FaceServer.h    \
-    FaceAgentConnector.h
+    FrokServer.h    \
+    FrokAgentConnector.h
 
 SOURCES +=          \
     main.cpp        \
-    FaceServer.cpp  \
-    FaceAgentConnector.cpp
+    FrokServer.cpp  \
+    FrokAgentConnector.cpp

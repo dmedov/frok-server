@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "FaceServer.h"
+#include "FrokServer.h"
 
 // Add SHOW_IMAGE define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
 
@@ -39,11 +39,11 @@ int main(int argc, char *argv[])
 
     std::vector<AgentInfo*> agentInfoVec;
     agentInfoVec.push_back(info);
-    FaceServer server(agentInfoVec, 27015);
-    server.StartFaceServer();
+    FrokServer server(agentInfoVec, 27015);
+    server.StartFrokServer();
 
     getchar();
-    server.StopFaceServer();
+    server.StopFrokServer();
     /*InitFaceDetectionLib();
 
     FilePrintMessage(_SUCC("Starting network server with port = %d"), PORT);

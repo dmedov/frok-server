@@ -11,11 +11,11 @@
 
 #define MODULE_NAME     "AGENT"
 
-#include "FaceAgent.h"
+#include "FrokAgent.h"
 
-pthread_mutex_t             faceAgent_trace_cs;
-pthread_mutex_t             faceAgent_cs;
-FaceAgent::FaceAgent(unsigned short localPort, const char *photoBasePath, const char *targetsFolderPath)
+pthread_mutex_t             frokAgent_trace_cs;
+pthread_mutex_t             frokAgent_cs;
+FrokAgent::FrokAgent(unsigned short localPort, const char *photoBasePath, const char *targetsFolderPath)
 {
     this->photoBasePath = new char[strlen(photoBasePath) + 1];
     this->targetsFolderPath = new char[strlen(targetsFolderPath) + 1];
@@ -25,18 +25,18 @@ FaceAgent::FaceAgent(unsigned short localPort, const char *photoBasePath, const 
     pthread_mutexattr_t mAttr;
     pthread_mutexattr_init(&mAttr);
     pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&faceAgent_trace_cs, &mAttr);
-    pthread_mutex_init(&faceAgent_cs, &mAttr);
+    pthread_mutex_init(&frokAgent_trace_cs, &mAttr);
+    pthread_mutex_init(&frokAgent_cs, &mAttr);
     pthread_mutexattr_destroy(&mAttr);
 
     threadServerListener = new CommonThread;
     localSock = INVALID_SOCKET;
 
     this->localPortNumber = localPort;
-    TRACE("new FaceAgent");
+    TRACE("new FrokAgent");
 }
 
-FaceAgent::~FaceAgent()
+FrokAgent::~FrokAgent()
 {
     delete []photoBasePath;
     delete []targetsFolderPath;
@@ -49,15 +49,15 @@ FaceAgent::~FaceAgent()
     threadServerListener->stopThread();
     delete threadServerListener;
 
-    pthread_mutex_destroy(&faceAgent_cs);
-    pthread_mutex_destroy(&faceAgent_trace_cs);
-    TRACE("~FaceAgent");
+    pthread_mutex_destroy(&frokAgent_cs);
+    pthread_mutex_destroy(&frokAgent_trace_cs);
+    TRACE("~FrokAgent");
 }
 
-bool FaceAgent::StartFaceAgent()
+bool FrokAgent::StartFrokAgent()
 {
     TRACE("Calling InitFaceCommonLib");
-    if(!InitFaceCommonLib("FaceAgent.log"))
+    if(!InitFaceCommonLib("FrokAgent.log"))
     {
         TRACE_F("InitFaceCommonLib failed");
         return false;
@@ -75,7 +75,7 @@ bool FaceAgent::StartFaceAgent()
     return true;
 }
 
-NetResult FaceAgent::StartNetworkServer()
+NetResult FrokAgent::StartNetworkServer()
 {
     sockaddr_in             server;
     memset(&server, 0, sizeof(server));
@@ -142,11 +142,11 @@ NetResult FaceAgent::StartNetworkServer()
         return NET_UNSPECIFIED_ERROR;
     }
 
-    FaceAgent *pThis = this;
+    FrokAgent *pThis = this;
 
     TRACE("Starting ServerListener");
 
-    if(!threadServerListener->startThread((void*(*)(void*))FaceAgent::ServerListener, &pThis, sizeof(FaceAgent*)))
+    if(!threadServerListener->startThread((void*(*)(void*))FrokAgent::ServerListener, &pThis, sizeof(FrokAgent*)))
     {
         TRACE_F("Failed to start ServerListener thread. See CommonThread logs for information");
         return NET_COMMON_THREAD_ERROR;
@@ -157,7 +157,7 @@ NetResult FaceAgent::StartNetworkServer()
     return NET_SUCCESS;
 }
 
-bool FaceAgent::StopFaceAgent()
+bool FrokAgent::StopFrokAgent()
 {
     bool success = true;
 
@@ -181,15 +181,15 @@ bool FaceAgent::StopFaceAgent()
     return success;
 }
 
-void FaceAgent::ServerListener(void* param)
+void FrokAgent::ServerListener(void* param)
 {
-    FaceAgent                  *pThis                       = NULL;
+    FrokAgent                  *pThis                       = NULL;
     SOCKET                      accepted_socket             = INVALID_SOCKET;
     int                         dataLength                  = 0;
     char                        data[MAX_SOCKET_BUFF_SIZE]  = {0};
     std::vector<std::string>    mandatoryKeys;
 
-    memcpy(&pThis, param, sizeof(FaceAgent*));
+    memcpy(&pThis, param, sizeof(FrokAgent*));
 
     mandatoryKeys.push_back("cmd");
     mandatoryKeys.push_back("req_id");
@@ -338,7 +338,7 @@ void FaceAgent::ServerListener(void* param)
     return;
 }
 
-NetResult FaceAgent::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)
+NetResult FrokAgent::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)
 {
     int sendlen = 0;
 
@@ -362,7 +362,7 @@ NetResult FaceAgent::SendData(SOCKET sock, const char* pBuffer, unsigned uBuffer
     return NET_SUCCESS;
 }
 
-NetResult FaceAgent::StopNetworkServer()
+NetResult FrokAgent::StopNetworkServer()
 {
     NetResult res = NET_SUCCESS;
 

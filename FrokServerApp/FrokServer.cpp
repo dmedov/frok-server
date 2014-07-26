@@ -9,17 +9,17 @@
 #include <pthread.h>
 #include <list>
 
-#include "FaceServer.h"
+#include "FrokServer.h"
 
 #define MODULE_NAME     "SERVER"
 
-pthread_mutex_t             faceServer_trace_cs;
-pthread_mutex_t             faceServer_cs;
-FaceServer::FaceServer(std::vector<AgentInfo*> &agentsInfo, unsigned short localPort)
+pthread_mutex_t             frokServer_trace_cs;
+pthread_mutex_t             frokServer_cs;
+FrokServer::FrokServer(std::vector<AgentInfo*> &agentsInfo, unsigned short localPort)
 {
     for(std::vector<AgentInfo*>::const_iterator it = agentsInfo.begin(); it != agentsInfo.end(); ++it)
     {
-        agents.push_back(new FaceAgentConnector(*(AgentInfo*)*it));
+        agents.push_back(new FrokAgentConnector(*(AgentInfo*)*it));
     }
 
     localPortNumber = localPort;
@@ -27,16 +27,16 @@ FaceServer::FaceServer(std::vector<AgentInfo*> &agentsInfo, unsigned short local
     pthread_mutexattr_t mAttr;
     pthread_mutexattr_init(&mAttr);
     pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&faceServer_cs, &mAttr);
-    pthread_mutex_init(&faceServer_trace_cs, &mAttr);
+    pthread_mutex_init(&frokServer_cs, &mAttr);
+    pthread_mutex_init(&frokServer_trace_cs, &mAttr);
     pthread_mutexattr_destroy(&mAttr);
 
     threadAcceptConnection = new CommonThread;
     localSock = INVALID_SOCKET;
-    TRACE("new FaceServer");
+    TRACE("new FrokServer");
 }
 
-FaceServer::~FaceServer()
+FrokServer::~FrokServer()
 {
     shutdown(localSock, 2);
     close(localSock);
@@ -51,22 +51,22 @@ FaceServer::~FaceServer()
     threadAcceptConnection->stopThread();
     delete threadAcceptConnection;
 
-    pthread_mutex_destroy(&faceServer_cs);
-    pthread_mutex_destroy(&faceServer_trace_cs);
+    pthread_mutex_destroy(&frokServer_cs);
+    pthread_mutex_destroy(&frokServer_trace_cs);
 
-    TRACE("~FaceServer");
+    TRACE("~FrokServer");
 }
 
-bool FaceServer::StartFaceServer()
+bool FrokServer::StartFrokServer()
 {
     if(!InitFaceCommonLib())
     {
         return false;
     }
 
-    for(std::vector<FaceAgentConnector*>::const_iterator it = agents.begin(); it != agents.end(); ++it)
+    for(std::vector<FrokAgentConnector*>::const_iterator it = agents.begin(); it != agents.end(); ++it)
     {
-        FaceAgentConnector *agent = (FaceAgentConnector*)*it;
+        FrokAgentConnector *agent = (FrokAgentConnector*)*it;
         TRACE("Calling ConnectToAgent");
         if(!agent->ConnectToAgent())
         {
@@ -85,13 +85,13 @@ bool FaceServer::StartFaceServer()
     return true;
 }
 
-bool FaceServer::StopFaceServer()
+bool FrokServer::StopFrokServer()
 {
     bool success = true;
 
-    for(std::vector<FaceAgentConnector*>::const_iterator it = agents.begin(); it != agents.end(); ++it)
+    for(std::vector<FrokAgentConnector*>::const_iterator it = agents.begin(); it != agents.end(); ++it)
     {
-        FaceAgentConnector *agent = (FaceAgentConnector*)*it;
+        FrokAgentConnector *agent = (FrokAgentConnector*)*it;
         if(!agent->DisconnectFromAgent())
         {
             success = false;
@@ -111,7 +111,7 @@ bool FaceServer::StopFaceServer()
     return success;
 }
 
-NetResult FaceServer::StopNetworkServer()
+NetResult FrokServer::StopNetworkServer()
 {
     NetResult res = NET_SUCCESS;
 
@@ -152,16 +152,16 @@ NetResult FaceServer::StopNetworkServer()
     return res;
 }
 
-void FaceServer::AcceptConnection(void* param)
+void FrokServer::AcceptConnection(void* param)
 {
-    FaceServer             *pThis = NULL;
-    memcpy(&pThis, param, sizeof(FaceServer*));
+    FrokServer             *pThis = NULL;
+    memcpy(&pThis, param, sizeof(FrokServer*));
 
     SOCKET                  accepted_socket;
 
     StructSocketListenerData socketListenerData;
     socketListenerData.pThis = &pThis;
-    unsigned socketListenerDataLength = sizeof(FaceServer*) + sizeof(SOCKET) + sizeof(CommonThread*);
+    unsigned socketListenerDataLength = sizeof(FrokServer*) + sizeof(SOCKET) + sizeof(CommonThread*);
 
     TRACE("Accepting all incoming connections for socket %i", pThis->localSock);
 
@@ -206,7 +206,7 @@ void FaceServer::AcceptConnection(void* param)
         socketListenerData.listenedSocket = accepted_socket;
 
         CommonThread *thread = new CommonThread;
-        if(!thread->startThread((void*(*)(void*))FaceServer::SocketListener, &socketListenerData, socketListenerDataLength))
+        if(!thread->startThread((void*(*)(void*))FrokServer::SocketListener, &socketListenerData, socketListenerDataLength))
         {
             TRACE_F("Failed to start SocketListener thread. See CommonThread logs for information");
             continue;
@@ -224,11 +224,11 @@ void FaceServer::AcceptConnection(void* param)
     return;
 }
 
-void FaceServer::SocketListener(void* param)
+void FrokServer::SocketListener(void* param)
 {
     SocketListenerData     *psParam = (SocketListenerData*)param;
-    FaceServer *pThis = NULL;
-    memcpy(&pThis, psParam->pThis, sizeof(FaceServer*));
+    FrokServer *pThis = NULL;
+    memcpy(&pThis, psParam->pThis, sizeof(FrokServer*));
 
     int         dataLength;
     char        data[MAX_SOCKET_BUFF_SIZE];
@@ -278,7 +278,7 @@ void FaceServer::SocketListener(void* param)
     return;
 }
 
-NetResult FaceServer::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)
+NetResult FrokServer::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)
 {
     int sendlen = 0;
 
@@ -302,7 +302,7 @@ NetResult FaceServer::SendData(SOCKET sock, const char* pBuffer, unsigned uBuffe
     return NET_SUCCESS;
 }
 
-NetResult FaceServer::StartNetworkServer()
+NetResult FrokServer::StartNetworkServer()
 {
     sockaddr_in             server;
     memset(&server, 0, sizeof(server));
@@ -369,11 +369,11 @@ NetResult FaceServer::StartNetworkServer()
         return NET_UNSPECIFIED_ERROR;
     }
 
-    FaceServer *pThis = this;
+    FrokServer *pThis = this;
 
     TRACE("Starting ServerListener");
 
-    if(!threadAcceptConnection->startThread((void*(*)(void*))FaceServer::AcceptConnection, &pThis, sizeof(FaceServer*)))
+    if(!threadAcceptConnection->startThread((void*(*)(void*))FrokServer::AcceptConnection, &pThis, sizeof(FrokServer*)))
     {
         TRACE_F("Failed to start ServerListener thread. See CommonThread logs for information");
         shutdown(localSock, 2);

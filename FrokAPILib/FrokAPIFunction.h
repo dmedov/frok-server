@@ -1,12 +1,15 @@
 #ifndef FROKAPIFUNCTION_H
 #define FROKAPIFUNCTION_H
 
-#include "string.h"
-#include "json.h"
-
 #define CUT_TIMEOUT            (600)
 #define MAX_THREADS_AND_CASCADES_NUM        (1)
 
+// include dependencies
+#include <cv.h>
+#include <highgui.h>
+#include "faceCommonLib.h"
+
+typedef FrokResult (*APIFunction) (void *params);
 
 #pragma pack(push, 1)
 
@@ -27,9 +30,9 @@ public:
 
 #pragma pack(pop)
 
-void recognizeFromModel(void *pContext);
-void generateAndTrainBase(void *pContext);
-void getFacesFromPhoto(void *pContext);
-void saveFaceFromPhoto(void *pContext);
+FrokResult Recognize(void *pContext);
+FrokResult TrainUserModel(void *pContext);
+FrokResult GetFacesFromPhoto(void *pContext);
+FrokResult AddFaceFromPhoto(void *pContext);
 
 #endif // FROKAPIFUNCTION_H

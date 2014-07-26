@@ -1,14 +1,14 @@
 ###########################################################
-# mk for project FaceAgentApp
+# mk for project FrokAgentApp
 ###########################################################
 
 include makefile.consts
 include opencv.include
-SRCDIR = FaceAgentApp
+SRCDIR = FrokAgentApp
 
 # Target settings
 LANG := c++
-TARGET := FaceAgentApp
+TARGET := FrokAgentApp
 TARGETTYPE := executable
 
 CFLAGS += -Wno-unknown-pragmas

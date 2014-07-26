@@ -1,5 +1,5 @@
-#ifndef FACESERVER_H
-#define FACESERVER_H
+#ifndef FROKAGENT_H
+#define FROKAGENT_H
 
 #define DEFAULT_PORT                28015
 #define MAX_SOCKET_BUFF_SIZE            (163840)
@@ -32,7 +32,7 @@ typedef struct
 
 #pragma pack(pop)
 
-class FaceAgent
+class FrokAgent
 {
 private:
     char                   *photoBasePath;
@@ -42,27 +42,18 @@ private:
     CommonThread           *threadServerListener;
 
 public:
-    FaceAgent(unsigned short localPort = DEFAULT_PORT, const char *photoBasePath = DEFAULT_PHOTO_BASE_PATH, const char *targetsFolderPath = DEFAULT_TARGETS_FOLDER_PATH);
-    ~FaceAgent();
+    FrokAgent(unsigned short localPort = DEFAULT_PORT, const char *photoBasePath = DEFAULT_PHOTO_BASE_PATH, const char *targetsFolderPath = DEFAULT_TARGETS_FOLDER_PATH);
+    ~FrokAgent();
 
-    bool StartFaceAgent();
-    bool StopFaceAgent();
-
-
-
+    bool StartFrokAgent();
+    bool StopFrokAgent();
 protected:
     NetResult StartNetworkServer();
     NetResult StopNetworkServer();
     NetResult SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize);
-// API functions
-    FrokResult Recognize(void *param);
-    FrokResult TrainUserModel(void *param);
-    FrokResult GetFacesFromPhoto(void *param);
-    FrokResult AddFaceFromPhoto(void *param);
-
 private:
     // Only one connected server is allowed. Disconnect current connection to allow new server connect
     static void ServerListener(void* param);
 };
 
-#endif // FACESERVER_H
+#endif // FROKAGENT_H

@@ -1,14 +1,14 @@
 ###########################################################
-# mk for project FaceServerApp
+# mk for project FrokServerApp
 ###########################################################
 
 include makefile.consts
 include opencv.include
-SRCDIR = FaceServerApp
+SRCDIR = FrokServerApp
 
 # Target settings
 LANG := c++
-TARGET := FaceServerApp
+TARGET := FrokServerApp
 TARGETTYPE := executable
 
 CFLAGS += -Wno-unknown-pragmas

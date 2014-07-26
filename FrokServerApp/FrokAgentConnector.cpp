@@ -5,64 +5,64 @@
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include "FaceAgentConnector.h"
+#include "FrokAgentConnector.h"
 
 #define MODULE_NAME     "AGENT_CONNECTOR"
 
-pthread_mutex_t             faceAgentConnector_trace_cs;
-pthread_mutex_t             faceAgentConnector_cs;
+pthread_mutex_t             FrokAgentConnector_trace_cs;
+pthread_mutex_t             FrokAgentConnector_cs;
 
-FaceAgentConnector::FaceAgentConnector(AgentInfo &info)
+FrokAgentConnector::FrokAgentConnector(AgentInfo &info)
 {
     netInfo.agentIpV4Address = info.agentIpV4Address;
     netInfo.agentPortNumber = info.agentPortNumber;
-    state = FACE_AGENT_NOT_STARTED;
+    state = FROK_AGENT_NOT_STARTED;
 
     pthread_mutexattr_t mAttr;
     pthread_mutexattr_init(&mAttr);
     pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&faceAgentConnector_trace_cs, &mAttr);
-    pthread_mutex_init(&faceAgentConnector_cs, &mAttr);
+    pthread_mutex_init(&FrokAgentConnector_trace_cs, &mAttr);
+    pthread_mutex_init(&FrokAgentConnector_cs, &mAttr);
     pthread_mutexattr_destroy(&mAttr);
 
     threadAgentListener = new CommonThread;
     agentSocket = INVALID_SOCKET;
 
-    TRACE("new FaceAgentConnector");
+    TRACE("new FrokAgentConnector");
 }
 
-FaceAgentConnector::~FaceAgentConnector()
+FrokAgentConnector::~FrokAgentConnector()
 {
-    state = FACE_AGENT_NOT_STARTED;
+    state = FROK_AGENT_NOT_STARTED;
 
     shutdown(agentSocket, 2);
     close(agentSocket);
     threadAgentListener->stopThread();
     delete threadAgentListener;
 
-    pthread_mutex_destroy(&faceAgentConnector_cs);
-    pthread_mutex_destroy(&faceAgentConnector_trace_cs);
-    TRACE("~FaceAgentConnector");
+    pthread_mutex_destroy(&FrokAgentConnector_cs);
+    pthread_mutex_destroy(&FrokAgentConnector_trace_cs);
+    TRACE("~FrokAgentConnector");
 }
 
-bool FaceAgentConnector::ConnectToAgent()
+bool FrokAgentConnector::ConnectToAgent()
 {
     NetResult res;
     TRACE("Calling StartNetworkClient");
     if(NET_SUCCESS != (res = StartNetworkClient()))
     {
         TRACE_F("StartNetworkClient failed on error %x", res);
-        state = FACE_AGENT_ERROR;
+        state = FROK_AGENT_ERROR;
         return false;
     }
     TRACE_S("StartNetworkClient succeed");
 
-    state = FACE_AGENT_FREE;
+    state = FROK_AGENT_FREE;
 
     return true;
 }
 
-bool FaceAgentConnector::DisconnectFromAgent()
+bool FrokAgentConnector::DisconnectFromAgent()
 {
     if(agentSocket == INVALID_SOCKET)
     {
@@ -74,7 +74,7 @@ bool FaceAgentConnector::DisconnectFromAgent()
     if(-1 == shutdown(agentSocket, 2))
     {
         TRACE_F("Failed to terminate connection with error = %s", strerror(errno));
-        state = FACE_AGENT_ERROR;
+        state = FROK_AGENT_ERROR;
         return false;
     }
     TRACE_S("shutdown succeed");
@@ -83,22 +83,22 @@ bool FaceAgentConnector::DisconnectFromAgent()
     if(-1 == close(agentSocket))
     {
         TRACE_F("Failed to close socket descriptor on error %s", strerror(errno));
-        state = FACE_AGENT_ERROR;
+        state = FROK_AGENT_ERROR;
         return false;
     }
     TRACE_S("Descriptor successfully closed");
 
-    state = FACE_AGENT_STOPPED;
+    state = FROK_AGENT_STOPPED;
 
     return true;
 }
 
-AgentState FaceAgentConnector::GetAgentState()
+AgentState FrokAgentConnector::GetAgentState()
 {
     return state;
 }
 
-bool FaceAgentConnector::SendCommand(AgentCommandParam command)
+bool FrokAgentConnector::SendCommand(AgentCommandParam command)
 {
     if(agentSocket == INVALID_SOCKET)
     {
@@ -106,7 +106,7 @@ bool FaceAgentConnector::SendCommand(AgentCommandParam command)
         return false;
     }
     json::Object outJson;
-    switch(command.cmd)
+    /*switch(command.cmd)
     {
     case FACE_AGENT_RECOGNIZE:
     {
@@ -127,7 +127,7 @@ bool FaceAgentConnector::SendCommand(AgentCommandParam command)
         // [TBD]
         break;
     }
-    }
+    }*/
 
     outJson["cmd"] = "command";
     outJson["req_id"] = "0";
@@ -146,10 +146,10 @@ bool FaceAgentConnector::SendCommand(AgentCommandParam command)
     return true;
 }
 
-void FaceAgentConnector::AgentListener(void *param)
+void FrokAgentConnector::AgentListener(void *param)
 {
-    FaceAgentConnector     *pThis = NULL;
-    memcpy(&pThis, param, sizeof(FaceAgentConnector*));
+    FrokAgentConnector     *pThis = NULL;
+    memcpy(&pThis, param, sizeof(FrokAgentConnector*));
 
     int         dataLength;
     char        data[MAX_SOCKET_BUFF_SIZE];
@@ -231,7 +231,7 @@ void FaceAgentConnector::AgentListener(void *param)
     TRACE("SocketListener finished");
 }
 
-NetResult FaceAgentConnector::StartNetworkClient()
+NetResult FrokAgentConnector::StartNetworkClient()
 {
     if(threadAgentListener->getThreadState() == COMMON_THREAD_STARTED)
     {
@@ -295,10 +295,10 @@ NetResult FaceAgentConnector::StartNetworkClient()
         return NET_SOCKET_ERROR;
     }
 
-    FaceAgentConnector *pThis = this;
+    FrokAgentConnector *pThis = this;
     TRACE("Starting AgentListener");
 
-    if(!threadAgentListener->startThread((void * (*)(void*))(FaceAgentConnector::AgentListener), &pThis, sizeof(FaceAgentConnector*)))
+    if(!threadAgentListener->startThread((void * (*)(void*))(FrokAgentConnector::AgentListener), &pThis, sizeof(FrokAgentConnector*)))
     {
         TRACE_F("Failed to start SocketListener thread. See CommonThread logs for information");
         shutdown(agentSocket, 2);
@@ -311,7 +311,7 @@ NetResult FaceAgentConnector::StartNetworkClient()
     return NET_SUCCESS;
 }
 
-NetResult FaceAgentConnector::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)
+NetResult FrokAgentConnector::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)
 {
     int sendlen = 0;
 

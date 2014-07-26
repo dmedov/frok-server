@@ -27,12 +27,12 @@ QMAKE_CFLAGS_DEBUG +=     -Werror -Wall -Wno-unused-function -Wno-write-strings 
 
 HEADERS +=          \
     FrokAPI.h \
-    FaceAgent.h \
+    FrokAgent.h \
     FrokAPI.h \
     FrokAPIFunction.h
 
 SOURCES +=          \
     main.cpp        \
-    FaceAgent.cpp \
+    FrokAgent.cpp \
     FrokAPI.cpp \
     FrokAPIFunction.cpp
