@@ -100,6 +100,7 @@ AgentState FrokAgentConnector::GetAgentState()
 
 bool FrokAgentConnector::SendCommand(AgentCommandParam command)
 {
+    UNREFERENCED_PARAMETER(command);
     if(agentSocket == INVALID_SOCKET)
     {
         TRACE_F("Agent not connected");

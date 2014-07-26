@@ -150,6 +150,7 @@ FrokResult FaceUserModel::AddFaceToModel(cv::Mat &kappaFace)
     }
     }
     TRACE_T("finished");
+    return FROK_RESULT_SUCCESS;
 }
 
 FrokResult FaceUserModel::LoadUserModel(const char *userPath)
@@ -212,6 +213,7 @@ FrokResult FaceUserModel::SaveUserModel(const char *userPath)
     case RECOGNIZER_EIGENFACES:
     {
         modelPath.append(USER_MODEL_FILENAME_EIGENFACES);
+        break;
     }
     case RECOGNIZER_FISHER:
     default:

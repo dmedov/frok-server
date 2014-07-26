@@ -12,13 +12,20 @@ void usage()
 
 int main(void)
 {
-    /*if(!InitFaceCommonLib())
+    if(!InitFaceCommonLib())
     {
         return -1;
     }
     FrokFaceRecognizer recognizer;
     FrokFaceDetector detector;
-    FaceUserModel model((std::string)"1", RECOGNIZER_EIGENFACES);
+
+    std::vector<std::string> ids;
+    ids.push_back("1");
+    ids.push_back("2");
+    printf("Calling TrainUserModel...");
+    TrainUserModel(ids, DEFAULT_PHOTO_BASE_PATH, detector, recognizer);
+    printf("TrainUserModel finished");
+    /*FaceUserModel model((std::string)"1", RECOGNIZER_EIGENFACES);
 
     std::vector<cv::Rect> faces;
     std::vector<cv::Mat> images;

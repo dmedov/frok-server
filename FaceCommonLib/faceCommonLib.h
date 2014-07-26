@@ -33,8 +33,10 @@ enum FrokResult
 #define SOCKET_ERROR                    (-1)
 #define INVALID_SOCKET                  (-1)
 #define COMMAND_WITH_LENGTH(__CHARS__)      (__CHARS__), strlen((__CHARS__))
+#define CASE_RET_STR(x) case x: return #x
 
 // Library init functions
+char *FrokResultToString(FrokResult res);
 bool InitFaceCommonLib(const char *logFileName = DEFAULT_LOG_FILE_NAME);
 bool DeinitFaceCommonLib();
 void set_time_stamp(unsigned *sec, unsigned *usec);

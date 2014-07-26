@@ -138,7 +138,7 @@ FrokResult FrokFaceRecognizer::GetSimilarityOfFaceWithModels(cv::Mat &targetFace
         cv::Mat predictedFace;
         if(FROK_RESULT_SUCCESS != (res = model.GetPredictedFace(targetFace, predictedFace)))
         {
-            TRACE_F_T("GetPredictedFace failed on result %x for user %s", res, userId.c_str());
+            TRACE_F_T("GetPredictedFace failed on result %s for user %s", FrokResultToString(res), userId.c_str());
             continue;
         }
 

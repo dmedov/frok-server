@@ -7,6 +7,9 @@
 // include dependencies
 #include <cv.h>
 #include <highgui.h>
+
+#include "FrokFaceDetector.h"
+#include "FrokFaceRecognizer.h"
 #include "faceCommonLib.h"
 
 typedef FrokResult (*APIFunction) (void *params);
@@ -30,7 +33,7 @@ public:
 
 #pragma pack(pop)
 
-FrokResult Recognize(void *pContext);
+FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath, FrokFaceDetector &detector, FrokFaceRecognizer &recognizer);
 FrokResult TrainUserModel(void *pContext);
 FrokResult GetFacesFromPhoto(void *pContext);
 FrokResult AddFaceFromPhoto(void *pContext);

@@ -1,5 +1,7 @@
 #include "FrokAPIFunction.h"
 
+#define MODULE_NAME     "FROK_API"
+
 FrokResult GetFacesFromPhoto(void *pContext)
 {
     UNREFERENCED_PARAMETER(pContext);
@@ -177,146 +179,128 @@ FrokResult Recognize(void *pContext)
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult TrainUserModel(std::vector<std::string> ids)
+FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath, FrokFaceDetector &detector, FrokFaceRecognizer &recognizer)
 {
-    /*if(ids.empty())
+    timespec startTime;
+    timespec endTime;
+    bool isSuccess = true;
+    TRACE_T("Training started");
+    if(ids.empty())
     {
         TRACE_F_T("Invalid parameter: ids vector is empty");
         return FROK_RESULT_INVALID_PARAMETER;
     }
+
+    FrokResult res;
+
     for(std::vector<std::string>::const_iterator it = ids.begin(); it != ids.end(); ++it)
     {
-        std::string currentUserFolder = DEFAULT_PHOTO_BASE_PATH;
+        memset(&startTime, 0, sizeof(startTime));
+        memset(&endTime, 0, sizeof(endTime));
+
+        printf("Starting train for user %s\n", ((std::string)*it).c_str());
+        clock_gettime(CLOCK_REALTIME, &startTime);
+
+        std::string currentUserFolder = userBasePath;
         currentUserFolder.append(*it).append("/photos/");
 
         std::vector<std::string> userPhotos;
 
         if(-1 == getFilesFromDir(currentUserFolder.c_str(), userPhotos))
         {
-            TRACE_F("Failed to get photos from directory %s", currentUserFolder.c_str());
+            TRACE_F_T("Failed to get photos from directory %s", currentUserFolder.c_str());
             continue;
         }
 
-        for(std::vector<std::string>::iterator iterImage = userPhotos.begin(); iterImage != userPhotos.end(); ++iterImage)
+        TRACE_T("Found %d photos for user %s", userPhotos.size(), ((std::string)*it).c_str());
+
+        if(!userPhotos.empty())
         {
-            //cv::Mat currentImage = cv::imread(iterImage, cv::
-        }
-    }*/
-/*    pContext = pContext;
-    double startTime = clock();
+            unsigned successCounter = 0;
 
-    ContextForTrain *psContext = (ContextForTrain*)pContext;
-
-    __int64_t uSuccCounter = 0;
-
-    for (__int64_t i = 0; i < psContext->arrIds.size(); i++)
-    {
-        __int64_t uNumOfThreads = 0;
-
-        vector<string> photos = vector<string>();
-        getFilesFromDir(((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("/photos/").c_str(), photos);
-
-        vector<CommonThread *> threads;
-
-        for (unsigned int j = 0; j < photos.size(); j++)
-        {
-            string photoName = ((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("/photos/").append(photos[j]);
-            IplImage *img = cvLoadImage(photoName.c_str());
-            if (img == NULL)
+            for(std::vector<std::string>::iterator iterImage = userPhotos.begin(); iterImage != userPhotos.end(); ++iterImage)
             {
-                FilePrintMessage(_WARN("Failed to load image %s. Continue..."), photoName.c_str());
-                continue;
-            }
-
-            cutFaceThreadParams * param = new cutFaceThreadParams(img,
-                (((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("/faces/").append(photos[j])).c_str(),
-                &cascades[uNumOfThreads]);
-            CommonThread *threadCutFace = new CommonThread;
-            threadCutFace->startThread((void*(*)(void*))param->pThis->cutFaceThread, param, sizeof(cutFaceThreadParams));
-            threads.push_back( threadCutFace);
-
-            if (++uNumOfThreads == MAX_THREADS_AND_CASCADES_NUM)
-            {
-                for(vector<CommonThread*>::iterator it = threads.begin(); it != threads.end(); ++it)
+                std::string imageFullPath = currentUserFolder;
+                imageFullPath.append((std::string)*iterImage);
+                if(FROK_RESULT_SUCCESS != (res = detector.SetTargetImage(imageFullPath.c_str())))
                 {
-                    ((CommonThread*)*it)->waitForFinish(CUT_TIMEOUT);
-                    ((CommonThread*)*it)->stopThread();
-                    delete *it;
+                    TRACE_F_T("Failed to SetTargetImage on result %s", FrokResultToString(res));
+                    continue;
                 }
-                threads.clear();
 
-                uNumOfThreads = 0;
+                std::vector<cv::Rect> faces;
+
+                if(FROK_RESULT_SUCCESS != (res = detector.GetFacesFromPhoto(faces)))
+                {
+                    TRACE_F_T("Failed to GetFacesFromPhoto on result %s", FrokResultToString(res));
+                    continue;
+                }
+
+                std::vector<cv::Mat> faceImages;
+
+                if(FROK_RESULT_SUCCESS != (res = detector.GetNormalizedFaceImages(faces, faceImages)))
+                {
+                    TRACE_F_T("Failed to GetNormalizedFaceImages on result %s", FrokResultToString(res));
+                    continue;
+                }
+
+                FaceUserModel *model;
+                try
+                {
+                    model = new FaceUserModel(*it, RECOGNIZER_EIGENFACES);
+                }
+                catch(FrokResult error)
+                {
+                    TRACE_F_T("Failed to create FaceUserModel on error %s", FrokResultToString(error));
+                    continue;
+                }
+                catch(...)
+                {
+                    TRACE_F_T("Unknown error on FaceUserModel creation.");
+                    continue;
+                }
+
+                if(FROK_RESULT_SUCCESS != (res = model->GenerateUserModel(faceImages)))
+                {
+                    TRACE_F_T("Failed to GenerateUserModel on result %s", FrokResultToString(res));
+                    continue;
+                }
+
+                if(FROK_RESULT_SUCCESS != (res = model->SaveUserModel(currentUserFolder.c_str())))
+                {
+                    TRACE_F_T("Failed to SaveUserModel on result %s", FrokResultToString(res));
+                    continue;
+                }
+
+                if(FROK_RESULT_SUCCESS != (res = recognizer.AddFrokUserModel(((std::string)*it), *model)))
+                {
+                    TRACE_F_T("Failed to AddFrokUserModel on result %s", FrokResultToString(res));
+                    continue;
+                }
+
+                successCounter++;
             }
-        }
 
-        for(vector<CommonThread*>::iterator it = threads.begin(); it != threads.end(); ++it)
-        {
-            ((CommonThread*)*it)->waitForFinish(CUT_TIMEOUT);
-            ((CommonThread*)*it)->stopThread();
-            delete *it;
-        }
-        threads.clear();
-
-        EigenDetector *eigenDetector = new EigenDetector();
-
-        //train FaceRecognizer
-        try
-        {
-            if (!eigenDetector->train((((string)ID_PATH).append(psContext->arrIds[i].ToString())).c_str()))
+            if(successCounter == 0)
             {
-                FilePrintMessage(_FAIL("Some error has occured during Learn call."));
-                delete eigenDetector;
-                continue;
+                isSuccess = false;
             }
         }
-        catch (...)
-        {
-            FilePrintMessage(_FAIL("Some error has occured during Learn call."));
-            delete eigenDetector;
-            continue;
-        }
 
-        pthread_mutex_lock(&faceDetectionCS);
-        Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
-        try
-        {
-            string fileName = ((string)ID_PATH).append(psContext->arrIds[i].ToString()).append("/eigenface.yml");
-            if (access(fileName.c_str(), 0) != -1)
-            {
-                model->load(fileName.c_str());
-                FilePrintMessage(_SUCC("Model base for user %s successfully loaded. Continue..."), psContext->arrIds[i].ToString().c_str());
-            }
-            else
-            {
-                FilePrintMessage(_WARN("Failed to load model base for user %s. Continue..."), psContext->arrIds[i].ToString().c_str());
-                pthread_mutex_unlock(&faceDetectionCS);
-                continue;
-            }
+        clock_gettime(CLOCK_REALTIME, &endTime);
 
-        }
-        catch (...)
-        {
-            FilePrintMessage(_WARN("Failed to load model base for user %s. Continue..."), psContext->arrIds[i].ToString().c_str());
-            pthread_mutex_unlock(&faceDetectionCS);
-            continue;
-        }
-
-        models[psContext->arrIds[i].ToString()] = model;
-        pthread_mutex_unlock(&faceDetectionCS);
-
-        delete eigenDetector;
-        uSuccCounter++;
+        printf("Training for user %s finished\n", ((std::string)*it).c_str());
+        print_time(startTime, endTime);
     }
 
-    cvDestroyAllWindows();
-    FilePrintMessage(_SUCC("Train finished. Time elapsed %.4lf s\n"), (clock() - startTime) / CLOCKS_PER_SEC);
-    if (uSuccCounter == 0)
+    if(isSuccess == false)
     {
-        net.SendData(psContext->sock, "{ \"fail\":\"learning failed\" }\n\0", strlen("{ \"fail\":\"learning failed\" }\n\0"));
-        return;
+        TRACE_F_T("Training failed for one or more user - return failure");
+        return FROK_RESULT_UNSPECIFIED_ERROR;
     }
 
-    net.SendData(psContext->sock, "{ \"success\":\"train succeed\" }\n\0", strlen("{ \"success\":\"train succeed\" }\n\0"));*/
+    TRACE_T("Training finished");
+
     return FROK_RESULT_SUCCESS;
 }
 

@@ -88,7 +88,9 @@ FrokResult FrokFaceDetector::SetCascadeParameters(EnumCascades cascade, CascadeP
 
     cascades[cascade].properties = params;
     cascades[cascade].nonDefaultParameters = true;
+    return FROK_RESULT_SUCCESS;
 }
+
 FrokResult FrokFaceDetector::SetDefaultCascadeParameters(EnumCascades cascade, cv::Mat &imageWithObjects)
 {
     switch(cascade)
@@ -144,6 +146,7 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath)
 
     cascades[CASCADE_FACE].properties.maxObjectSize = cv::Size(targetImageKappa.cols, targetImageKappa.rows);
     TRACE_T("finished");
+    return FROK_RESULT_SUCCESS;
 }
 
 FrokResult FrokFaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
@@ -203,13 +206,13 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
         cv::Mat faceImage;
         if(FROK_RESULT_SUCCESS != (res = AlignFaceImage(*it, targetImageCopy, faceImage)))
         {
-            TRACE_F_T("AlignFaceImage failed on result %x", res);
+            TRACE_F_T("AlignFaceImage failed on result %s", FrokResultToString(res));
             continue;
         }
 
         if(FROK_RESULT_SUCCESS != (res = RemoveDrowbackFrokImage(faceImage)))
         {
-            TRACE_F_T("RemoveDrowbackFrokImage failed on result %x", res);
+            TRACE_F_T("RemoveDrowbackFrokImage failed on result %s", FrokResultToString(res));
             return res;
         }
 
@@ -267,7 +270,6 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
     {
         TRACE_S_T("2 eyes were successfully detected with CASCADE_EYE");
         // [TBD] Left eye is the left one or the one that is to the left on the photo?
-        TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
         if(eyes[0].x > eyes[1].x)
         {
             faceParts->leftEye = eyes[0];
@@ -297,8 +299,6 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
     if(eyes.size() == 2)
     {
         TRACE_S_T("2 eyes were successfully detected with CASCADE_EYE_WITH_GLASSES");
-        // [TBD] Left eye is the left one or the one that is to the left on the photo?
-        TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
         if(eyes[0].x > eyes[1].x)
         {
             faceParts->leftEye = eyes[0];
@@ -328,8 +328,6 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
     if(eyes.size() == 1)
     {
         TRACE_S_T("Left eye was successfully detected with CASCADE_EYE_LEFT");
-        // [TBD] Left eye is the left one or the one that is to the left on the photo?
-        TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
         faceParts->leftEye = eyes[0];
         faceParts->leftEyeFound = true;
     }
@@ -346,8 +344,6 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
         if(eyes.size() == 1)
         {
             TRACE_S_T("Left eye was successfully detected with CASCADE_EYE_LEFT_SPLITTED");
-            // [TBD] Left eye is the left one or the one that is to the left on the photo?
-            TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
             faceParts->leftEye = eyes[0];
             faceParts->leftEyeFound = true;
         }
@@ -366,8 +362,6 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
     if(eyes.size() == 1)
     {
         TRACE_S_T("Right eye was successfully detected with CASCADE_EYE_RIGHT");
-        // [TBD] Left eye is the left one or the one that is to the left on the photo?
-        TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
         faceParts->rightEye = eyes[0];
         faceParts->rightEyeFound = true;
     }
@@ -384,8 +378,6 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
         if(eyes.size() == 1)
         {
             TRACE_S_T("Right eye was successfully detected with CASCADE_EYE_RIGHT_SPLITTED");
-            // [TBD] Left eye is the left one or the one that is to the left on the photo?
-            TRACE_W("Left eye is the left one or the one that is to the left on the photo?");
             faceParts->rightEye = eyes[0];
             faceParts->rightEyeFound = true;
         }
@@ -393,11 +385,11 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
 
     if(faceParts->rightEyeFound == false && faceParts->leftEyeFound == false)
     {
-        TRACE_F_T("Eyes detection failed");
+        TRACE_W_T("Eyes detection failed");
     }
     else if(faceParts->rightEyeFound == false || faceParts->leftEyeFound == false)
     {
-        TRACE_F_T("Only one eye detected");
+        TRACE_W_T("Only one eye detected");
     }
     else
     {
@@ -421,7 +413,7 @@ detect_nose:
         goto detect_mouth;
     }
     TRACE_T("Failed to find nose with CASCADE_NOSE_MSC");
-    TRACE_F_T("Nose detection failed");
+    TRACE_W_T("Nose detection failed");
 detect_mouth:
     std::vector < cv::Rect > mouth;
     TRACE_T("Detecting eyes with CASCADE_NOSE_MSC...");
@@ -440,7 +432,7 @@ detect_mouth:
         goto detect_finish;
     }
     TRACE_T("Failed to find mouth with CASCADE_MOUTH_MSC");
-    TRACE_F_T("Mouth detection failed");
+    TRACE_W_T("Mouth detection failed");
 
 detect_finish:
     TRACE_T("finished");

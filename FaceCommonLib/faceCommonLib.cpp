@@ -101,3 +101,21 @@ void print_time(timespec &startTime, timespec &endTime)
 
     fprintf(stdout, "Time elapsed: %u.%09u\n", sec, nsec);
 }
+
+char *FrokResultToString(FrokResult res)
+{
+    switch(res)
+    {
+        CASE_RET_STR(FROK_RESULT_SUCCESS);
+        CASE_RET_STR(FROK_RESULT_CASCADE_ERROR);
+        CASE_RET_STR(FROK_RESULT_UNSPECIFIED_ERROR);
+        CASE_RET_STR(FROK_RESULT_NOT_A_FACE);
+        CASE_RET_STR(FROK_RESULT_INVALID_PARAMETER);
+        CASE_RET_STR(FROK_RESULT_OPENCV_ERROR);
+        CASE_RET_STR(FROK_RESULT_NO_MODELS);
+        default:
+        {
+            return "UNKNOWN_RESULT";
+        }
+    }
+}
