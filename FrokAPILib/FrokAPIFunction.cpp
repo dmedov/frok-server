@@ -216,7 +216,9 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
 
         std::vector<std::string> userPhotos;
 
-        if(-1 == getFilesFromDir(currentUserFolder.append("/photos/").c_str(), userPhotos))
+        std::string photosPath = currentUserFolder;
+        photosPath.append("/photos/");
+        if(-1 == getFilesFromDir(photosPath.c_str(), userPhotos))
         {
             TRACE_F_T("Failed to get photos from directory %s", currentUserFolder.c_str());
             continue;
@@ -226,11 +228,11 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
 
         if(!userPhotos.empty())
         {
-            unsigned successCounter = 0;
+            std::vector<cv::Mat> faceImages;
 
             for(std::vector<std::string>::iterator iterImage = userPhotos.begin(); iterImage != userPhotos.end(); ++iterImage)
             {
-                std::string imageFullPath = currentUserFolder;
+                std::string imageFullPath = photosPath;
                 imageFullPath.append((std::string)*iterImage);
                 if(FROK_RESULT_SUCCESS != (res = detector.SetTargetImage(imageFullPath.c_str())))
                 {
@@ -246,14 +248,38 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
                     continue;
                 }
 
-                std::vector<cv::Mat> faceImages;
-
-                if(FROK_RESULT_SUCCESS != (res = detector.GetNormalizedFaceImages(faces, faceImages)))
+                if(faces.size() == 1)
                 {
-                    TRACE_F_T("Failed to GetNormalizedFaceImages on result %s", FrokResultToString(res));
+                    if(FROK_RESULT_SUCCESS != (res = detector.GetNormalizedFaceImages(faces, faceImages)))
+                    {
+                        TRACE_F_T("Failed to GetNormalizedFaceImages on result %s", FrokResultToString(res));
+                        continue;
+                    }
+
+                    TRACE_S_T("Face detection succeed for photo %s", ((std::string)*iterImage).c_str());
+                    TRACE_T("Saving result face");
+                    std::string saveImagePath = currentUserFolder;
+                    saveImagePath.append("/faces/").append((std::string)*iterImage);
+                    try
+                    {
+                        cv::imwrite(saveImagePath, faceImages[faceImages.size() - 1]);
+                    }
+                    catch(...)
+                    {
+                        TRACE_F_T("Failed to save image %s", ((std::string)*iterImage).c_str());
+                    }
+
+                }
+                else
+                {
+                    TRACE_F_T("Invalid number of faces found on photo: %u", (unsigned)faces.size());
                     continue;
                 }
+            }
 
+            if(!faceImages.empty())
+            {
+                TRACE_T("Found %u images for user %s. Generating user model", (unsigned)faceImages.size(), ((std::string)*it).c_str());
                 FaceUserModel *model;
                 try
                 {
@@ -287,12 +313,10 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
                     TRACE_F_T("Failed to AddFrokUserModel on result %s", FrokResultToString(res));
                     continue;
                 }
-
-                successCounter++;
             }
-
-            if(successCounter == 0)
+            else
             {
+                TRACE_F_T("No faces found for user %s", ((std::string)*it).c_str());
                 isSuccess = false;
             }
         }

@@ -26,10 +26,10 @@ int main(void)
     TrainUserModel(ids, DEFAULT_PHOTO_BASE_PATH, detector, recognizer);
     printf("TrainUserModel finished\n");
 
-    std::vector< std::map<std::string, double> > similarities;
+    /*std::vector< std::map<std::string, double> > similarities;
     printf("Calling Recognize...\n");
     Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "1.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
-    printf("Rcognize finished\n");
+    printf("Rcognize finished\n");*/
     /*FaceUserModel model((std::string)"1", RECOGNIZER_EIGENFACES);
 
     std::vector<cv::Rect> faces;

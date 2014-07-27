@@ -67,6 +67,13 @@ typedef struct HumanFace
     bool rightEyeFound;
     bool noseFound;
     bool mouthFound;
+    HumanFace()
+    {
+        leftEyeFound = false;
+        rightEyeFound = false;
+        noseFound = false;
+        mouthFound = false;
+    }
 }HumanFace;
 
 class FrokFaceDetector
