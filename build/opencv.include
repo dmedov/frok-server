@@ -1,0 +1,55 @@
+###########################################################
+# Includes for OPENCV
+###########################################################
+include makefile.consts
+
+OPENCV_LIB := -L$(OPENCV)/static/lib            \
+-L$(OPENCV)/static/share/OpenCV/3rdparty/lib    \
+-lopencv_contrib	\
+-lopencv_stitching  \
+-lopencv_nonfree    \
+-lopencv_superres   \
+-lopencv_ocl        \
+-lopencv_ts         \
+-lopencv_videostab  \
+-lopencv_gpu        \
+-lopencv_photo      \
+-lopencv_objdetect	\
+-lopencv_legacy     \
+-lopencv_video      \
+-lopencv_ml         \
+-lopencv_calib3d    \
+-lopencv_features2d \
+-lopencv_highgui    \
+-lIlmImf            \
+-llibjasper         \
+-llibtiff           \
+-llibjpeg           \
+-lopencv_imgproc    \
+-lopencv_flann      \
+-lopencv_core       \
+-lgthread-2.0       \
+-lfreetype          \
+-lglib-2.0          \
+-lgobject-2.0       \
+-lfontconfig        \
+-lpango-1.0         \
+-lcairo             \
+-lgdk_pixbuf-2.0    \
+-lpangocairo-1.0    \
+-lpangoft2-1.0      \
+-lgio-2.0           \
+-latk-1.0           \
+-lgdk-x11-2.0       \
+-lgtk-x11-2.0       \
+/usr/lib/x86_64-linux-gnu/libpng.so \
+-lrt                \
+-lpthread           \
+-lm                 \
+-ldl                \
+-lstdc++            \
+/usr/lib/x86_64-linux-gnu/libz.so
+
+OPENCV_INCLUDES := $(OPENCV)/static/include	    \
+	$(OPENCV)/static/include/opencv/	        \
+	$(OPENCV)/satic/include/opencv2/
