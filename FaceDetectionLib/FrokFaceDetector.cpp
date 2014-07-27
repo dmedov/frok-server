@@ -539,10 +539,10 @@ FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &
         return result;
     }
 
-    cv::imwrite("/home/zda/le.jpg", cv::Mat(imageFace, humanFace.leftEye));
+    /*cv::imwrite("/home/zda/le.jpg", cv::Mat(imageFace, humanFace.leftEye));
     cv::imwrite("/home/zda/re.jpg", cv::Mat(imageFace, humanFace.rightEye));
     cv::imwrite("/home/zda/n.jpg", cv::Mat(imageFace, humanFace.nose));
-    cv::imwrite("/home/zda/m.jpg", cv::Mat(imageFace, humanFace.mouth));
+    cv::imwrite("/home/zda/m.jpg", cv::Mat(imageFace, humanFace.mouth));*/
 
     TRACE_S_T("GetHumanFaceParts succeed");
 
