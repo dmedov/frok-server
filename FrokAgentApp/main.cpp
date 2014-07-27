@@ -20,8 +20,24 @@ int main(void)
     FrokFaceDetector detector;
 
     std::vector<std::string> ids;
-    ids.push_back("1");
+    ids.push_back("0");
+    /*ids.push_back("1");
     ids.push_back("2");
+    ids.push_back("3");
+    ids.push_back("4");
+    ids.push_back("5");
+    ids.push_back("6");
+    ids.push_back("7");
+    ids.push_back("8");
+    ids.push_back("9");
+    ids.push_back("10");
+    ids.push_back("11");
+    ids.push_back("12");
+    ids.push_back("13");
+    ids.push_back("14");
+    ids.push_back("15");
+    ids.push_back("16");
+    ids.push_back("17");*/
     printf("Calling TrainUserModel...\n");
     TrainUserModel(ids, DEFAULT_PHOTO_BASE_PATH, detector, recognizer);
     printf("TrainUserModel finished\n");
@@ -30,78 +46,12 @@ int main(void)
     printf("Calling Recognize...\n");
     Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "1.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
     printf("Rcognize finished\n");*/
-    /*FaceUserModel model((std::string)"1", RECOGNIZER_EIGENFACES);
 
-    std::vector<cv::Rect> faces;
+    /*std::vector<cv::Rect> faces;
     std::vector<cv::Mat> images;
-
-// Train Base
-    timespec startTime;
-    timespec endTime;
-    memset(&startTime, 0, sizeof(startTime));
-    memset(&endTime, 0, sizeof(endTime));
-//START OF VERY FAST WAITING
-    printf("Starting first image's face detection\n");
-    clock_gettime(CLOCK_REALTIME, &startTime);
-
-    detector.SetTargetImage("/home/zda/faces/1/photos/1.jpg");
+    detector.SetTargetImage("/home/zda/faces/0/photos/Picture (22) (Copy).jpg");
     detector.GetFacesFromPhoto(faces);
-    detector.GetNormalizedFaceImages(faces, images);
-
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    print_time(startTime, endTime);
-
-    printf("Starting first image's face detection\n");
-    clock_gettime(CLOCK_REALTIME, &startTime);
-    detector.SetTargetImage("/home/zda/faces/1/photos/2.jpg");
-    detector.GetFacesFromPhoto(faces);
-    detector.GetNormalizedFaceImages(faces, images);
-
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    print_time(startTime, endTime);
-
-    printf("Starting base generation\n");
-    clock_gettime(CLOCK_REALTIME, &startTime);
-    model.GenerateUserModel(images);
-    recognizer.AddFrokUserModel((std::string)"1", model);
-
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    print_time(startTime, endTime);
-// Train Base finished
-
-// Get recigized face
-    printf("Face detection on recognized picture\n");
-    clock_gettime(CLOCK_REALTIME, &startTime);
-
-    detector.SetTargetImage("/home/zda/faces/1/photos/3.jpg");
-    detector.GetFacesFromPhoto(faces);
-    detector.GetNormalizedFaceImages(faces, images);
-
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    print_time(startTime, endTime);
-
-// Recognize
-    printf("Recognition\n");
-    clock_gettime(CLOCK_REALTIME, &startTime);
-
-    std::vector<std::string> ids;
-    ids.push_back("1");
-    recognizer.SetUserIdsVector(ids);
-    std::map<std::string, double> similarities;
-    recognizer.GetSimilarityOfFaceWithModels(images[2], similarities);
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    print_time(startTime, endTime);
-    printf("done\n");*/
-
-    /*for(std::vector<cv::Mat>::iterator it = images.begin(); it != images.end(); ++it)
-    {
-        cv::Mat face = (cv::Mat)*it;
-        cv::imwrite("/home/zda/faces/face.jpg", face);
-        //cv::imshow("image",);
-    }*/
-
-
-    getchar();
+    detector.GetNormalizedFaceImages(faces, images);*/
 
     return 0;
 }

@@ -232,6 +232,7 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
 
             for(std::vector<std::string>::iterator iterImage = userPhotos.begin(); iterImage != userPhotos.end(); ++iterImage)
             {
+                TRACE_S_T("Processing image %s", ((std::string)*iterImage).c_str());
                 std::string imageFullPath = photosPath;
                 imageFullPath.append((std::string)*iterImage);
                 if(FROK_RESULT_SUCCESS != (res = detector.SetTargetImage(imageFullPath.c_str())))
@@ -337,4 +338,3 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
 
     return FROK_RESULT_SUCCESS;
 }
-

@@ -351,7 +351,18 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
 
     if(eyes.size() == 1)
     {
-        if(faceParts->leftEye == eyes[0])
+        // See whether one eye is subpicture of another (both eyes are idential)
+        if((faceParts->leftEye.x                                    >=  (eyes[0].x + + eyes[0].width)) ||
+                ((faceParts->leftEye.x + faceParts->leftEye.width)  <=  eyes[0].x) ||
+                (faceParts->leftEye.y                               >=  (eyes[0].y + + eyes[0].height)) ||
+                ((faceParts->leftEye.y + faceParts->leftEye.height) <=  eyes[0].y))
+        {
+            // Different rectangles
+            TRACE_S_T("Right eye was successfully detected with CASCADE_EYE_RIGHT");
+            faceParts->rightEye = eyes[0];
+            faceParts->rightEyeFound = true;
+        }
+        else
         {
             TRACE_W_T("Left eye was duplicatedly detected with CASCADE_EYE_RIGHT. Resolving conflict");
             if(faceParts->leftEye.x < image.cols / 2)
@@ -367,12 +378,6 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
                 faceParts->rightEyeFound = true;
             }
         }
-        else
-        {
-            TRACE_S_T("Right eye was successfully detected with CASCADE_EYE_RIGHT");
-            faceParts->rightEye = eyes[0];
-            faceParts->rightEyeFound = true;
-        }
     }
 
     if(faceParts->leftEyeFound == false)
@@ -387,9 +392,33 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
                                                         cascades[CASCADE_EYE_LEFT_SPLITTED].properties.maxObjectSize);
         if(eyes.size() == 1)
         {
-            TRACE_S_T("Left eye was successfully detected with CASCADE_EYE_LEFT_SPLITTED");
-            faceParts->leftEye = eyes[0];
-            faceParts->leftEyeFound = true;
+            // See whether one eye is subpicture of another (both eyes are idential)
+            if((faceParts->rightEye.x                                    >=  (eyes[0].x + + eyes[0].width)) ||
+                    ((faceParts->rightEye.x + faceParts->rightEye.width)  <=  eyes[0].x) ||
+                    (faceParts->rightEye.y                               >=  (eyes[0].y + + eyes[0].height)) ||
+                    ((faceParts->rightEye.y + faceParts->rightEye.height) <=  eyes[0].y))
+            {
+                // Different rectangles
+                TRACE_S_T("Left eye was successfully detected with CASCADE_EYE_LEFT_SPLITTED");
+                faceParts->leftEye = eyes[0];
+                faceParts->leftEyeFound = true;
+            }
+            else
+            {
+                TRACE_W_T("Left eye was duplicatedly detected with CASCADE_EYE_RIGHT. Resolving conflict");
+                if(faceParts->rightEye.x > image.cols / 2)
+                {
+                    TRACE_S_T("Conflict is resolved. Eye is the right one");
+                }
+                else
+                {
+                    TRACE_S_T("Conflict is resolved. Eye is the left one");
+                    faceParts->rightEyeFound = false;
+                    TRACE_S_T("Left eye was successfully detected with CASCADE_EYE_LEFT_SPLITTED");
+                    faceParts->leftEye = eyes[0];
+                    faceParts->leftEyeFound = true;
+                }
+            }
         }
     }
 
@@ -405,7 +434,17 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
                                                         cascades[CASCADE_EYE_RIGHT_SPLITTED].properties.maxObjectSize);
         if(eyes.size() == 1)
         {
-            if(faceParts->leftEye == eyes[0])
+            // See whether one eye is subpicture of another (both eyes are idential)
+            if((faceParts->leftEye.x                                    >=  (eyes[0].x + + eyes[0].width)) ||
+                    ((faceParts->leftEye.x + faceParts->leftEye.width)  <=  eyes[0].x) ||
+                    (faceParts->leftEye.y                               >=  (eyes[0].y + + eyes[0].height)) ||
+                    ((faceParts->leftEye.y + faceParts->leftEye.height) <=  eyes[0].y))
+            {
+                TRACE_S_T("Right eye was successfully detected with CASCADE_EYE_RIGHT_SPLITTED");
+                faceParts->rightEye = eyes[0];
+                faceParts->rightEyeFound = true;
+            }
+            else
             {
                 TRACE_W_T("Left eye was duplicatedly detected with CASCADE_EYE_RIGHT. Resolving conflict");
                 if(faceParts->leftEye.x < image.cols / 2)
@@ -420,12 +459,6 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
                     faceParts->rightEye = eyes[0];
                     faceParts->rightEyeFound = true;
                 }
-            }
-            else
-            {
-                TRACE_S_T("Right eye was successfully detected with CASCADE_EYE_RIGHT_SPLITTED");
-                faceParts->rightEye = eyes[0];
-                faceParts->rightEyeFound = true;
             }
         }
     }
@@ -506,10 +539,10 @@ FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &
         return result;
     }
 
-    cv::Mat le(imageFace, humanFace.leftEye);
-    cv::Mat re(imageFace, humanFace.rightEye);
-    cv::Mat n(imageFace, humanFace.nose);
-    cv::Mat m(imageFace, humanFace.mouth);
+    cv::imwrite("/home/zda/le.jpg", cv::Mat(imageFace, humanFace.leftEye));
+    cv::imwrite("/home/zda/re.jpg", cv::Mat(imageFace, humanFace.rightEye));
+    cv::imwrite("/home/zda/n.jpg", cv::Mat(imageFace, humanFace.nose));
+    cv::imwrite("/home/zda/m.jpg", cv::Mat(imageFace, humanFace.mouth));
 
     TRACE_S_T("GetHumanFaceParts succeed");
 

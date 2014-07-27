@@ -65,7 +65,10 @@ Issues:
 Build steps:        [TBD] more info + QtCreator info
 1. in terminal go to FaceDetection library
     cd ./build
-    make build 
+        for debug:
+    make CFG=debug build 
+        for release:
+    make CFG=release build 
 
 How to install in Windows:
 1. Donwload and install to C:\ opencv from http://sourceforge.net/projects/opencvlibrary/files/opencv-win/2.4.8/opencv-2.4.8.exe/download

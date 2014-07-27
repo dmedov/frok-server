@@ -97,12 +97,9 @@ public:
     FrokResult GetFacesFromPhoto(std::vector< cv::Rect > &faces);
     FrokResult GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages);
     FrokResult GetNormalizedFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages);
-
 private:
     FrokResult AlignFaceImage(cv::Rect faceCoords, const cv::Mat &processedImage, cv::Mat &alignedFaceImage);
     FrokResult GetHumanFaceParts(cv::Mat &image, HumanFace *faceParts);
     FrokResult RemoveDrowbackFrokImage(cv::Mat &image);
-
-
 };
 #endif
