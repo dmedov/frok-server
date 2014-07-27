@@ -254,7 +254,8 @@ FrokResult FaceUserModel::GetPredictedFace(cv::Mat &targetFace, cv::Mat &predict
     TRACE_T("started");
     try
     {
-        cv::Mat tempTargetFace = targetFace;
+        cv::Mat tempTargetFace;
+        targetFace.copyTo(tempTargetFace);
         // Get some required data from the FaceRecognizer model.
         cv::Mat eigenvectors = model->get<cv::Mat>("eigenvectors");
         cv::Mat averageFaceRow = model->get<cv::Mat>("mean");

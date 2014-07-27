@@ -212,12 +212,12 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
         clock_gettime(CLOCK_REALTIME, &startTime);
 
         std::string currentUserFolder = userBasePath;
-        currentUserFolder.append(*it);
+        currentUserFolder.append(*it).append("/");
 
         std::vector<std::string> userPhotos;
 
         std::string photosPath = currentUserFolder;
-        photosPath.append("/photos/");
+        photosPath.append("photos/");
         if(-1 == getFilesFromDir(photosPath.c_str(), userPhotos))
         {
             TRACE_F_T("Failed to get photos from directory %s", currentUserFolder.c_str());
@@ -259,7 +259,7 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
                     TRACE_S_T("Face detection succeed for photo %s", ((std::string)*iterImage).c_str());
                     TRACE_T("Saving result face");
                     std::string saveImagePath = currentUserFolder;
-                    saveImagePath.append("/faces/").append((std::string)*iterImage);
+                    saveImagePath.append("faces/").append((std::string)*iterImage);
                     try
                     {
                         cv::imwrite(saveImagePath, faceImages[faceImages.size() - 1]);

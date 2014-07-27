@@ -145,6 +145,7 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath)
     }
 
     cascades[CASCADE_FACE].properties.maxObjectSize = cv::Size(targetImageKappa.cols, targetImageKappa.rows);
+
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
@@ -152,6 +153,7 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath)
 FrokResult FrokFaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
 {
     TRACE_T("started...");
+
     try
     {
         cascades[CASCADE_FACE].cascade.detectMultiScale(targetImageKappa, faces, cascades[CASCADE_FACE].properties.scaleFactor,
@@ -165,6 +167,7 @@ FrokResult FrokFaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
         return FROK_RESULT_NOT_A_FACE;
     }
     TRACE_T("finished");
+
     return FROK_RESULT_SUCCESS;
 }
 FrokResult FrokFaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
@@ -190,6 +193,8 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
 {
     TRACE_T("started...");
 
+    size_t imagesBefore = faceImages.size();
+
     if(coords.empty())
     {
         TRACE_F_T("Empty vector with faces received");
@@ -197,13 +202,16 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
     }
     FrokResult res;
 
-    cv::Mat targetImageCopy(targetImageKappa);
+    cv::Mat targetImageCopy;
+    targetImageKappa.copyTo(targetImageCopy);
+
     normalizerClahe->apply(targetImageCopy, targetImageCopy);
     cv::normalize(targetImageCopy, targetImageCopy, 10, 250, cv::NORM_MINMAX);
 
     for(std::vector<cv::Rect>::iterator it = coords.begin(); it != coords.end(); ++it)
     {
         cv::Mat faceImage;
+
         if(FROK_RESULT_SUCCESS != (res = AlignFaceImage(*it, targetImageCopy, faceImage)))
         {
             TRACE_F_T("AlignFaceImage failed on result %s", FrokResultToString(res));
@@ -222,7 +230,7 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
         faceImages.push_back(faceImage);
     }
 
-    if(faceImages.empty())
+    if(imagesBefore == faceImages.size())
     {
         TRACE_F_T("All faces are rejected");
         return FROK_RESULT_NOT_A_FACE;

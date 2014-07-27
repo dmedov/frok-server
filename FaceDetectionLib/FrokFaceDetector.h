@@ -33,6 +33,7 @@ typedef enum
     CASCADE_MOUTH_MSC           = 0x08
 } EnumCascades;
 
+#pragma pack(push, 1)
 typedef struct
 {
     // Minimum possible object size. Objects smaller than that are ignored.
@@ -75,6 +76,8 @@ typedef struct HumanFace
         mouthFound = false;
     }
 }HumanFace;
+
+#pragma pack(pop)
 
 class FrokFaceDetector
 {
