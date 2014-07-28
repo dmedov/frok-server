@@ -154,14 +154,10 @@ NetResult FrokServer::StopNetworkServer()
 
 void FrokServer::AcceptConnection(void* param)
 {
-    FrokServer             *pThis = NULL;
-    memcpy(&pThis, param, sizeof(FrokServer*));
+    ThreadFunctionParameters *thParams = (ThreadFunctionParameters*)param;
+    FrokServer             *pThis = (FrokServer*)thParams->object;
 
     SOCKET                  accepted_socket;
-
-    StructSocketListenerData socketListenerData;
-    socketListenerData.pThis = &pThis;
-    unsigned socketListenerDataLength = sizeof(FrokServer*) + sizeof(SOCKET) + sizeof(CommonThread*);
 
     TRACE("Accepting all incoming connections for socket %i", pThis->localSock);
 
@@ -203,12 +199,12 @@ void FrokServer::AcceptConnection(void* param)
             continue;
         }
 
-        socketListenerData.listenedSocket = accepted_socket;
-
         CommonThread *thread = new CommonThread;
-        if(!thread->startThread((void*(*)(void*))FrokServer::SocketListener, &socketListenerData, socketListenerDataLength))
+
+        if(!thread->startThread((void*(*)(void*))FrokServer::SocketListener, &accepted_socket, sizeof(accepted_socket), &pThis))
         {
             TRACE_F("Failed to start SocketListener thread. See CommonThread logs for information");
+            delete thread;
             continue;
         }
 
@@ -226,24 +222,26 @@ void FrokServer::AcceptConnection(void* param)
 
 void FrokServer::SocketListener(void* param)
 {
-    SocketListenerData     *psParam = (SocketListenerData*)param;
-    FrokServer *pThis = NULL;
-    memcpy(&pThis, psParam->pThis, sizeof(FrokServer*));
+    ThreadFunctionParameters *thParams = (ThreadFunctionParameters*)param;
+    int listenedSocket = *(int*)thParams->params;
+    FrokServer *pThis = (FrokServer*)thParams->object;
+
+    UNREFERENCED_PARAMETER(pThis);
 
     int         dataLength;
     char        data[MAX_SOCKET_BUFF_SIZE];
 
-    TRACE("start listening to socket %i", psParam->listenedSocket);
+    TRACE("start listening to socket %i", listenedSocket);
 
     for(;;)
     {
-        if(psParam->thread->isStopThreadReceived())
+        if(thParams->thread->isStopThreadReceived())
         {
             TRACE("terminate thread sema received");
             break;
         }
 
-        if( -1 == (dataLength = recv(psParam->listenedSocket, data, sizeof(data), MSG_DONTWAIT)))
+        if( -1 == (dataLength = recv(listenedSocket, data, sizeof(data), MSG_DONTWAIT)))
         {
             if((errno == EAGAIN) || (errno == EWOULDBLOCK))
             {
@@ -251,8 +249,8 @@ void FrokServer::SocketListener(void* param)
                 continue;
             }
             // unspecified error occured
-            shutdown(psParam->listenedSocket, 2);
-            close(psParam->listenedSocket);
+            shutdown(listenedSocket, 2);
+            close(listenedSocket);
             TRACE_F("recv failed on error %s", strerror(errno));
             TRACE_W("SocketListener shutdown");
             return;
@@ -265,13 +263,13 @@ void FrokServer::SocketListener(void* param)
             break;
         }
 
-        TRACE("Received %d bytes from the socket %u", dataLength, psParam->listenedSocket);
+        TRACE("Received %d bytes from the socket %u", dataLength, listenedSocket);
     }
 
-    if(psParam->listenedSocket != INVALID_SOCKET)
+    if(listenedSocket != INVALID_SOCKET)
     {
-        shutdown(psParam->listenedSocket, 2);
-        close(psParam->listenedSocket);
+        shutdown(listenedSocket, 2);
+        close(listenedSocket);
     }
 
     TRACE("SocketListener finished");
@@ -373,7 +371,7 @@ NetResult FrokServer::StartNetworkServer()
 
     TRACE("Starting ServerListener");
 
-    if(!threadAcceptConnection->startThread((void*(*)(void*))FrokServer::AcceptConnection, &pThis, sizeof(FrokServer*)))
+    if(!threadAcceptConnection->startThread((void*(*)(void*))FrokServer::AcceptConnection, NULL, 0, &pThis))
     {
         TRACE_F("Failed to start ServerListener thread. See CommonThread logs for information");
         shutdown(localSock, 2);

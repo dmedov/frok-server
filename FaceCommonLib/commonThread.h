@@ -27,71 +27,45 @@ typedef enum EnumCommonThreadState
     COMMON_THREAD_ERROR        =   0x04
 } commonThreadState;
 
-#pragma pack (push, 1)
-
-template< class T >
-struct startRoutineParamsTemp
-{
-    void           *pThis;
-    sem_t          *threadStartedSema;
-    unsigned        paramsLength;
-    void           *params;
-    void           *object;
-    void (T::*virtualFunction)(void *);
-    //void         *(*function) (void *);
-    startRoutineParamsTemp()
-    {
-        threadStartedSema = new sem_t;
-        if(0 != sem_init(threadStartedSema, 0, 0))
-        {
-            CTHREAD_PRINT(startRoutineParamsTemp, "sem_init failed on error %s", strerror(errno));
-        }
-    }
-    ~startRoutineParamsTemp()
-    {
-        delete threadStartedSema;
-    }
-};
-
 class CommonThread
 {
 private:
     commonThreadState   threadState;
-    pthread_t          *thread;
-    sem_t              *threadStoppedSema;
+    pthread_t           thread;
+    sem_t               threadStoppedSema;
 
 public:
     CommonThread();
     ~CommonThread();
 
-    bool startThread(void *(*function) (void *), void *functionParams, unsigned functionParamsLength);
+    // pObject - pointer to your class object.
+    // example:
+    // void MyClass::someFunctionOfYourClass() {
+    // MyClass *pThis = this;
+    // startThread(..., &pThis); }
+    bool startThread(void *(*function) (void *), void *functionParams, unsigned functionParamsLength, void *pObject = NULL);
     bool isStopThreadReceived();
     bool stopThread();
-    bool waitForFinish(unsigned timeout_sec);
     commonThreadState getThreadState();
 private:
     static void startRoutine(void *param);
 };
 
+#pragma pack (push, 1)
+
+typedef struct StructThreadFunctionParameters
+{
+    void           *object;
+    void           *params;
+    unsigned        paramsLength;
+    CommonThread   *thread;
+}ThreadFunctionParameters;
+
 typedef struct SructStartRoutineParam
 {
-    void           *pThis;
-    sem_t          *threadStartedSema;
-    unsigned        paramsLength;
-    void           *params;
+    sem_t                       threadStartedSema;
+    ThreadFunctionParameters    functionParameters;
     void         *(*function) (void *);
-    SructStartRoutineParam()
-    {
-        threadStartedSema = new sem_t;
-        if(0 != sem_init(threadStartedSema, 0, 0))
-        {
-            CTHREAD_PRINT(SructStartRoutineParam, "sem_init failed on error %s", strerror(errno));
-        }
-    }
-    ~SructStartRoutineParam()
-    {
-        delete threadStartedSema;
-    }
 } startRoutineParams;
 
 #pragma pack (pop)

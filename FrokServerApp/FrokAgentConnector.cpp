@@ -149,8 +149,8 @@ bool FrokAgentConnector::SendCommand(AgentCommandParam command)
 
 void FrokAgentConnector::AgentListener(void *param)
 {
-    FrokAgentConnector     *pThis = NULL;
-    memcpy(&pThis, param, sizeof(FrokAgentConnector*));
+    ThreadFunctionParameters *thParams = (ThreadFunctionParameters*)param;
+    FrokAgentConnector     *pThis = (FrokAgentConnector*)thParams->object;
 
     int         dataLength;
     char        data[MAX_SOCKET_BUFF_SIZE];
@@ -299,7 +299,7 @@ NetResult FrokAgentConnector::StartNetworkClient()
     FrokAgentConnector *pThis = this;
     TRACE("Starting AgentListener");
 
-    if(!threadAgentListener->startThread((void * (*)(void*))(FrokAgentConnector::AgentListener), &pThis, sizeof(FrokAgentConnector*)))
+    if(!threadAgentListener->startThread((void * (*)(void*))(FrokAgentConnector::AgentListener), NULL, 0, &pThis))
     {
         TRACE_F("Failed to start SocketListener thread. See CommonThread logs for information");
         shutdown(agentSocket, 2);
