@@ -83,16 +83,17 @@ class FrokFaceDetector
 {
 private:
     std::map <EnumCascades, Cascade> cascades;
-    cv::Mat         targetImageKappa;
-    cv::Ptr<cv::CLAHE> normalizerClahe;
-    double aligningScaleFactor;
-    cv::Size faceSize;
+    cv::Mat                 targetImageKappa;
+    cv::Ptr<cv::CLAHE>      normalizerClahe;
+    double                  aligningScaleFactor;
+    cv::Size                faceSize;
+    cv::Size                defaultImageSize;
 public:
     FrokFaceDetector();
     ~FrokFaceDetector();
     FrokResult SetCascadeParameters(EnumCascades cascade, CascadeProperties params);
     FrokResult SetDefaultCascadeParameters(EnumCascades cascade, cv::Mat &imageWithObjects);
-    FrokResult SetTargetImage(const char *imagePath);
+    FrokResult SetTargetImage(const char *imagePath, bool dontResize = false);
     FrokResult SetTargetImage(cv::Mat &image);
     FrokResult GetFacesFromPhoto(std::vector< cv::Rect > &faces);
     FrokResult GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages);
@@ -101,5 +102,6 @@ private:
     FrokResult AlignFaceImage(cv::Rect faceCoords, const cv::Mat &processedImage, cv::Mat &alignedFaceImage);
     FrokResult GetHumanFaceParts(cv::Mat &image, HumanFace *faceParts);
     FrokResult RemoveDrowbackFrokImage(cv::Mat &image);
+    FrokResult ResizeFaceAndImage(cv::Mat &targetImage, cv::Rect &faceCoords);
 };
 #endif
