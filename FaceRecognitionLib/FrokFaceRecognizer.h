@@ -23,7 +23,9 @@ private:
     double GetSimilarity_FirstMethod(const cv::Mat firstImage, const cv::Mat secondImage);
     double GetSimilarity_SecondMethod(const cv::Mat firstImage, const cv::Mat secondImage);
     double GetSimilarity_ThirdMethod(const cv::Mat &firstImage, const cv::Mat &secondImage);
+    double GetSimilarity_ChiSquare(const cv::Mat &firstImage, const cv::Mat &secondImage);
 
+    FrokResult GetImageHistogram(const cv::Mat &image, cv::MatND &histogram);
     __int64_t calcImageHash(cv::Mat &image);
     __int64_t calcHammingDistance(__int64_t firstHash, __int64_t secondHash);
 };

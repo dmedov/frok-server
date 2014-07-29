@@ -10,7 +10,7 @@
 #define _FAIL(__x__, ...)    "[%s->%s] \x1b[1;91m[FAIL] "   __x__ "\n\x1b[0m", MODULE_NAME, __FUNCTION__, ##__VA_ARGS__
 #define _WARN(__x__, ...)    "[%s->%s] \x1b[1;93m[WARN] "   __x__ "\n\x1b[0m", MODULE_NAME, __FUNCTION__, ##__VA_ARGS__
 #define _SUCC(__x__, ...)    "[%s->%s] \x1b[1;97m[SUCC] "   __x__ "\n\x1b[0m", MODULE_NAME, __FUNCTION__, ##__VA_ARGS__
-#define _RES(__x__, ...)     "[%s->%s] \x1b[1;91m[FAIL] "   __x__ "\n\x1b[0m", MODULE_NAME, __FUNCTION__, ##__VA_ARGS__
+#define _RES(__x__, ...)     "[%s->%s] \x1b[1;95m[FAIL] "   __x__ "\n\x1b[0m", MODULE_NAME, __FUNCTION__, ##__VA_ARGS__
 #define _N(__x__, ...)       "[%s->%s] "                    __x__ "\n",        MODULE_NAME, __FUNCTION__, ##__VA_ARGS__
 
 

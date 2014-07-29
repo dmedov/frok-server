@@ -21,9 +21,9 @@ int main(void)
 
     std::vector<std::string> ids;
     //ids.push_back("0");
-    ids.push_back("1");
-    /*ids.push_back("2");
-    ids.push_back("3");
+    //ids.push_back("1");
+    ids.push_back("2");
+    /*ids.push_back("3");
     ids.push_back("4");
     ids.push_back("5");
     ids.push_back("6");
@@ -41,7 +41,17 @@ int main(void)
     printf("Calling TrainUserModel...\n");
     TrainUserModel(ids, DEFAULT_PHOTO_BASE_PATH, detector, recognizer);
     printf("TrainUserModel finished\n");
+    std::vector< std::map<std::string, double> > similarities;
+    printf("Calling Recognize...\n");
+    /*FaceUserModel model(ids[0], RECOGNIZER_EIGENFACES);
+    std::string modelPath = DEFAULT_PHOTO_BASE_PATH;
+    modelPath.append(ids[0]).append("/");
+    model.LoadUserModel(modelPath.c_str());
+    recognizer->AddFrokUserModel(ids[0], model);*/
+    Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "1.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
+    Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "2.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
 
+    printf("Recognize finished\n");
     /*std::vector< std::map<std::string, double> > similarities;
     printf("Calling Recognize...\n");
     Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "1.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);

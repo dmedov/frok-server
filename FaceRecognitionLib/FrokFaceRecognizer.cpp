@@ -1,5 +1,4 @@
 #include "FrokFaceRecognizer.h"
-
 #define MODULE_NAME     "FACE_RECOGNIZER"
 
 FrokFaceRecognizer::FrokFaceRecognizer()
@@ -40,10 +39,10 @@ double FrokFaceRecognizer::GetSimilarity_FirstMethod(const cv::Mat firstImage, c
             }
         }
     }
-    TRACE_T("Calculated error = %lf", err);
+    //TRACE_T("Calculated error = %lf", err);
     if(err < 0) err = -err;
     err /= (255 * diffMat.rows * diffMat.cols);
-    TRACE_T("Normalized error = %lf", err);
+    TRACE_R("GetSimilarity_FirstMethod result = %lf", (1 - err));
     TRACE_T("finished");
     return 1 - err;
 }
@@ -73,10 +72,10 @@ double FrokFaceRecognizer::GetSimilarity_SecondMethod(const cv::Mat firstImage, 
         }
     }
 
-    TRACE_T("Calculated error = %lf", err);
+    //TRACE_T("Calculated error = %lf", err);
     if(err < 0) err = -err;
     err /= (255 * diffMat.rows * diffMat.cols);
-    TRACE_T("Normalized error = %lf", err);
+    TRACE_R("GetSimilarity_SecondMethod result = %lf", (1 - err));
     TRACE_T("finished");
     return 1 - err;
 }
@@ -87,11 +86,56 @@ double FrokFaceRecognizer::GetSimilarity_ThirdMethod(const cv::Mat &firstImage, 
     // Calculate the L2 relative error between the 2 images.
     double err = cv::norm(firstImage, secondImage, CV_L2);
     // Convert to a reasonable scale, since L2 error is summed across all pixels of the image.
-    TRACE_T("Calculated error = %lf", err);
+    //TRACE_T("Calculated error = %lf", err);
     err /= (firstImage.rows * firstImage.cols);
-    TRACE_T("Normalized error = %lf", err);
+    TRACE_R("GetSimilarity_ThirdMethod result = %lf", (1 - err));
     TRACE_T("finished");
     return 1 - err;
+}
+
+double FrokFaceRecognizer::GetSimilarity_ChiSquare(const cv::Mat &firstImage, const cv::Mat &secondImage)
+{
+    TRACE_T("started");
+    FrokResult res;
+
+    cv::MatND firstImageHist;
+    cv::MatND secondImageHist;
+
+    double resPercent = 0;
+
+    TRACE_T("Getting first image's histogram");
+
+    if(FROK_RESULT_SUCCESS != (res = GetImageHistogram(firstImage, firstImageHist)))
+    {
+        TRACE_F_T("GetImageHistogram failed on result %s", FrokResultToString(res));
+        return -1;
+    }
+
+    TRACE_T("Getting second image's histogram");
+
+    if(FROK_RESULT_SUCCESS != (res = GetImageHistogram(secondImage, secondImageHist)))
+    {
+        TRACE_F_T("GetImageHistogram failed on result %s", FrokResultToString(res));
+        return -1;
+    }
+
+    TRACE_T("Comparing histograms");
+    double chiSquare = 0;
+    UNREFERENCED_PARAMETER(chiSquare);
+    try
+    {
+        chiSquare = cv::compareHist(firstImageHist, secondImageHist, CV_COMP_CHISQR);
+    }
+    catch(...)
+    {
+        TRACE_F_T("Opencv failed to compareHist");
+        return -1;
+    }
+
+    resPercent = GetPercantByChiSqruare(2, chiSquare);
+    TRACE_R("GetSimilarity_ChiSquare result = %lf", resPercent);
+    TRACE_T("finished");
+    return resPercent;
 }
 
 FrokResult FrokFaceRecognizer::SetUserIdsVector(std::vector<std::string> &usedUserIds)
@@ -137,7 +181,6 @@ FrokResult FrokFaceRecognizer::SetTargetImage(cv::Mat &targetFace)
     return FROK_RESULT_SUCCESS;
 }
 
-
 FrokResult FrokFaceRecognizer::GetSimilarityOfFaceWithModels(std::map<std::string, double> &similarities)
 {
     TRACE_T("started");
@@ -166,13 +209,23 @@ FrokResult FrokFaceRecognizer::GetSimilarityOfFaceWithModels(std::map<std::strin
             double prob1 = GetSimilarity_FirstMethod(targetFace, predictedFace);
             double prob2 = GetSimilarity_SecondMethod(targetFace, predictedFace);
             double prob3 = GetSimilarity_ThirdMethod(targetFace, predictedFace);
+            double prob4 = GetSimilarity_ChiSquare(targetFace, predictedFace);
+
+            if((prob1 < 0) || (prob2 < 0) || (prob3 < 0) || (prob4 < 0))
+            {
+                TRACE_F_T("Some of GetSimilarities failed");
+                continue;
+            }
 
             double geometricMean = pow(prob1*prob2*prob3, 1. / 3);
             double arithmeticMean = (prob1 + prob2 + prob3) / 3;
 
+            double weightMean = 0.75 * geometricMean + 0.25 * prob4;
+
             TRACE_S_T("geometric mean probability = %lf", geometricMean);
             TRACE_S_T("arithmetic mean probability = %lf", arithmeticMean);
-            similarities[userId] = geometricMean;
+            TRACE_S_T("weightMean mean probability = %lf", weightMean);
+            similarities[userId] = weightMean;
         }
     }
     TRACE_T("finished");
@@ -224,5 +277,28 @@ __int64_t FrokFaceRecognizer::calcHammingDistance(__int64_t firstHash, __int64_t
 
     TRACE_T("finished");
     return dist;
+}
+
+FrokResult FrokFaceRecognizer::GetImageHistogram(const cv::Mat &image, cv::MatND &histogram)
+{
+    TRACE_T("started");
+    TRACE_W_T("This function works only for GrayScaled images");
+    int channels = {0};     // Only 1 channel
+    int histSize [] = {image.cols, image.cols};
+    float range[] = {0, 256};
+    const float* ranges [] = {range};     // full image
+
+    try
+    {
+        cv::calcHist(&image, 1, &channels, cv::Mat(), histogram, 1, histSize, ranges, true, false);
+        cv::normalize(histogram, histogram, 0, 1, cv::NORM_MINMAX, -1, cv::Mat());
+    }
+    catch(...)
+    {
+        TRACE_F_T("Opencv failed to calculate histogram");
+        return FROK_RESULT_OPENCV_ERROR;
+    }
+    TRACE_T("finished");
+    return FROK_RESULT_SUCCESS;
 }
 

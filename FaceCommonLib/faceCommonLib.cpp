@@ -1,8 +1,9 @@
 #include <pthread.h>
 #include <string.h>
-#include "faceCommonLib.h"
-
+#include <math.h>
 #include <sys/time.h>
+
+#include "faceCommonLib.h"
 
 #define MODULE_NAME     "COMMON_LIB"
 
@@ -118,4 +119,92 @@ char *FrokResultToString(FrokResult res)
             return "UNKNOWN_RESULT";
         }
     }
+}
+
+double CalculateGamma(double N)
+{
+    const long double SQRT2PI = 2.5066282746310005024157652848110452530069867406099383;
+
+    int A = 32;
+    long double Z = (long double)N;
+    long double Sc = powl((Z + A), (Z + 0.5));
+    Sc *= expl(-1.0 * (Z + A));
+    Sc /= Z;
+
+    long double F = 1.0;
+    long double Ck;
+    long double Sum = SQRT2PI;
+
+
+    for(int K = 1; K < A; K++)
+    {
+        Z++;
+        Ck = powl(A - K, K - 0.5);
+        Ck *= expl(A - K);
+        Ck /= F;
+
+        Sum += (Ck / Z);
+
+        F *= (-1.0 * K);
+    }
+
+    return (double)(Sum * Sc);
+}
+
+double CalculateIncompleteGamma(double S, double Z)
+{
+    if(Z < 0.0)
+    {
+        TRACE_F("Invalid parameter: Z = %lf", Z);
+        return -1;
+    }
+    double Sc = (1.0 / S);
+    Sc *= pow(Z, S);
+    Sc *= exp(-Z);
+
+    double Sum = 1.0;
+    double Nom = 1.0;
+    double Denom = 1.0;
+
+    for(int I = 0; I < 200; I++)
+    {
+        Nom *= Z;
+        S++;
+        Denom *= S;
+        Sum += (Nom / Denom);
+    }
+
+    return Sum * Sc;
+}
+
+double GetPercantByChiSqruare(int Dof, double Cv)
+{
+    if(Cv < 0 || Dof < 1)
+    {
+        TRACE_F("Invalid parameter: Dof = %i, Cv = %lf", Dof, Cv);
+        return -1;
+    }
+
+    double K = ((double)Dof) * 0.5;
+    double X = Cv * 0.5;
+
+    if(Dof == 2)
+    {
+        return exp(-1.0 * X);
+    }
+
+    double PValue = CalculateIncompleteGamma(K, X);
+    if(PValue < 0)
+    {
+        TRACE_F("CalculateIncompleteGamma failed");
+        return -1;
+    }
+    if(isnan(PValue) || isinf(PValue) || PValue <= 1e-8)
+    {
+        return 1e-14;
+    }
+
+    PValue /= CalculateGamma(K);
+
+    return (1.0 - PValue);
 }
