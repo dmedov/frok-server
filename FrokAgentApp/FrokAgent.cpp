@@ -146,7 +146,7 @@ NetResult FrokAgent::StartNetworkServer()
 
     TRACE("Starting ServerListener");
 
-    if(!threadServerListener->startThread((void*(*)(void*))FrokAgent::ServerListener, &pThis, sizeof(FrokAgent*)))
+    if(!threadServerListener->startThread((void*(*)(void*))FrokAgent::ServerListener, NULL, 0, &pThis))
     {
         TRACE_F("Failed to start ServerListener thread. See CommonThread logs for information");
         return NET_COMMON_THREAD_ERROR;
@@ -183,13 +183,12 @@ bool FrokAgent::StopFrokAgent()
 
 void FrokAgent::ServerListener(void* param)
 {
-    FrokAgent                  *pThis                       = NULL;
+    ThreadFunctionParameters   *thParams                    = (ThreadFunctionParameters*)param;
+    FrokAgent                  *pThis                       = (FrokAgent*)thParams->object;
     SOCKET                      accepted_socket             = INVALID_SOCKET;
     int                         dataLength                  = 0;
     char                        data[MAX_SOCKET_BUFF_SIZE]  = {0};
     std::vector<std::string>    mandatoryKeys;
-
-    memcpy(&pThis, param, sizeof(FrokAgent*));
 
     mandatoryKeys.push_back("cmd");
     mandatoryKeys.push_back("req_id");

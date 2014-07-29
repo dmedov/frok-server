@@ -24,9 +24,11 @@ INCLUDEPATH += ../FaceCommonLib/
 
 HEADERS +=                  \
     FrokFaceRecognizer.h \
-    FaceUserModel.h
+    FaceUserModel.h \
+    FaceRecognizerAbstract.h
 
 SOURCES +=                  \
     FaceUserModel.cpp \
-    FrokFaceRecognizer.cpp
+    FrokFaceRecognizer.cpp \
+    FaceRecognizerAbstract.cpp
 

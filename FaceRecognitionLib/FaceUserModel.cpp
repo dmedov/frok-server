@@ -105,6 +105,7 @@ FrokResult FaceUserModel::GenerateUserModel(std::vector<cv::Mat> &kappaFaces)
     }
 
     TRACE_T("Model training started");
+    TRACE_T("Generating model from %u photos", (unsigned)kappaFaces.size());
     try
     {
         model->train(userKappaFaces, labels);

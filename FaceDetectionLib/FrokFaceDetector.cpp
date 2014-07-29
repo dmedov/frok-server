@@ -69,6 +69,7 @@ FrokFaceDetector::FrokFaceDetector()
     aligningScaleFactor = 1;
 
     faceSize = cv::Size(158, 190);
+    defaultImageSize = cv::Size(320, 320);
 
     TRACE("new FrokFaceDetector");
 }
@@ -134,9 +135,18 @@ FrokResult FrokFaceDetector::SetDefaultCascadeParameters(EnumCascades cascade, c
     cascades[cascade].nonDefaultParameters = false;
     return FROK_RESULT_SUCCESS;
 }
-FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath)
+
+FrokResult FrokFaceDetector::SetTargetImage(cv::Mat &image)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
+    image.copyTo(targetImageKappa);
+    TRACE_T("finished");
+    return FROK_RESULT_SUCCESS;
+}
+
+FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath, bool dontResize)
+{
+    TRACE_T("started");
     targetImageKappa = cv::imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE);
     if(!targetImageKappa.data)
     {
@@ -144,7 +154,36 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath)
         return FROK_RESULT_INVALID_PARAMETER;
     }
 
+    if(!dontResize)
+    {
+        double scale = (double)targetImageKappa.cols / targetImageKappa.rows;
+        cv::Size newImageSize;
+        if(scale > 1)
+        {
+            newImageSize.width = scale * defaultImageSize.width;
+            newImageSize.height = defaultImageSize.height;
+        }
+        else
+        {
+            newImageSize.width = defaultImageSize.width;
+            newImageSize.height = defaultImageSize.height / scale;
+        }
+        TRACE_T("Resizing image from (%d, %d) to (%d, %d)", targetImageKappa.cols, targetImageKappa.rows,
+                newImageSize.width, newImageSize.height);
+        try
+        {
+            cv::resize(targetImageKappa, targetImageKappa, newImageSize);
+        }
+        catch(...)
+        {
+            TRACE_F_T("Opencv failed to resize image");
+            return FROK_RESULT_OPENCV_ERROR;
+        }
+    }
+
     cascades[CASCADE_FACE].properties.maxObjectSize = cv::Size(targetImageKappa.cols, targetImageKappa.rows);
+
+    cv::imwrite("/home/zda/target.jpg", targetImageKappa);
 
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
@@ -152,7 +191,7 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath)
 
 FrokResult FrokFaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
 
     try
     {
@@ -166,13 +205,15 @@ FrokResult FrokFaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
         TRACE_F_T("detectMultiScale Failed");
         return FROK_RESULT_NOT_A_FACE;
     }
+
+    TRACE_S_T("Found %u faces", (unsigned)faces.size());
     TRACE_T("finished");
 
     return FROK_RESULT_SUCCESS;
 }
 FrokResult FrokFaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
 
     if(coords.empty())
     {
@@ -191,7 +232,7 @@ FrokResult FrokFaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std:
 
 FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
 
     size_t imagesBefore = faceImages.size();
 
@@ -224,7 +265,7 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
             return res;
         }
 
-        // Resize image to standart meanings
+        // Restore target image to initial size
         cv::resize(faceImage, faceImage, faceSize);
 
         faceImages.push_back(faceImage);
@@ -522,7 +563,7 @@ detect_finish:
 
 FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &processedImage, cv::Mat &alignedFaceImage)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
     FrokResult result;
 
     // [TBD] Nikita resized image to image * 5 if width/height < 200. I do not.

@@ -91,7 +91,7 @@ FrokResult AddFaceFromPhoto(void *pContext)
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult Recognize(std::vector< std::map<std::string, double> > &similarities, std::vector<std::string> ids, const char *userBasePath, std::string photoName, const char *targetPhotosPath, FrokFaceDetector &detector, FrokFaceRecognizer &recognizer)
+FrokResult Recognize(std::vector< std::map<std::string, double> > &similarities, std::vector<std::string> ids, const char *userBasePath, std::string photoName, const char *targetPhotosPath, FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer)
 {
     timespec startTime;
     timespec endTime;
@@ -119,7 +119,7 @@ FrokResult Recognize(std::vector< std::map<std::string, double> > &similarities,
 
     TRACE_T("Loading models for requested ids");
 
-    if(FROK_RESULT_SUCCESS != (res = recognizer.SetUserIdsVector(ids)))
+    if(FROK_RESULT_SUCCESS != (res = recognizer->SetUserIdsVector(ids)))
     {
         TRACE_W_T("Failed to SetUserIdsVector on error %s", FrokResultToString(res));
         return res;
@@ -132,7 +132,7 @@ FrokResult Recognize(std::vector< std::map<std::string, double> > &similarities,
 
     TRACE_T("Detecting faces on target photo %s", targetImageFullPath.c_str());
 
-    if(FROK_RESULT_SUCCESS != (res = detector.SetTargetImage(targetImageFullPath.c_str())))
+    if(FROK_RESULT_SUCCESS != (res = detector->SetTargetImage(targetImageFullPath.c_str())))
     {
         TRACE_F_T("Failed to SetTargetImage on result %s", FrokResultToString(res));
         return res;
@@ -140,7 +140,7 @@ FrokResult Recognize(std::vector< std::map<std::string, double> > &similarities,
 
     std::vector<cv::Rect> faces;
 
-    if(FROK_RESULT_SUCCESS != (res = detector.GetFacesFromPhoto(faces)))
+    if(FROK_RESULT_SUCCESS != (res = detector->GetFacesFromPhoto(faces)))
     {
         TRACE_F_T("Failed to GetFacesFromPhoto on result %s", FrokResultToString(res));
         return res;
@@ -148,7 +148,7 @@ FrokResult Recognize(std::vector< std::map<std::string, double> > &similarities,
 
     std::vector<cv::Mat> faceImages;
 
-    if(FROK_RESULT_SUCCESS != (res = detector.GetNormalizedFaceImages(faces, faceImages)))
+    if(FROK_RESULT_SUCCESS != (res = detector->GetNormalizedFaceImages(faces, faceImages)))
     {
         TRACE_F_T("Failed to GetNormalizedFaceImages on result %s", FrokResultToString(res));
         return res;
@@ -159,7 +159,14 @@ FrokResult Recognize(std::vector< std::map<std::string, double> > &similarities,
         TRACE_T("Recognizing users on new face");
         cv::Mat currentFace = (cv::Mat)*it;
         std::map<std::string, double> currenFaceSimilarities;
-        if(FROK_RESULT_SUCCESS != (res = recognizer.GetSimilarityOfFaceWithModels(currentFace, currenFaceSimilarities)))
+
+        if(FROK_RESULT_SUCCESS != (res = recognizer->SetTargetImage(currentFace)))
+        {
+            TRACE_F_T("Failed to SetTargetImage on result %s", FrokResultToString(res));
+            continue;
+        }
+
+        if(FROK_RESULT_SUCCESS != (res = recognizer->GetSimilarityOfFaceWithModels(currenFaceSimilarities)))
         {
             TRACE_F_T("Failed to GetSimilarityOfFaceWithModels on result %s", FrokResultToString(res));
             continue;
@@ -183,7 +190,7 @@ FrokResult Recognize(std::vector< std::map<std::string, double> > &similarities,
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath, FrokFaceDetector &detector, FrokFaceRecognizer &recognizer)
+FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath, FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer)
 {
     timespec startTime;
     timespec endTime;
@@ -235,7 +242,7 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
                 TRACE_S_T("Processing image %s", ((std::string)*iterImage).c_str());
                 std::string imageFullPath = photosPath;
                 imageFullPath.append((std::string)*iterImage);
-                if(FROK_RESULT_SUCCESS != (res = detector.SetTargetImage(imageFullPath.c_str())))
+                if(FROK_RESULT_SUCCESS != (res = detector->SetTargetImage(imageFullPath.c_str())))
                 {
                     TRACE_F_T("Failed to SetTargetImage on result %s", FrokResultToString(res));
                     continue;
@@ -243,7 +250,7 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
 
                 std::vector<cv::Rect> faces;
 
-                if(FROK_RESULT_SUCCESS != (res = detector.GetFacesFromPhoto(faces)))
+                if(FROK_RESULT_SUCCESS != (res = detector->GetFacesFromPhoto(faces)))
                 {
                     TRACE_F_T("Failed to GetFacesFromPhoto on result %s", FrokResultToString(res));
                     continue;
@@ -251,7 +258,7 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
 
                 if(faces.size() == 1)
                 {
-                    if(FROK_RESULT_SUCCESS != (res = detector.GetNormalizedFaceImages(faces, faceImages)))
+                    if(FROK_RESULT_SUCCESS != (res = detector->GetNormalizedFaceImages(faces, faceImages)))
                     {
                         TRACE_F_T("Failed to GetNormalizedFaceImages on result %s", FrokResultToString(res));
                         continue;
@@ -309,7 +316,7 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
                     continue;
                 }
 
-                if(FROK_RESULT_SUCCESS != (res = recognizer.AddFrokUserModel(((std::string)*it), *model)))
+                if(FROK_RESULT_SUCCESS != (res = recognizer->AddFrokUserModel(((std::string)*it), *model)))
                 {
                     TRACE_F_T("Failed to AddFrokUserModel on result %s", FrokResultToString(res));
                     continue;

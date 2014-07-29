@@ -2,25 +2,23 @@
 #define FrokFaceRecognizer_H
 
 // include dependencies
+#include "FaceRecognizerAbstract.h"
 #include "FaceUserModel.h"
 #include "faceCommonLib.h"
 
 typedef std::pair<std::string, FaceUserModel> userIdAndModel;
 typedef std::pair<std::string, double> userIdAndSimilarity;
-class FrokFaceRecognizer
+class FrokFaceRecognizer : public FaceRecognizerAbstract
 {
 private:
-    std::map<std::string, FaceUserModel> models;
-    std::map<std::string, FaceUserModel> usedModels;
-    cv::Mat targetImageKappa;
     unsigned maxHammingDistance;
-
 public:
     FrokFaceRecognizer();
     ~FrokFaceRecognizer();
+    FrokResult SetTargetImage(cv::Mat &targetFace);
     FrokResult SetUserIdsVector(std::vector<std::string> &usedUserIds);
     FrokResult AddFrokUserModel(std::string userId, FaceUserModel &model);
-    FrokResult GetSimilarityOfFaceWithModels(cv::Mat &targetFace, std::map<std::string, double> &similarities);
+    FrokResult GetSimilarityOfFaceWithModels(std::map<std::string, double> &similarities);
 private:
     double GetSimilarity_FirstMethod(const cv::Mat firstImage, const cv::Mat secondImage);
     double GetSimilarity_SecondMethod(const cv::Mat firstImage, const cv::Mat secondImage);

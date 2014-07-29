@@ -4,10 +4,7 @@
 #define MAX_SOCKET_BUFF_SIZE            (163840)
 
 // include dependencies
-#include "faceCommonLib.h"
-// opencv dependencies
-#include <cv.h>
-#include <highgui.h>
+#include "FaceDetectorAbstarct.h"
 
 // [TBD] somehow replace paths to haarcascades with path defines
 typedef enum
@@ -79,27 +76,31 @@ typedef struct HumanFace
 
 #pragma pack(pop)
 
-class FrokFaceDetector
+class FrokFaceDetector : public FaceDetectorAbstract
 {
 private:
-    std::map <EnumCascades, Cascade> cascades;
-    cv::Mat         targetImageKappa;
-    cv::Ptr<cv::CLAHE> normalizerClahe;
-    double aligningScaleFactor;
-    cv::Size faceSize;
+    std::map <EnumCascades, Cascade>    cascades;
+    cv::Ptr<cv::CLAHE>                  normalizerClahe;
+    double                              aligningScaleFactor;
+    cv::Size                            faceSize;
+    cv::Size                            defaultImageSize;
 public:
+
     FrokFaceDetector();
     ~FrokFaceDetector();
-    FrokResult SetCascadeParameters(EnumCascades cascade, CascadeProperties params);
-    FrokResult SetDefaultCascadeParameters(EnumCascades cascade, cv::Mat &imageWithObjects);
-    FrokResult SetTargetImage(const char *imagePath);
+
+    FrokResult SetTargetImage(const char *imagePath, bool dontResize = false);
     FrokResult SetTargetImage(cv::Mat &image);
     FrokResult GetFacesFromPhoto(std::vector< cv::Rect > &faces);
     FrokResult GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages);
     FrokResult GetNormalizedFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages);
+
+    FrokResult SetCascadeParameters(EnumCascades cascade, CascadeProperties params);
+    FrokResult SetDefaultCascadeParameters(EnumCascades cascade, cv::Mat &imageWithObjects);
 private:
     FrokResult AlignFaceImage(cv::Rect faceCoords, const cv::Mat &processedImage, cv::Mat &alignedFaceImage);
     FrokResult GetHumanFaceParts(cv::Mat &image, HumanFace *faceParts);
     FrokResult RemoveDrowbackFrokImage(cv::Mat &image);
+    FrokResult ResizeFaceAndImage(cv::Mat &targetImage, cv::Rect &faceCoords);
 };
 #endif
