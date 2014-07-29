@@ -1,9 +1,9 @@
 #include <stdio.h>
 
 #include "FrokAgent.h"
-//#include "FrokFaceDetector.h"
-//#include "FrokFaceRecognizer.h"
-//#include "FaceUserModel.h"
+/*#include "FrokFaceDetector.h"
+#include "FrokFaceRecognizer.h"*/
+
 void usage()
 {
     printf("FaceDetectionApp <Local port number>");
@@ -16,13 +16,13 @@ int main(void)
     {
         return -1;
     }
-    FrokFaceRecognizer recognizer;
-    FrokFaceDetector detector;
+    FaceRecognizerAbstract *recognizer = new FrokFaceRecognizer;
+    FaceDetectorAbstract *detector = new FrokFaceDetector;
 
     std::vector<std::string> ids;
-    ids.push_back("0");
-    /*ids.push_back("1");
-    ids.push_back("2");
+    //ids.push_back("0");
+    ids.push_back("1");
+    /*ids.push_back("2");
     ids.push_back("3");
     ids.push_back("4");
     ids.push_back("5");
@@ -49,8 +49,10 @@ int main(void)
 
     /*std::vector<cv::Rect> faces;
     std::vector<cv::Mat> images;
-    detector.SetTargetImage("/home/zda/faces/0/photos/Picture (22) (Copy).jpg");
+    detector.SetTargetImage("/home/zda/faces/1/photos/Picture (15).jpg");
     detector.GetFacesFromPhoto(faces);
+    detector.GetFaceImages(faces, images);
+    cv::imwrite("/home/zda/_face.jpg", images[0]);
     detector.GetNormalizedFaceImages(faces, images);*/
 
     return 0;

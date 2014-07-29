@@ -121,7 +121,24 @@ FrokResult FrokFaceRecognizer::SetUserIdsVector(std::vector<std::string> &usedUs
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FrokFaceRecognizer::GetSimilarityOfFaceWithModels(cv::Mat &targetFace, std::map<std::string, double> &similarities)
+FrokResult FrokFaceRecognizer::SetTargetImage(cv::Mat &targetFace)
+{
+    TRACE_T("started");
+    try
+    {
+        targetFace.copyTo(this->targetFace);
+    }
+    catch(...)
+    {
+        TRACE_F_T("Opencv failed to copy tagetFace");
+        return FROK_RESULT_OPENCV_ERROR;
+    }
+    TRACE_T("finished");
+    return FROK_RESULT_SUCCESS;
+}
+
+
+FrokResult FrokFaceRecognizer::GetSimilarityOfFaceWithModels(std::map<std::string, double> &similarities)
 {
     TRACE_T("started");
     if(usedModels.empty())

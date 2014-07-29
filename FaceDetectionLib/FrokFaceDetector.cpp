@@ -135,9 +135,18 @@ FrokResult FrokFaceDetector::SetDefaultCascadeParameters(EnumCascades cascade, c
     cascades[cascade].nonDefaultParameters = false;
     return FROK_RESULT_SUCCESS;
 }
+
+FrokResult FrokFaceDetector::SetTargetImage(cv::Mat &image)
+{
+    TRACE_T("started");
+    image.copyTo(targetImageKappa);
+    TRACE_T("finished");
+    return FROK_RESULT_SUCCESS;
+}
+
 FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath, bool dontResize)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
     targetImageKappa = cv::imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE);
     if(!targetImageKappa.data)
     {
@@ -182,7 +191,7 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath, bool dontResi
 
 FrokResult FrokFaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
 
     try
     {
@@ -204,7 +213,7 @@ FrokResult FrokFaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
 }
 FrokResult FrokFaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
 
     if(coords.empty())
     {
@@ -223,7 +232,7 @@ FrokResult FrokFaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std:
 
 FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
 
     size_t imagesBefore = faceImages.size();
 
@@ -554,7 +563,7 @@ detect_finish:
 
 FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &processedImage, cv::Mat &alignedFaceImage)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
     FrokResult result;
 
     // [TBD] Nikita resized image to image * 5 if width/height < 200. I do not.
