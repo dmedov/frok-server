@@ -288,10 +288,10 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
             if(!faceImages.empty())
             {
                 TRACE_T("Found %u images for user %s. Generating user model", (unsigned)faceImages.size(), ((std::string)*it).c_str());
-                FaceUserModel *model;
+                FaceModelAbstract *model;
                 try
                 {
-                    model = new FaceUserModel(*it, RECOGNIZER_EIGENFACES);
+                    model = new FaceModelEigenfaces((std::string)*it);
                 }
                 catch(FrokResult error)
                 {
@@ -316,9 +316,9 @@ FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath
                     continue;
                 }
 
-                if(FROK_RESULT_SUCCESS != (res = recognizer->AddFrokUserModel(((std::string)*it), *model)))
+                if(FROK_RESULT_SUCCESS != (res = recognizer->AddFaceUserModel(((std::string)*it), model)))
                 {
-                    TRACE_F_T("Failed to AddFrokUserModel on result %s", FrokResultToString(res));
+                    TRACE_F_T("Failed to AddFaceUserModel on result %s", FrokResultToString(res));
                     continue;
                 }
             }

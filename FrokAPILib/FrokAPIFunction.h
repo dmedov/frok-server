@@ -9,7 +9,7 @@
 #include <highgui.h>
 
 #include "FrokFaceDetector.h"
-#include "FrokFaceRecognizer.h"
+#include "FaceRecognizerEigenfaces.h"
 #include "faceCommonLib.h"
 
 typedef FrokResult (*APIFunction) (void *params);

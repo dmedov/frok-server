@@ -1,19 +1,20 @@
-#include "FrokFaceRecognizer.h"
-#define MODULE_NAME     "FACE_RECOGNIZER"
+#include "FaceRecognizerEigenfaces.h"
 
-FrokFaceRecognizer::FrokFaceRecognizer()
+#define MODULE_NAME     "FACE_RECOGNIZER_EIGENFACES"
+
+FaceRecognizerEigenfaces::FaceRecognizerEigenfaces()
 {
     // Set defaults
     maxHammingDistance = 18;
-    TRACE("new FrokFaceRecognizer");
+    TRACE("new FaceRecognizerEigenfaces");
 }
 
-FrokFaceRecognizer::~FrokFaceRecognizer()
+FaceRecognizerEigenfaces::~FaceRecognizerEigenfaces()
 {
-    TRACE("~FrokFaceRecognizer");
+    TRACE("~FaceRecognizerEigenfaces");
 }
 
-FrokResult FrokFaceRecognizer::AddFrokUserModel(std::string userId, FaceUserModel &model)
+FrokResult FaceRecognizerEigenfaces::AddFaceUserModel(std::string userId, FaceModelAbstract *model)
 {
     TRACE_T("started");
     models[userId] = model;
@@ -21,7 +22,7 @@ FrokResult FrokFaceRecognizer::AddFrokUserModel(std::string userId, FaceUserMode
     return FROK_RESULT_SUCCESS;
 }
 
-double FrokFaceRecognizer::GetSimilarity_FirstMethod(const cv::Mat firstImage, const cv::Mat secondImage)
+double FaceRecognizerEigenfaces::GetSimilarity_FirstMethod(const cv::Mat firstImage, const cv::Mat secondImage)
 {
     TRACE_T("started");
     cv::Mat diffMat = firstImage - secondImage;
@@ -46,7 +47,7 @@ double FrokFaceRecognizer::GetSimilarity_FirstMethod(const cv::Mat firstImage, c
     TRACE_T("finished");
     return 1 - err;
 }
-double FrokFaceRecognizer::GetSimilarity_SecondMethod(const cv::Mat firstImage, const cv::Mat secondImage)
+double FaceRecognizerEigenfaces::GetSimilarity_SecondMethod(const cv::Mat firstImage, const cv::Mat secondImage)
 {
     TRACE_T("started");
     cv::Mat temporary1, temporary2;
@@ -80,7 +81,7 @@ double FrokFaceRecognizer::GetSimilarity_SecondMethod(const cv::Mat firstImage, 
     return 1 - err;
 }
 
-double FrokFaceRecognizer::GetSimilarity_ThirdMethod(const cv::Mat &firstImage, const cv::Mat &secondImage)
+double FaceRecognizerEigenfaces::GetSimilarity_ThirdMethod(const cv::Mat &firstImage, const cv::Mat &secondImage)
 {
     TRACE_T("started");
     // Calculate the L2 relative error between the 2 images.
@@ -93,7 +94,7 @@ double FrokFaceRecognizer::GetSimilarity_ThirdMethod(const cv::Mat &firstImage, 
     return 1 - err;
 }
 
-double FrokFaceRecognizer::GetSimilarity_ChiSquare(const cv::Mat &firstImage, const cv::Mat &secondImage)
+double FaceRecognizerEigenfaces::GetSimilarity_ChiSquare(const cv::Mat &firstImage, const cv::Mat &secondImage)
 {
     TRACE_T("started");
     FrokResult res;
@@ -138,7 +139,7 @@ double FrokFaceRecognizer::GetSimilarity_ChiSquare(const cv::Mat &firstImage, co
     return resPercent;
 }
 
-FrokResult FrokFaceRecognizer::SetUserIdsVector(std::vector<std::string> &usedUserIds)
+FrokResult FaceRecognizerEigenfaces::SetUserIdsVector(std::vector<std::string> &usedUserIds)
 {
     TRACE_T("started");
     if(models.empty())
@@ -165,7 +166,7 @@ FrokResult FrokFaceRecognizer::SetUserIdsVector(std::vector<std::string> &usedUs
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FrokFaceRecognizer::SetTargetImage(cv::Mat &targetFace)
+FrokResult FaceRecognizerEigenfaces::SetTargetImage(cv::Mat &targetFace)
 {
     TRACE_T("started");
     try
@@ -181,7 +182,7 @@ FrokResult FrokFaceRecognizer::SetTargetImage(cv::Mat &targetFace)
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FrokFaceRecognizer::GetSimilarityOfFaceWithModels(std::map<std::string, double> &similarities)
+FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std::string, double> &similarities)
 {
     TRACE_T("started");
     if(usedModels.empty())
@@ -191,12 +192,12 @@ FrokResult FrokFaceRecognizer::GetSimilarityOfFaceWithModels(std::map<std::strin
     }
 
     FrokResult res;
-    for(std::map<std::string, FaceUserModel>::const_iterator it = usedModels.begin(); it != usedModels.end(); ++it)
+    for(std::map< std::string, FaceModelAbstract* >::const_iterator it = usedModels.begin(); it != usedModels.end(); ++it)
     {
-        FaceUserModel model = ((userIdAndModel)*it).second;
+        FaceModelAbstract *model = ((userIdAndModel)*it).second;
         std::string userId = ((userIdAndModel)*it).first;
         cv::Mat predictedFace;
-        if(FROK_RESULT_SUCCESS != (res = model.GetPredictedFace(targetFace, predictedFace)))
+        if(FROK_RESULT_SUCCESS != (res = model->GetPredictedFace(targetFace, predictedFace)))
         {
             TRACE_F_T("GetPredictedFace failed on result %s for user %s", FrokResultToString(res), userId.c_str());
             continue;
@@ -220,7 +221,7 @@ FrokResult FrokFaceRecognizer::GetSimilarityOfFaceWithModels(std::map<std::strin
             double geometricMean = pow(prob1*prob2*prob3, 1. / 3);
             double arithmeticMean = (prob1 + prob2 + prob3) / 3;
 
-            double weightMean = 0.75 * geometricMean + 0.25 * prob4;
+            double weightMean = 0.25 * geometricMean + 0.75 * prob4;
 
             TRACE_S_T("geometric mean probability = %lf", geometricMean);
             TRACE_S_T("arithmetic mean probability = %lf", arithmeticMean);
@@ -233,7 +234,7 @@ FrokResult FrokFaceRecognizer::GetSimilarityOfFaceWithModels(std::map<std::strin
 }
 
 // [TBD] Get any prove of this code frok Nikita!
-__int64_t FrokFaceRecognizer::calcImageHash(cv::Mat &image)
+__int64_t FaceRecognizerEigenfaces::calcImageHash(cv::Mat &image)
 {
     TRACE_T("started");
 
@@ -263,7 +264,7 @@ __int64_t FrokFaceRecognizer::calcImageHash(cv::Mat &image)
 }
 
 // [TBD] There is possibly easier way to count it
-__int64_t FrokFaceRecognizer::calcHammingDistance(__int64_t firstHash, __int64_t secondHash)
+__int64_t FaceRecognizerEigenfaces::calcHammingDistance(__int64_t firstHash, __int64_t secondHash)
 {
     TRACE_T("started");
     __int64_t dist = 0, val = firstHash ^ secondHash;
@@ -279,7 +280,7 @@ __int64_t FrokFaceRecognizer::calcHammingDistance(__int64_t firstHash, __int64_t
     return dist;
 }
 
-FrokResult FrokFaceRecognizer::GetImageHistogram(const cv::Mat &image, cv::MatND &histogram)
+FrokResult FaceRecognizerEigenfaces::GetImageHistogram(const cv::Mat &image, cv::MatND &histogram)
 {
     TRACE_T("started");
     TRACE_W_T("This function works only for GrayScaled images");

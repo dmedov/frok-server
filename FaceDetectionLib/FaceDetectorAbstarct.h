@@ -10,7 +10,7 @@
 class FaceDetectorAbstract
 {
 protected:
-    cv::Mat                 targetImageKappa;
+    cv::Mat                 targetImageGray;
 public:
     FaceDetectorAbstract();
     virtual ~FaceDetectorAbstract();

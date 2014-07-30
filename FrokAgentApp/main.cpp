@@ -1,8 +1,5 @@
 #include <stdio.h>
-
 #include "FrokAgent.h"
-/*#include "FrokFaceDetector.h"
-#include "FrokFaceRecognizer.h"*/
 
 void usage()
 {
@@ -16,7 +13,7 @@ int main(void)
     {
         return -1;
     }
-    FaceRecognizerAbstract *recognizer = new FrokFaceRecognizer;
+    FaceRecognizerAbstract *recognizer = new FaceRecognizerEigenfaces;
     FaceDetectorAbstract *detector = new FrokFaceDetector;
 
     std::vector<std::string> ids;
@@ -47,7 +44,7 @@ int main(void)
     std::string modelPath = DEFAULT_PHOTO_BASE_PATH;
     modelPath.append(ids[0]).append("/");
     model.LoadUserModel(modelPath.c_str());
-    recognizer->AddFrokUserModel(ids[0], model);*/
+    recognizer->AddFaceUserModel(ids[0], model);*/
     Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "1.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
     Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "2.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
 
