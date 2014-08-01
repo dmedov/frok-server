@@ -2,8 +2,8 @@
 #define FROKAPI_H
 
 // include dependencies
-#include "faceCommonLib.h"
 #include "FrokAPIFunction.h"
+#include "faceCommonLib.h"
 
 // FaceAgent defaults
 const char DEFAULT_PHOTO_BASE_PATH [] = "/home/zda/faces/";

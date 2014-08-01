@@ -1,5 +1,6 @@
 #include "FaceRecognizerEigenfaces.h"
 
+#pragma GCC poison IplImage
 #define MODULE_NAME     "FACE_RECOGNIZER_EIGENFACES"
 
 FaceRecognizerEigenfaces::FaceRecognizerEigenfaces()

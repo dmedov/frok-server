@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include "FaceModelEigenfaces.h"
 
+#pragma GCC poison IplImage
 #define MODULE_NAME         "MODEL_EIGENFACES"
 
 FaceModelEigenfaces::FaceModelEigenfaces()

@@ -1,5 +1,6 @@
 #include "FaceModelAbstract.h"
 
+#pragma GCC poison IplImage
 #define MODULE_NAME     "FACE_MODEL_ABSTRACT"
 
 FaceModelAbstract::FaceModelAbstract()

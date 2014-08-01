@@ -1,5 +1,6 @@
 #include "FrokAPIFunction.h"
 
+#pragma GCC poison IplImage
 #define MODULE_NAME     "FROK_API"
 
 FrokResult GetFacesFromPhoto(void *pContext)

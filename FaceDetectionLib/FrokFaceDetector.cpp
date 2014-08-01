@@ -1,7 +1,7 @@
 #include "FrokFaceDetector.h"
-
 #include <math.h>
 
+#pragma GCC poison IplImage
 #define MODULE_NAME         "FACE_DETECTOR"
 
 FrokFaceDetector::FrokFaceDetector()

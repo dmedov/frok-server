@@ -5,6 +5,8 @@
 #include <time.h>
 #include <stdio.h>
 
+#pragma GCC poison cout
+
 #ifdef TRACE_DEBUG
 // Colored print defines
 #define _FAIL(__x__, ...)    "[%s->%s] \x1b[1;91m[FAIL] "   __x__ "\n\x1b[0m", MODULE_NAME, __FUNCTION__, ##__VA_ARGS__

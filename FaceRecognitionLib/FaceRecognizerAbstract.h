@@ -1,14 +1,14 @@
 #ifndef FACERECOGNIZERABSTRACT_H
 #define FACERECOGNIZERABSTRACT_H
 
-// include dependencies
-#include "faceCommonLib.h"
-#include "FaceModelAbstract.h"
-
 // opencv dependencies
 #include <cv.h>
 #include <highgui.h>
 #include <opencv2/contrib/contrib.hpp>
+
+// include dependencies
+#include "FaceModelAbstract.h"
+#include "faceCommonLib.h"
 
 class FaceRecognizerAbstract
 {

@@ -5,8 +5,8 @@
 #define MAX_SOCKET_BUFF_SIZE            (163840)
 
 // include dependencies
-#include "faceCommonLib.h"
 #include "FrokAPI.h"
+#include "faceCommonLib.h"
 
 typedef enum NetResult
 {

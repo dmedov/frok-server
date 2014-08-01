@@ -1,12 +1,13 @@
 #ifndef FACEMODELABSTRACT_H
 #define FACEMODELABSTRACT_H
 
-// include dependencies
-#include "faceCommonLib.h"
 // opencv dependencies
 #include <cv.h>
 #include <highgui.h>
 #include <opencv2/contrib/contrib.hpp>
+
+// include dependencies
+#include "faceCommonLib.h"
 
 class FaceModelAbstract
 {

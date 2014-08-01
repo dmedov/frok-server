@@ -13,22 +13,44 @@
 #include "faceCommonLib.h"
 
 typedef FrokResult (*APIFunction) (void *params);
-
+typedef void (*Converter) (void* converterParams);
 #pragma pack(push, 1)
+
+typedef struct
+{
+    std::string jsonParameters;
+    void *functionParameters;
+}ConvertParams;
 
 typedef struct FrokAPIFunction
 {
 public:
     // Pointer to function
-    APIFunction function;
+    APIFunction         function;
+    // Function parameters
+    std::string         jsonParameters;
     // Function description
-    const char         *functionDescription;
-    // template json with function's param fields with zeroed values
-    std::string         jsonParams;
+    std::string         functionDescription;
     // Function params description
-    const char         *jsonParamsDescription;
+    std::string         paramsDescription;
     // Estimated timeout in seconds
     unsigned long int   timeout;
+    // Pointer to converter
+    Converter ConvertJsonToFunctionParameters;
+    // Pointer to converter
+    Converter ConvertFunctionReturnToJson;
+    FrokAPIFunction(APIFunction function, std::string jsonParameters, const char *functionDescription,
+                    const char *paramsDescription, unsigned long int timeout, Converter json2funcP,
+                    Converter funcR2json)
+    {
+        this->function = function;
+        this->jsonParameters = jsonParameters;
+        this->functionDescription = functionDescription;
+        this->paramsDescription = paramsDescription;
+        this->timeout = timeout;
+        this->ConvertJsonToFunctionParameters = json2funcP;
+        this->ConvertFunctionReturnToJson = funcR2json;
+    }
 }FrokAPIFunction;
 
 #pragma pack(pop)
