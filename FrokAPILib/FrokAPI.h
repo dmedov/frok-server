@@ -11,8 +11,11 @@ const char DEFAULT_TARGETS_FOLDER_PATH [] = "/home/zda/faces/";
 
 class FrokAPI
 {
+    FaceDetectorAbstract *detector;
+    FaceRecognizerAbstract *recognizer;
     std::map<std::string, FrokAPIFunction> functions;
-    FrokAPI();
+
+    FrokAPI(FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer);
     ~FrokAPI();
     void AddAPIFunction(std::string functionName, FrokAPIFunction function);
     FrokResult ExecuteFunction(std::string functionName);

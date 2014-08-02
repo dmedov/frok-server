@@ -12,8 +12,6 @@
 #include "FaceRecognizerEigenfaces.h"
 #include "faceCommonLib.h"
 
-typedef FrokResult (*APIFunction) (void *params);
-typedef void (*Converter) (void* converterParams);
 #pragma pack(push, 1)
 
 typedef struct
@@ -22,13 +20,17 @@ typedef struct
     void *functionParameters;
 }ConvertParams;
 
+typedef FrokResult (*APIFunction) (void *inParams, void **outParams, const char *userBasePath, const char *targetPhotosPath, FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer);
+typedef bool (*Converter) (ConvertParams *converterParams);
+
 typedef struct FrokAPIFunction
 {
 public:
     // Pointer to function
     APIFunction         function;
     // Function parameters
-    std::string         jsonParameters;
+    std::string         inJsonParameters;
+    std::string         outJsonParameters;
     // Function description
     std::string         functionDescription;
     // Function params description
@@ -39,12 +41,23 @@ public:
     Converter ConvertJsonToFunctionParameters;
     // Pointer to converter
     Converter ConvertFunctionReturnToJson;
-    FrokAPIFunction(APIFunction function, std::string jsonParameters, const char *functionDescription,
-                    const char *paramsDescription, unsigned long int timeout, Converter json2funcP,
-                    Converter funcR2json)
+    FrokAPIFunction(APIFunction function, std::vector<std::string> inJsonParameters, std::vector<std::string> outJsonParameters,
+                    const char *functionDescription, const char *paramsDescription, unsigned long int timeout,
+                    Converter json2funcP, Converter funcR2json)
     {
         this->function = function;
-        this->jsonParameters = jsonParameters;
+        json::Object obj;
+        for(std::vector<std::string>::iterator it = inJsonParameters.begin(); it != inJsonParameters.end(); ++it)
+        {
+            obj[(std::string)*it] = "";
+        }
+        this->inJsonParameters = json::Serialize(obj);
+        obj.Clear();
+        for(std::vector<std::string>::iterator it = outJsonParameters.begin(); it != outJsonParameters.end(); ++it)
+        {
+            obj[(std::string)*it] = "";
+        }
+        this->outJsonParameters = json::Serialize(obj);
         this->functionDescription = functionDescription;
         this->paramsDescription = paramsDescription;
         this->timeout = timeout;
@@ -55,9 +68,18 @@ public:
 
 #pragma pack(pop)
 
+extern FrokAPIFunction FAPI_TrainUserModel;
+extern FrokAPIFunction FAPI_Recognize;
+extern FrokAPIFunction FAPI_GetFacesFromPhoto;
+extern FrokAPIFunction FAPI_AddFaceFromPhotoToModel;
+
+
+/*bool FAPI_TrainUserModel_JSON2FUNCP(void* converterParams);
 FrokResult TrainUserModel(std::vector<std::string> ids, const char *userBasePath, FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer);
+
+bool FAPI_Recognize_JSON2FUNCP(void* converterParams);
 FrokResult Recognize(std::vector< std::map<std::string, double> > &similarities, std::vector<std::string> ids, const char *userBasePath, std::string photoName, const char *targetPhotosPath, FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer);
 FrokResult GetFacesFromPhoto(void *pContext);
-FrokResult AddFaceFromPhoto(void *pContext);
+FrokResult AddFaceFromPhotoToModel(void *pContext);*/
 
 #endif // FROKAPIFUNCTION_H

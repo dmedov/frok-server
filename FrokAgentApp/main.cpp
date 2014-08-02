@@ -7,17 +7,23 @@ void usage()
     return;
 }
 
+#define MODULE_NAME ""
+
 int main(void)
 {
     if(!InitFaceCommonLib())
     {
+        TRACE_F("InitFaceCommonLib");
         return -1;
     }
-    FaceRecognizerAbstract *recognizer = new FaceRecognizerEigenfaces;
-    FaceDetectorAbstract *detector = new FrokFaceDetector;
+
+    /*FaceRecognizerAbstract *recognizer = new FaceRecognizerEigenfaces;
+    FaceDetectorAbstract *detector = new FrokFaceDetector;*/
+
+    //FAPI_Recognize_JSON2FUNCP(recognizer);
 
     std::vector<std::string> ids;
-    //ids.push_back("0");
+    //ids.push_back("0");fgfh
     //ids.push_back("1");
     ids.push_back("2");
     /*ids.push_back("3");
@@ -36,7 +42,7 @@ int main(void)
     ids.push_back("16");
     ids.push_back("17");*/
     printf("Calling TrainUserModel...\n");
-    TrainUserModel(ids, DEFAULT_PHOTO_BASE_PATH, detector, recognizer);
+    //TrainUserModel(ids, DEFAULT_PHOTO_BASE_PATH, detector, recognizer);
     printf("TrainUserModel finished\n");
     std::vector< std::map<std::string, double> > similarities;
     printf("Calling Recognize...\n");
@@ -45,8 +51,8 @@ int main(void)
     modelPath.append(ids[0]).append("/");
     model.LoadUserModel(modelPath.c_str());
     recognizer->AddFaceUserModel(ids[0], model);*/
-    Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "1.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
-    Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "2.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
+    //Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "1.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
+    //Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "2.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
 
     printf("Recognize finished\n");
     /*std::vector< std::map<std::string, double> > similarities;
