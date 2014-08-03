@@ -32,57 +32,8 @@ int main(int argc, char *argv[])
     FrokServer server(agentInfoVec, 27015);
     server.StartFrokServer();
 
-    AgentInfo *info2 = new AgentInfo;
-
-    info2->agentIpV4Address = info->agentIpV4Address;
-    info2->agentPortNumber = 27015;
-
-    sleep(1);
-
-    FrokAgentConnector connector(*info2);
-
-    sleep(2);
-    json::Object outJson;
-
-    outJson["cmd"] = "train";
-    outJson["req_id"] = "0";
-    json::Array arr;
-    arr.push_back("1");
-    arr.push_back("2");
-    arr.push_back("3");
-    outJson["arrIds"] = arr;
-
-    // [TBD] this is possibly incorrect, need to serialize all objects
-    std::string outString = json::Serialize(outJson);
-
-    connector.SendCommand(outString);
-
-    getchar();
-    //server.StopFrokServer();
-    /*InitFaceDetectionLib();
-
-    FilePrintMessage(_SUCC("Starting network server with port = %d"), PORT);
-    if (NET_SUCCESS != net.StartNetworkServer())
-    {
-        FilePrintMessage(_FAIL("Failed to start network. For additional info build project with NET_DEBUG_PRINT flag enabled"));
-        DeinitFaceDetectionLib();
-        return -1;
-    }
-    FilePrintMessage(_SUCC("Network server started!"));
-
-    char train[] = "{\"cmd\":\"train\", \"ids\":[\"1\"]}\0";    // cut faces and train base
-    callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(train), train);
-
-    //char save_face[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_number\":\"0\"}\0";    // cut faces and train base
-    //callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(save_face), save_face);
-
-    //char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"2\"}\0";    // recognize name = 1.jpg
-    //callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(recognize), recognize);
-
     getchar();
 
     DeinitFaceDetectionLib();
-
-    printf("success\n");*/
     return 0;
 }
