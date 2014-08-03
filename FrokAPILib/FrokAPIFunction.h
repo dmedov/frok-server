@@ -41,6 +41,17 @@ public:
     Converter ConvertJsonToFunctionParameters;
     // Pointer to converter
     Converter ConvertFunctionReturnToJson;
+    FrokAPIFunction(const FrokAPIFunction &copy)
+    {
+        this->function = copy.function;
+        this->inJsonParameters = copy.inJsonParameters;
+        this->outJsonParameters = copy.outJsonParameters;
+        this->functionDescription = copy.functionDescription;
+        this->timeout = copy.timeout;
+        this->ConvertFunctionReturnToJson = copy.ConvertFunctionReturnToJson;
+        this->ConvertJsonToFunctionParameters = copy.ConvertJsonToFunctionParameters;
+        this->paramsDescription = copy.paramsDescription;
+    }
     FrokAPIFunction(APIFunction function, std::vector<std::string> inJsonParameters, std::vector<std::string> outJsonParameters,
                     const char *functionDescription, const char *paramsDescription, unsigned long int timeout,
                     Converter json2funcP, Converter funcR2json)
