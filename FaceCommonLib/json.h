@@ -29,7 +29,7 @@
 #define JSON_H
 
 // include dependencies
-#include <assert.h>
+//#include <assert.h>
 #include <map>
 #include <string>
 #include <vector>
@@ -263,13 +263,48 @@ namespace json
             // Or you can now do:
             //         my_string = my_value.ToString();
             //
-            operator int() const             {assert(IsNumeric()); return mIntVal;}
-            operator float() const             {assert(IsNumeric()); return mFloatVal;}
-            operator double() const         {assert(IsNumeric()); return mDoubleVal;}
-            operator bool() const             {assert(mValueType == BoolVal); return mBoolVal;}
-            operator std::string() const     {assert(mValueType == StringVal); return mStringVal;}
-            operator Object() const         {assert(mValueType == ObjectVal); return mObjectVal;}
-            operator Array() const             {assert(mValueType == ArrayVal); return mArrayVal;}
+            operator int() const
+            {
+                if(!IsNumeric())
+                    throw -1;
+                return mIntVal;
+            }
+            operator float() const
+            {
+                if(!IsNumeric())
+                    throw -1;
+                return mFloatVal;
+            }
+            operator double() const
+            {
+                if(!IsNumeric())
+                    throw -1;
+                return mDoubleVal;
+            }
+            operator bool() const
+            {
+                if(mValueType != BoolVal)
+                    throw -1;
+                return mBoolVal;
+            }
+            operator std::string() const
+            {
+                if(mValueType != StringVal)
+                    throw -1;
+                return mStringVal;
+            }
+            operator Object() const
+            {
+                if(mValueType != ObjectVal)
+                    throw -1;
+                return mObjectVal;
+            }
+            operator Array() const
+            {
+                if(mValueType != ArrayVal)
+                    throw -1;
+                return mArrayVal;
+            }
 
             bool IsNumeric() const             {return (mValueType == IntVal) || (mValueType == DoubleVal) || (mValueType == FloatVal);}
 
