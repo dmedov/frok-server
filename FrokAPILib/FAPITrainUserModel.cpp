@@ -4,10 +4,10 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-std::string strInParams [] = {"arrIds"};
-std::string strOutParams [] = {};
-std::vector<std::string> InParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
-std::vector<std::string> OutParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
+static std::string strInParams [] = {"arrIds"};
+static std::string strOutParams [] = {};
+static std::vector<std::string> InTrainUserModelParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
+static std::vector<std::string> OutTrainUserModelParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
 
 typedef struct
 {
@@ -20,7 +20,7 @@ const char functionDescription [] = "This function generates user's grey faces' 
 const char parametersDescription [] = "arrIds: [in] array of users' for whom database would be created";
 
 // timeout
-unsigned long int timeout = 300;        //300 sec
+static unsigned long int timeout = 300;        //300 sec
 
 // Function and parameters convertors
 FrokResult TrainUserModel(void *inParams, void **outParams, const char *userBasePath, const char *targetPhotosPath, FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer);
@@ -28,7 +28,7 @@ bool FAPI_TrainUserModel_JSON2FUNCP(ConvertParams* converterParams);
 bool FAPI_TrainUserModel_FUNCP2JSON(ConvertParams* converterParams);
 
 // FAPI object
-FrokAPIFunction FAPI_TrainUserModel(TrainUserModel, InParameters, OutParameters, functionDescription,
+FrokAPIFunction FAPI_TrainUserModel(TrainUserModel, InTrainUserModelParameters, OutTrainUserModelParameters, functionDescription,
                 parametersDescription, timeout, FAPI_TrainUserModel_JSON2FUNCP,
                 FAPI_TrainUserModel_FUNCP2JSON);
 
@@ -51,11 +51,11 @@ bool FAPI_TrainUserModel_JSON2FUNCP(ConvertParams* psConvertParams)
         return false;
     }
 
-    if(!jsonParams.HasKeys(InParameters))
+    if(!jsonParams.HasKeys(InTrainUserModelParameters))
     {
         TRACE_F("Invalid parameter: input json doesn't have all mandatory keys.");
         TRACE("Mandatory parameter:");
-        for(std::vector<std::string>::const_iterator it = InParameters.begin(); it != InParameters.end(); ++it)
+        for(std::vector<std::string>::const_iterator it = InTrainUserModelParameters.begin(); it != InTrainUserModelParameters.end(); ++it)
         {
             TRACE("\t%s", ((std::string)*it).c_str());
         }

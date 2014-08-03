@@ -1,6 +1,7 @@
 #include "FaceRecognizerEigenfaces.h"
 
 #pragma GCC poison IplImage
+
 #define MODULE_NAME     "FACE_RECOGNIZER_EIGENFACES"
 
 FaceRecognizerEigenfaces::FaceRecognizerEigenfaces()
@@ -208,21 +209,21 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
 
         if (hammingDistance <= maxHammingDistance)
         {
-            double prob1 = GetSimilarity_FirstMethod(targetFace, predictedFace);
-            double prob2 = GetSimilarity_SecondMethod(targetFace, predictedFace);
-            double prob3 = GetSimilarity_ThirdMethod(targetFace, predictedFace);
-            double prob4 = GetSimilarity_ChiSquare(targetFace, predictedFace);
+            //double prob1 = GetSimilarity_FirstMethod(targetFace, predictedFace);  // method is deprecated
+            double prob1 = GetSimilarity_SecondMethod(targetFace, predictedFace);
+            double prob2 = GetSimilarity_ThirdMethod(targetFace, predictedFace);
+            double prob3 = GetSimilarity_ChiSquare(targetFace, predictedFace);
 
-            if((prob1 < 0) || (prob2 < 0) || (prob3 < 0) || (prob4 < 0))
+            if((prob1 < 0) || (prob2 < 0) || (prob3 < 0))
             {
                 TRACE_F_T("Some of GetSimilarities failed");
                 continue;
             }
 
-            double geometricMean = pow(prob1*prob2*prob3, 1. / 3);
-            double arithmeticMean = (prob1 + prob2 + prob3) / 3;
+            double geometricMean = pow(prob1 * prob2, 1. / 2);
+            double arithmeticMean = (prob1 + prob2) / 2;
 
-            double weightMean = 0.25 * geometricMean + 0.75 * prob4;
+            double weightMean = 0.25 * geometricMean + 0.75 * prob3;
 
             TRACE_S_T("geometric mean probability = %lf", geometricMean);
             TRACE_S_T("arithmetic mean probability = %lf", arithmeticMean);

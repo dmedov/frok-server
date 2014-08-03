@@ -17,56 +17,39 @@ int main(void)
         return -1;
     }
 
-    /*FaceRecognizerAbstract *recognizer = new FaceRecognizerEigenfaces;
-    FaceDetectorAbstract *detector = new FrokFaceDetector;*/
+    FaceRecognizerAbstract *recognizer = new FaceRecognizerEigenfaces;
+    FaceDetectorAbstract *detector = new FrokFaceDetector;
 
-    //FAPI_Recognize_JSON2FUNCP(recognizer);
+    ConvertParams params;
+    ConvertParams outParams;
+    //params.jsonParameters = "{\"arrIds\": [\"3\", \"4\"]}";
+    params.jsonParameters = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
+            \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"]}";
 
-    std::vector<std::string> ids;
-    //ids.push_back("0");fgfh
-    //ids.push_back("1");
-    ids.push_back("2");
-    /*ids.push_back("3");
-    ids.push_back("4");
-    ids.push_back("5");
-    ids.push_back("6");
-    ids.push_back("7");
-    ids.push_back("8");
-    ids.push_back("9");
-    ids.push_back("10");
-    ids.push_back("11");
-    ids.push_back("12");
-    ids.push_back("13");
-    ids.push_back("14");
-    ids.push_back("15");
-    ids.push_back("16");
-    ids.push_back("17");*/
-    printf("Calling TrainUserModel...\n");
-    //TrainUserModel(ids, DEFAULT_PHOTO_BASE_PATH, detector, recognizer);
-    printf("TrainUserModel finished\n");
-    std::vector< std::map<std::string, double> > similarities;
-    printf("Calling Recognize...\n");
-    /*FaceUserModel model(ids[0], RECOGNIZER_EIGENFACES);
-    std::string modelPath = DEFAULT_PHOTO_BASE_PATH;
-    modelPath.append(ids[0]).append("/");
-    model.LoadUserModel(modelPath.c_str());
-    recognizer->AddFaceUserModel(ids[0], model);*/
-    //Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "1.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
-    //Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "2.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
+    FAPI_TrainUserModel.ConvertJsonToFunctionParameters(&params);
+    FAPI_TrainUserModel.function(params.functionParameters, &outParams.functionParameters, DEFAULT_PHOTO_BASE_PATH, DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
+    FAPI_TrainUserModel.ConvertFunctionReturnToJson(&outParams);
 
-    printf("Recognize finished\n");
-    /*std::vector< std::map<std::string, double> > similarities;
-    printf("Calling Recognize...\n");
-    Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "1.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
-    printf("Rcognize finished\n");*/
+    ConvertParams params1;
+    ConvertParams outParams1;
+    params1.jsonParameters = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
+            \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"],\
+            \"photoName\": \"1.jpg\"}";
+    FAPI_Recognize.ConvertJsonToFunctionParameters(&params1);
+    FAPI_Recognize.function(params1.functionParameters, &outParams1.functionParameters, DEFAULT_PHOTO_BASE_PATH, DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
+    FAPI_Recognize.ConvertFunctionReturnToJson(&outParams1);
 
-    /*std::vector<cv::Rect> faces;
-    std::vector<cv::Mat> images;
-    detector.SetTargetImage("/home/zda/faces/1/photos/Picture (15).jpg");
-    detector.GetFacesFromPhoto(faces);
-    detector.GetFaceImages(faces, images);
-    cv::imwrite("/home/zda/_face.jpg", images[0]);
-    detector.GetNormalizedFaceImages(faces, images);*/
+    ConvertParams params2;
+    ConvertParams outParams2;
+    params2.jsonParameters = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
+            \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"],\
+            \"photoName\": \"2.jpg\"}";
+    FAPI_Recognize.ConvertJsonToFunctionParameters(&params2);
+    FAPI_Recognize.function(params2.functionParameters, &outParams2.functionParameters, DEFAULT_PHOTO_BASE_PATH, DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
+    FAPI_Recognize.ConvertFunctionReturnToJson(&outParams2);
+
+    printf("1.jpg: %s\n", outParams1.jsonParameters.c_str());
+    printf("2.jpg: %s\n", outParams2.jsonParameters.c_str());
 
     return 0;
 }

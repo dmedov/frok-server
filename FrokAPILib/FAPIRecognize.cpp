@@ -6,10 +6,10 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-std::string strInParams [] = {"arrIds", "photoName"};
-std::string strOutParams [] = {"arrMapSimilarities"};
-std::vector<std::string> InParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
-std::vector<std::string> OutParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
+static std::string strInParams [] = {"arrIds", "photoName"};
+static std::string strOutParams [] = {"arrMapSimilarities"};
+static std::vector<std::string> InRecognizeParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
+static std::vector<std::string> OutRecognizeParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
 
 typedef struct
 {
@@ -30,7 +30,7 @@ const char parametersDescription [] = "\"arrIds\": \"[in] array of users` for wh
         are given for all found faces\"";
 
 // timeout
-unsigned long int timeout = 300;        //300 sec
+static unsigned long int timeout = 300;        //300 sec
 
 // Function and parameters convertors
 FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath, const char *targetPhotosPath, FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer);
@@ -38,7 +38,7 @@ bool FAPI_Recognize_JSON2FUNCP(ConvertParams* converterParams);
 bool FAPI_Recognize_FUNCP2JSON(ConvertParams* converterParams);
 
 // FAPI object
-FrokAPIFunction FAPI_Recognize(Recognize, InParameters, OutParameters, functionDescription,
+FrokAPIFunction FAPI_Recognize(Recognize, InRecognizeParameters, OutRecognizeParameters, functionDescription,
                 parametersDescription, timeout, FAPI_Recognize_JSON2FUNCP,
                 FAPI_Recognize_FUNCP2JSON);
 
@@ -61,11 +61,11 @@ bool FAPI_Recognize_JSON2FUNCP(ConvertParams* psConvertParams)
         return false;
     }
 
-    if(!jsonParams.HasKeys(InParameters))
+    if(!jsonParams.HasKeys(InRecognizeParameters))
     {
         TRACE_F("Invalid parameter: input json doesn't have all mandatory keys.");
         TRACE("Mandatory parameter:");
-        for(std::vector<std::string>::const_iterator it = InParameters.begin(); it != InParameters.end(); ++it)
+        for(std::vector<std::string>::const_iterator it = InRecognizeParameters.begin(); it != InRecognizeParameters.end(); ++it)
         {
             TRACE("\t%s", ((std::string)*it).c_str());
         }
@@ -112,7 +112,7 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
              userIterator != currentFace.end(); ++userIterator)
         {
             std::stringstream doubleToString;
-            doubleToString << userIterator->second;
+            doubleToString << (double)userIterator->second;
             jsonFace[userIterator->first] = doubleToString.str();
             //std::cout << it->first << " => " << it->second << '\n';
         }
@@ -121,9 +121,19 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
         resultJson[intToString.str()] = jsonFace;
     }
 
+    try
+    {
+        psConvertParams->jsonParameters = json::Serialize(resultJson);
+    }
+    catch(...)
+    {
+        TRACE_F("Failed to serialize result json");
+        return false;
+    }
+
     if(psConvertParams->functionParameters != NULL)
     {
-        delete [] (StructInParams*)psConvertParams->functionParameters;
+        delete (StructOutParams*)psConvertParams->functionParameters;
         psConvertParams->functionParameters = NULL;
     }
     return true;
@@ -142,7 +152,6 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
     StructInParams *in = (StructInParams*)inParams;
     *outParams = new StructOutParams;
 
-    *outParams = NULL;
     timespec startTime;
     timespec endTime;
 
@@ -151,7 +160,7 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
 
     TRACE_T("Recognizing started");
 
-    ((StructOutParams*)outParams)->similarities.clear();
+    ((StructOutParams*)*outParams)->similarities.clear();
     if(ids.empty())
     {
         TRACE_F_T("Invalid parameter: ids vector is empty");
@@ -225,7 +234,7 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
             TRACE_F_T("Failed to GetSimilarityOfFaceWithModels on result %s", FrokResultToString(res));
             continue;
         }
-        ((StructOutParams*)outParams)->similarities.push_back(currenFaceSimilarities);
+        ((StructOutParams*)*outParams)->similarities.push_back(currenFaceSimilarities);
     }
 
     clock_gettime(CLOCK_REALTIME, &endTime);
@@ -233,7 +242,7 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
     printf("Recognition finished\n");
     print_time(startTime, endTime);
 
-    if(((StructOutParams*)outParams)->similarities.size() == 0)
+    if(((StructOutParams*)*outParams)->similarities.size() == 0)
     {
         TRACE_F_T("Nothing similar to requested users was found on picture");
         return FROK_RESULT_UNSPECIFIED_ERROR;
