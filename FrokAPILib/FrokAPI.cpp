@@ -1,11 +1,6 @@
 #include "FrokAPI.h"
 
-    std::map<std::string, FrokAPIFunction> functions;
-    void AddAPIFunction(std::string functionName, FrokAPIFunction function);
-    FrokResult ExecuteFunction(std::string functionName);
-
-    void GetAvailableFunctions(std::vector<std::string> &availableFunctions);
-    void GetFrokAPIFunction(std::string functionName, FrokAPIFunction *function);
+#define MODULE_NAME "FAPI"
 
 FrokAPI::FrokAPI(const char *photo_base_path, const char *targets_folder_path, FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer)
 {
@@ -65,11 +60,3 @@ FrokResult FrokAPI::ExecuteFunction(std::string functionName, std::string inJson
     outJson = outParams.jsonParameters;
     return res;
 }
-
-/*FrokAPI FROK_API_FUNCTIONS[] =
-{
-    {Recognize,             "Recognize user on target photo. To add new user to database use \"TrainUserModel\" function.",  "{\"user_id\":\"\", \"second_param\":\"\"}", "\"user_id\" - string, add some description \n etc\n", 300}
-    {TrainUserModel,        "description",  "params description", {"user_id"}, 3000},
-    {GetFacesFromPhoto,     "description",  "params description", {"user_id"}, 30},
-    {AddFaceFromPhoto,      "description",  "params description", {"user_id"}, 30},
-};*/

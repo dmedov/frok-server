@@ -17,39 +17,42 @@ int main(void)
         return -1;
     }
 
-    FaceRecognizerAbstract *recognizer = new FaceRecognizerEigenfaces;
-    FaceDetectorAbstract *detector = new FrokFaceDetector;
+    std::map <std::string, FrokAPIFunction*> functions;
+    functions["train"] = &FAPI_TrainUserModel;
+    functions["recognize"] = &FAPI_Recognize;
 
-    ConvertParams params;
-    ConvertParams outParams;
+    FrokAgent agent(functions);
+    agent.StartFrokAgent();
+    getchar();
+    agent.StopFrokAgent();
+
+    /*FrokAPI fapi(detector, recognizer);
+
+    fapi.AddAPIFunction("train", &FAPI_TrainUserModel);
+    fapi.AddAPIFunction("recognize", &FAPI_Recognize);
+    std::vector<std::string> functions;
+    fapi.GetAvailableFunctions(functions);
+
     //params.jsonParameters = "{\"arrIds\": [\"3\", \"4\"]}";
-    params.jsonParameters = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
+    std::string inJson= "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
             \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"]}";
+    std::string outJson;
+    fapi.ExecuteFunction("train", inJson, outJson);
 
-    FAPI_TrainUserModel.ConvertJsonToFunctionParameters(&params);
-    FAPI_TrainUserModel.function(params.functionParameters, &outParams.functionParameters, DEFAULT_PHOTO_BASE_PATH, DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
-    FAPI_TrainUserModel.ConvertFunctionReturnToJson(&outParams);
-
-    ConvertParams params1;
-    ConvertParams outParams1;
-    params1.jsonParameters = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
+    std::string inJsonRec1 = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
             \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"],\
             \"photoName\": \"1.jpg\"}";
-    FAPI_Recognize.ConvertJsonToFunctionParameters(&params1);
-    FAPI_Recognize.function(params1.functionParameters, &outParams1.functionParameters, DEFAULT_PHOTO_BASE_PATH, DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
-    FAPI_Recognize.ConvertFunctionReturnToJson(&outParams1);
+    std::string outJsonRec1;
+    fapi.ExecuteFunction("recognize", inJsonRec1, outJsonRec1);
 
-    ConvertParams params2;
-    ConvertParams outParams2;
-    params2.jsonParameters = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
+    std::string inJsonRec2 = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
             \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"],\
             \"photoName\": \"2.jpg\"}";
-    FAPI_Recognize.ConvertJsonToFunctionParameters(&params2);
-    FAPI_Recognize.function(params2.functionParameters, &outParams2.functionParameters, DEFAULT_PHOTO_BASE_PATH, DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
-    FAPI_Recognize.ConvertFunctionReturnToJson(&outParams2);
+    std::string outJsonRec2;
+    fapi.ExecuteFunction("recognize", inJsonRec2, outJsonRec2);
 
-    printf("1.jpg: %s\n", outParams1.jsonParameters.c_str());
-    printf("2.jpg: %s\n", outParams2.jsonParameters.c_str());
+    printf("1.jpg: %s\n", outJsonRec1.c_str());
+    printf("2.jpg: %s\n", outJsonRec2.c_str());*/
 
     return 0;
 }

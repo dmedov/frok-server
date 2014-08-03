@@ -1,13 +1,7 @@
 #include <stdlib.h>
-
 #include "FrokServer.h"
 
-// Add SHOW_IMAGE define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
-
-#define     NET_CMD_RECOGNIZE    "recognize"
-#define     NET_CMD_TRAIN        "train"
-#define     NET_CMD_GET_FACES    "get_faces"
-#define     NET_CMD_SAVE_FACE    "save_face"
+#include "unistd.h"
 
 void usage()
 {
@@ -17,10 +11,6 @@ void usage()
 
 int main(int argc, char *argv[])
 {
-    /*std::vector<AgentInfo*> agentsInfo;
-    agentsInfo.push_back(new AgentInfo(0, 0));*/
-    //FaceServer server(agentsInfo);
-
     if(argc != 3)
     {
         usage();
@@ -42,8 +32,33 @@ int main(int argc, char *argv[])
     FrokServer server(agentInfoVec, 27015);
     server.StartFrokServer();
 
+    AgentInfo *info2 = new AgentInfo;
+
+    info2->agentIpV4Address = info->agentIpV4Address;
+    info2->agentPortNumber = 27015;
+
+    sleep(1);
+
+    FrokAgentConnector connector(*info2);
+
+    sleep(2);
+    json::Object outJson;
+
+    outJson["cmd"] = "train";
+    outJson["req_id"] = "0";
+    json::Array arr;
+    arr.push_back("1");
+    arr.push_back("2");
+    arr.push_back("3");
+    outJson["arrIds"] = arr;
+
+    // [TBD] this is possibly incorrect, need to serialize all objects
+    std::string outString = json::Serialize(outJson);
+
+    connector.SendCommand(outString);
+
     getchar();
-    server.StopFrokServer();
+    //server.StopFrokServer();
     /*InitFaceDetectionLib();
 
     FilePrintMessage(_SUCC("Starting network server with port = %d"), PORT);

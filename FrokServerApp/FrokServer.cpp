@@ -264,6 +264,63 @@ void FrokServer::SocketListener(void* param)
         }
 
         TRACE("Received %d bytes from the socket %u", dataLength, listenedSocket);
+
+        json::Object requestJson;
+        try
+        {
+            requestJson = json::Deserialize(data);
+        }
+        catch(...)
+        {
+            TRACE_F("Invalid input json %s", (char*)data);
+            continue;
+        }
+        requestJson["reply_sock"] = listenedSocket;
+
+        std::string requestString;
+        try
+        {
+            requestString = json::Serialize(requestJson);
+        }
+        catch(...)
+        {
+            TRACE_F("Failed to serialize request json");
+            continue;
+        }
+
+        while(1)
+        {
+            bool success = false;
+            TRACE("Scanning registered agents");
+            for(std::vector<FrokAgentConnector*>::iterator agent = pThis->agents.begin(); agent != pThis->agents.end(); ++agent)
+            {
+                AgentState state = ((FrokAgentConnector*)*agent)->GetAgentState();
+                TRACE("\t state = %s", AgentStateToString(state));
+                if((state == FROK_AGENT_FREE) && (success == false))
+                {
+
+                    if(((FrokAgentConnector*)*agent)->SendCommand(requestString))
+                    {
+                        success = true;
+                        break;
+                    }
+                }
+            }
+
+            if(success == false)
+            {
+                for(std::vector<FrokAgentConnector*>::iterator agent = pThis->agents.begin(); agent != pThis->agents.end(); ++agent)
+                {
+                    if(((FrokAgentConnector*)*agent)->GetAgentState() != FROK_AGENT_BUSY)
+                    {
+                        TRACE_W("Reconnecting to agent");
+                        ((FrokAgentConnector*)*agent)->DisconnectFromAgent();
+                        ((FrokAgentConnector*)*agent)->ConnectToAgent();
+                    }
+                }
+            }
+            break;
+        }
     }
 
     if(listenedSocket != INVALID_SOCKET)

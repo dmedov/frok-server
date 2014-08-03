@@ -40,9 +40,12 @@ private:
     unsigned short          localPortNumber;
     SOCKET                  localSock;
     CommonThread           *threadServerListener;
+    FaceRecognizerAbstract *recognizer;
+    FaceDetectorAbstract   *detector;
+    FrokAPI                *fapi;
 
 public:
-    FrokAgent(unsigned short localPort = DEFAULT_PORT, const char *photoBasePath = DEFAULT_PHOTO_BASE_PATH, const char *targetsFolderPath = DEFAULT_TARGETS_FOLDER_PATH);
+    FrokAgent(std::map<std::string, FrokAPIFunction*> enabledFucntions, unsigned short localPort = DEFAULT_PORT, const char *photoBasePath = DEFAULT_PHOTO_BASE_PATH, const char *targetsFolderPath = DEFAULT_TARGETS_FOLDER_PATH);
     ~FrokAgent();
 
     bool StartFrokAgent();
