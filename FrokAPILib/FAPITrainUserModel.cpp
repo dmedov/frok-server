@@ -86,6 +86,7 @@ bool FAPI_TrainUserModel_FUNCP2JSON(ConvertParams* psConvertParams)
     }
 
     psConvertParams->jsonParameters.clear();
+    psConvertParams->jsonParameters = "{}";
     if(psConvertParams->functionParameters != NULL)
     {
         delete [] (StructInParams*)psConvertParams->functionParameters;
