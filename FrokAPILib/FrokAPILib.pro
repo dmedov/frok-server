@@ -31,6 +31,9 @@ HEADERS +=                  \
     FrokAPI.h
 
 SOURCES +=                  \
-    FrokAPIFunction.cpp \
-    FrokAPI.cpp
+    FrokAPI.cpp \
+    FAPIRecognize.cpp \
+    FAPITrainUserModel.cpp \
+    FAPIGetFacesFromPhoto.cpp \
+    FAPIAddFaceFromPhotoToModel.cpp
 

@@ -1,6 +1,9 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "commonThread.h"
+#include "trace.h"
+
+#include <math.h>
 
 #define MODULE_NAME     "COMMON_THREAD"
 

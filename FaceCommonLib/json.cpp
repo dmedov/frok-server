@@ -104,37 +104,43 @@ Value& Value::operator =(const Value& v)
 
 Value& Value::operator [](size_t idx)
 {
-    assert(mValueType == ArrayVal);
+    if(mValueType != ArrayVal)
+        throw -1;
     return mArrayVal[idx];
 }
 
 const Value& Value::operator [](size_t idx) const
 {
-    assert(mValueType == ArrayVal);
+    if(mValueType != ArrayVal)
+        throw -1;
     return mArrayVal[idx];
 }
 
 Value& Value::operator [](const std::string& key)
 {
-    assert(mValueType == ObjectVal);
+    if(mValueType != ObjectVal)
+        throw -1;
     return mObjectVal[key];
 }
 
 Value& Value::operator [](const char* key)
 {
-    assert(mValueType == ObjectVal);
+    if(mValueType != ObjectVal)
+        throw -1;
     return mObjectVal[key];
 }
 
 const Value& Value::operator [](const char* key) const
 {
-    assert(mValueType == ObjectVal);
+    if(mValueType != ObjectVal)
+        throw -1;
     return mObjectVal[key];
 }
 
 const Value& Value::operator [](const std::string& key) const
 {
-    assert(mValueType == ObjectVal);
+    if(mValueType != ObjectVal)
+        throw -1;
     return mObjectVal[key];
 }
 
@@ -153,19 +159,22 @@ size_t Value::size() const
 
 bool Value::HasKey(const std::string &key) const
 {
-    assert(mValueType == ObjectVal);
+    if(mValueType != ObjectVal)
+        throw -1;
     return mObjectVal.HasKey(key);
 }
 
 int Value::HasKeys(const std::vector<std::string> &keys) const
 {
-    assert(mValueType == ObjectVal);
+    if(mValueType != ObjectVal)
+        throw -1;
     return mObjectVal.HasKeys(keys);
 }
 
 int Value::HasKeys(const char **keys, int key_count) const
 {
-    assert(mValueType == ObjectVal);
+    if(mValueType != ObjectVal)
+        throw -1;
     return mObjectVal.HasKeys(keys, key_count);
 }
 

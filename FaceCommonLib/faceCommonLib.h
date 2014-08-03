@@ -6,6 +6,7 @@
 #include "commonThread.h"       // class for safe working with unix threads
 #include "io.h"                 // File system - depend operations, input - output operations
 #include "trace.h"              // trace system
+#include "commonMath.h"         // Calculating ChiSquare percantage
 
 // FaceDetectionLib defaults
 #define LOG_MESSAGE_MAX_LENGTH      1024

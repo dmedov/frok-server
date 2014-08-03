@@ -22,7 +22,8 @@ HEADERS +=                  \
     commonThread.h          \
     io.h                    \
     faceCommonLib.h \
-    trace.h
+    trace.h \
+    commonMath.h
 
 SOURCES +=                  \
     json.cpp                \

@@ -1,16 +1,17 @@
 #ifndef FACEDETECTORABSTARCT_H
 #define FACEDETECTORABSTARCT_H
 
-// include dependencies
-#include "faceCommonLib.h"
 // opencv dependencies
 #include <cv.h>
 #include <highgui.h>
 
+// include dependencies
+#include "faceCommonLib.h"
+
 class FaceDetectorAbstract
 {
 protected:
-    cv::Mat                 targetImageKappa;
+    cv::Mat                 targetImageGray;
 public:
     FaceDetectorAbstract();
     virtual ~FaceDetectorAbstract();

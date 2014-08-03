@@ -1,13 +1,7 @@
 #include <stdlib.h>
-
 #include "FrokServer.h"
 
-// Add SHOW_IMAGE define to preprocessor defines in FaceDetectionApp and FaceDetectionLib projects to see resulting image
-
-#define     NET_CMD_RECOGNIZE    "recognize"
-#define     NET_CMD_TRAIN        "train"
-#define     NET_CMD_GET_FACES    "get_faces"
-#define     NET_CMD_SAVE_FACE    "save_face"
+#include "unistd.h"
 
 void usage()
 {
@@ -17,10 +11,6 @@ void usage()
 
 int main(int argc, char *argv[])
 {
-    /*std::vector<AgentInfo*> agentsInfo;
-    agentsInfo.push_back(new AgentInfo(0, 0));*/
-    //FaceServer server(agentsInfo);
-
     if(argc != 3)
     {
         usage();
@@ -43,31 +33,7 @@ int main(int argc, char *argv[])
     server.StartFrokServer();
 
     getchar();
-    server.StopFrokServer();
-    /*InitFaceDetectionLib();
-
-    FilePrintMessage(_SUCC("Starting network server with port = %d"), PORT);
-    if (NET_SUCCESS != net.StartNetworkServer())
-    {
-        FilePrintMessage(_FAIL("Failed to start network. For additional info build project with NET_DEBUG_PRINT flag enabled"));
-        DeinitFaceDetectionLib();
-        return -1;
-    }
-    FilePrintMessage(_SUCC("Network server started!"));
-
-    char train[] = "{\"cmd\":\"train\", \"ids\":[\"1\"]}\0";    // cut faces and train base
-    callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(train), train);
-
-    //char save_face[] = "{\"cmd\":\"save_face\", \"user_id\":\"5\", \"photo_id\":\"1\", \"face_number\":\"0\"}\0";    // cut faces and train base
-    //callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(save_face), save_face);
-
-    //char recognize[] = "{\"cmd\":\"recognize\", \"friends\":[\"1\"], \"photo_id\": \"2\"}\0";    // recognize name = 1.jpg
-    //callback(NET_RECEIVED_REMOTE_DATA, 1, strlen(recognize), recognize);
-
-    getchar();
 
     DeinitFaceDetectionLib();
-
-    printf("success\n");*/
     return 0;
 }

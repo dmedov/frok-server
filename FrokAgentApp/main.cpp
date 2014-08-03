@@ -1,8 +1,5 @@
 #include <stdio.h>
-
 #include "FrokAgent.h"
-/*#include "FrokFaceDetector.h"
-#include "FrokFaceRecognizer.h"*/
 
 void usage()
 {
@@ -10,50 +7,52 @@ void usage()
     return;
 }
 
+#define MODULE_NAME ""
+
 int main(void)
 {
     if(!InitFaceCommonLib())
     {
+        TRACE_F("InitFaceCommonLib");
         return -1;
     }
-    FaceRecognizerAbstract *recognizer = new FrokFaceRecognizer;
-    FaceDetectorAbstract *detector = new FrokFaceDetector;
 
-    std::vector<std::string> ids;
-    //ids.push_back("0");
-    ids.push_back("1");
-    /*ids.push_back("2");
-    ids.push_back("3");
-    ids.push_back("4");
-    ids.push_back("5");
-    ids.push_back("6");
-    ids.push_back("7");
-    ids.push_back("8");
-    ids.push_back("9");
-    ids.push_back("10");
-    ids.push_back("11");
-    ids.push_back("12");
-    ids.push_back("13");
-    ids.push_back("14");
-    ids.push_back("15");
-    ids.push_back("16");
-    ids.push_back("17");*/
-    printf("Calling TrainUserModel...\n");
-    TrainUserModel(ids, DEFAULT_PHOTO_BASE_PATH, detector, recognizer);
-    printf("TrainUserModel finished\n");
+    std::map <std::string, FrokAPIFunction*> functions;
+    functions["train"] = &FAPI_TrainUserModel;
+    functions["recognize"] = &FAPI_Recognize;
 
-    /*std::vector< std::map<std::string, double> > similarities;
-    printf("Calling Recognize...\n");
-    Recognize(similarities, ids, DEFAULT_PHOTO_BASE_PATH, "1.jpg", DEFAULT_TARGETS_FOLDER_PATH, detector, recognizer);
-    printf("Rcognize finished\n");*/
+    FrokAgent agent(functions);
+    agent.StartFrokAgent();
+    getchar();
+    agent.StopFrokAgent();
 
-    /*std::vector<cv::Rect> faces;
-    std::vector<cv::Mat> images;
-    detector.SetTargetImage("/home/zda/faces/1/photos/Picture (15).jpg");
-    detector.GetFacesFromPhoto(faces);
-    detector.GetFaceImages(faces, images);
-    cv::imwrite("/home/zda/_face.jpg", images[0]);
-    detector.GetNormalizedFaceImages(faces, images);*/
+    /*FrokAPI fapi(detector, recognizer);
+
+    fapi.AddAPIFunction("train", &FAPI_TrainUserModel);
+    fapi.AddAPIFunction("recognize", &FAPI_Recognize);
+    std::vector<std::string> functions;
+    fapi.GetAvailableFunctions(functions);
+
+    //params.jsonParameters = "{\"arrIds\": [\"3\", \"4\"]}";
+    std::string inJson= "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
+            \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"]}";
+    std::string outJson;
+    fapi.ExecuteFunction("train", inJson, outJson);
+
+    std::string inJsonRec1 = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
+            \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"],\
+            \"photoName\": \"1.jpg\"}";
+    std::string outJsonRec1;
+    fapi.ExecuteFunction("recognize", inJsonRec1, outJsonRec1);
+
+    std::string inJsonRec2 = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
+            \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"],\
+            \"photoName\": \"2.jpg\"}";
+    std::string outJsonRec2;
+    fapi.ExecuteFunction("recognize", inJsonRec2, outJsonRec2);
+
+    printf("1.jpg: %s\n", outJsonRec1.c_str());
+    printf("2.jpg: %s\n", outJsonRec2.c_str());*/
 
     return 0;
 }

@@ -26,4 +26,7 @@ HDRDIRS :=  ../$(SRCDIR)/	\
 	../FaceCommonLib/	    \
 	$(OPENCV_INCLUDES)
 
+make_dependencies:
+	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FaceCommonLib.mk build
+
 include makefile.actions
