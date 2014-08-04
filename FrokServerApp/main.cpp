@@ -11,6 +11,10 @@ void usage()
 
 int main(int argc, char *argv[])
 {
+    if(!InitFaceCommonLib())
+    {
+        return -1;
+    }
     if(argc != 3)
     {
         usage();
@@ -34,6 +38,6 @@ int main(int argc, char *argv[])
 
     getchar();
 
-    DeinitFaceDetectionLib();
+    DeinitFaceCommonLib();
     return 0;
 }
