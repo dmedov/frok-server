@@ -26,33 +26,7 @@ int main(void)
     getchar();
     agent.StopFrokAgent();
 
-    /*FrokAPI fapi(detector, recognizer);
-
-    fapi.AddAPIFunction("train", &FAPI_TrainUserModel);
-    fapi.AddAPIFunction("recognize", &FAPI_Recognize);
-    std::vector<std::string> functions;
-    fapi.GetAvailableFunctions(functions);
-
-    //params.jsonParameters = "{\"arrIds\": [\"3\", \"4\"]}";
-    std::string inJson= "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
-            \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"]}";
-    std::string outJson;
-    fapi.ExecuteFunction("train", inJson, outJson);
-
-    std::string inJsonRec1 = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
-            \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"],\
-            \"photoName\": \"1.jpg\"}";
-    std::string outJsonRec1;
-    fapi.ExecuteFunction("recognize", inJsonRec1, outJsonRec1);
-
-    std::string inJsonRec2 = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
-            \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"],\
-            \"photoName\": \"2.jpg\"}";
-    std::string outJsonRec2;
-    fapi.ExecuteFunction("recognize", inJsonRec2, outJsonRec2);
-
-    printf("1.jpg: %s\n", outJsonRec1.c_str());
-    printf("2.jpg: %s\n", outJsonRec2.c_str());*/
+    DeinitFaceCommonLib();
 
     return 0;
 }
