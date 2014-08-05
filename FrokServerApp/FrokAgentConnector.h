@@ -28,7 +28,7 @@ typedef enum FrokActivityAgentState
     FROK_AGENT_STOPPED,
     FROK_AGENT_ERROR
 } AgentState;
-
+char *AgentStateToString(AgentState state);
 #pragma pack(push, 1)
 
 typedef struct AgentInfo
@@ -47,50 +47,6 @@ typedef struct AgentInfo
     }
 } AgentInfo;
 
-typedef enum FaceAgentCommand
-{
-/*    FACE_AGENT_RECOGNIZE,
-    FACE_AGENT_TRAIN_MODEL,
-    FACE_AGENT_GET_FACES_FROM_PHOTO,
-    FACE_AGENT_ADD_FACE_FROM_PHOTO*/
-} AgentCommand;
-
-struct ParamForRecognize
-{
-    std::string targetImg;
-    json::Array arrFrinedsList;
-};
-
-struct ParamForTrainModel
-{
-    json::Array arrIds;
-};
-
-struct ParamForGetFacesFromPhoto
-{
-    std::string userId;
-    std::string photoName;
-};
-
-struct ParamForAddFaceFromPhoto
-{
-    std::string userId;
-    std::string photoName;
-    int faceNumber;
-};
-
-typedef struct FaceAgentCommandParam
-{
-    FaceAgentCommand cmd;
-    union param
-    {
-        struct ParamForRecognize           *recognizeParam;
-        struct ParamForTrainModel          *trainModelParam;
-        struct ParamForGetFacesFromPhoto   *getFacesFromPhotoParam;
-        struct ParamForAddFaceFromPhoto    *addFaceFromPhotoParam;
-    };
-} AgentCommandParam;
-
 #pragma pack(pop)
 
 class FrokAgentConnector
@@ -108,7 +64,7 @@ public:
     bool ConnectToAgent();
     bool DisconnectFromAgent();
 
-    bool SendCommand(AgentCommandParam command);
+    bool SendCommand(std::string command);
     AgentState GetAgentState();
 protected:
     NetResult StartNetworkClient();

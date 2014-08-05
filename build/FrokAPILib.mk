@@ -8,7 +8,7 @@ SRCDIR = FrokAPILib
 
 # Target settings
 LANG := c++
-TARGET := libFrokAPILib.a
+TARGET := libFrokLib.a
 TARGETTYPE := staticlib
 
 LIBS := -L$(BINOUTDIR)			                    \
@@ -16,12 +16,8 @@ LIBS := -L$(BINOUTDIR)			                    \
     -lFaceCommonLib                                 \
 	-lFaceDetectionLib                              \
     -lFaceRecognitionLib                            \
+    -lFrokLib                                       \
 	$(OPENCV_LIB)
-
-DEPENDENCIES :=                                     \
-    $(BINOUTDIR)/libFaceCommonLib.a                 \
-    $(BINOUTDIR)/libFaceDetectionLib.a              \
-    $(BINOUTDIR)/libFaceRecognitionLib.a            \
 
 CFLAGS += -Wno-unknown-pragmas
 
@@ -32,10 +28,5 @@ HDRDIRS :=  ../$(SRCDIR)/		                    \
 	../FaceRecognitionLib/	                        \
     ../FaceCommonLib/	                            \
 	$(OPENCV_INCLUDES)
-
-make_dependencies:
-	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FaceCommonLib.mk build
-	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FaceDetectionLib.mk build
-	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FaceRecognitionLib.mk build
 
 include makefile.actions

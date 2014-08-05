@@ -8,7 +8,7 @@ SRCDIR = FaceDetectionLib
 
 # Target settings
 LANG := c++
-TARGET := libFaceDetectionLib.a
+TARGET := libFrokLib.a
 TARGETTYPE := staticlib
 
 LIBS := -L$(BINOUTDIR)			                            \

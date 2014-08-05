@@ -20,10 +20,7 @@ typedef struct StructFrokRequest
 
 typedef struct StructSocketListenerData
 {
-
-    SOCKET          listenedSocket;
-    CommonThread   *thread;
-    void           *pThis;
+    ;
 } SocketListenerData;
 
 #pragma pack(pop)

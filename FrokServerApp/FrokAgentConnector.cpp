@@ -12,6 +12,20 @@
 pthread_mutex_t             FrokAgentConnector_trace_cs;
 pthread_mutex_t             FrokAgentConnector_cs;
 
+char *AgentStateToString(AgentState state)
+{
+    switch (state)
+    {
+    CASE_RET_STR(FROK_AGENT_NOT_STARTED);
+    CASE_RET_STR(FROK_AGENT_FREE);
+    CASE_RET_STR(FROK_AGENT_BUSY);
+    CASE_RET_STR(FROK_AGENT_STOPPED);
+    CASE_RET_STR(FROK_AGENT_ERROR);
+    default:
+        return "UNKNOWN_STATE";
+    }
+}
+
 FrokAgentConnector::FrokAgentConnector(AgentInfo &info)
 {
     netInfo.agentIpV4Address = info.agentIpV4Address;
@@ -98,48 +112,16 @@ AgentState FrokAgentConnector::GetAgentState()
     return state;
 }
 
-bool FrokAgentConnector::SendCommand(AgentCommandParam command)
+bool FrokAgentConnector::SendCommand(std::string command)
 {
-    UNREFERENCED_PARAMETER(command);
     if(agentSocket == INVALID_SOCKET)
     {
         TRACE_F("Agent not connected");
         return false;
     }
-    json::Object outJson;
-    /*switch(command.cmd)
-    {
-    case FACE_AGENT_RECOGNIZE:
-    {
-        // Make out JSON
-    }
-    case FACE_AGENT_TRAIN_MODEL:
-    {
-        // [TBD]
-        break;
-    }
-    case FACE_AGENT_GET_FACES_FROM_PHOTO:
-    {
-        // [TBD]
-        break;
-    }
-    case FACE_AGENT_ADD_FACE_FROM_PHOTO:
-    {
-        // [TBD]
-        break;
-    }
-    }*/
-
-    outJson["cmd"] = "command";
-    outJson["req_id"] = "0";
-    outJson["reply_sock"] = -1;
-
-
-    // [TBD] this is possibly incorrect, need to serialize all objects
-    std::string outString = json::Serialize(outJson);
 
     NetResult res;
-    if(NET_SUCCESS != (res = SendData(agentSocket, outString.c_str(), outString.length())))
+    if(NET_SUCCESS != (res = SendData(agentSocket, command.c_str(), command.length())))
     {
         TRACE_F("Failed to send command to agent on error %x", res);
         return false;
@@ -149,14 +131,13 @@ bool FrokAgentConnector::SendCommand(AgentCommandParam command)
 
 void FrokAgentConnector::AgentListener(void *param)
 {
-    FrokAgentConnector     *pThis = NULL;
-    memcpy(&pThis, param, sizeof(FrokAgentConnector*));
+    ThreadFunctionParameters *thParams = (ThreadFunctionParameters*)param;
+    FrokAgentConnector     *pThis = (FrokAgentConnector*)thParams->object;
 
     int         dataLength;
     char        data[MAX_SOCKET_BUFF_SIZE];
 
     std::vector<std::string> mandatoryKeys;
-    mandatoryKeys.push_back("cmd");
     mandatoryKeys.push_back("req_id");
     mandatoryKeys.push_back("reply_sock");
     mandatoryKeys.push_back("result");
@@ -299,7 +280,7 @@ NetResult FrokAgentConnector::StartNetworkClient()
     FrokAgentConnector *pThis = this;
     TRACE("Starting AgentListener");
 
-    if(!threadAgentListener->startThread((void * (*)(void*))(FrokAgentConnector::AgentListener), &pThis, sizeof(FrokAgentConnector*)))
+    if(!threadAgentListener->startThread((void * (*)(void*))(FrokAgentConnector::AgentListener), NULL, 0, &pThis))
     {
         TRACE_F("Failed to start SocketListener thread. See CommonThread logs for information");
         shutdown(agentSocket, 2);

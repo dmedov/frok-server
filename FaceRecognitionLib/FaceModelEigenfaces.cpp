@@ -1,54 +1,46 @@
 #include <unistd.h>
-#include "FaceUserModel.h"
+#include "FaceModelEigenfaces.h"
 
-#define MODULE_NAME         "FACE_MODEL"
+#pragma GCC poison IplImage
+#define MODULE_NAME         "MODEL_EIGENFACES"
 
-FaceUserModel::FaceUserModel() {}
-FaceUserModel::~FaceUserModel() {}
-FaceUserModel::FaceUserModel(std::string userId, EnumFaceRecognizer recognizer)
-{\
-    this->userId = userId;
-    modelType = recognizer;
-    switch(modelType)
-    {
-    case RECOGNIZER_EIGENFACES:
-    {
-        model = cv::createEigenFaceRecognizer();
-        break;
-    }
-    case RECOGNIZER_FISHER:
-    default:
-    {
-        TRACE_F("Recognizer %x is not supported", recognizer);
-        throw FROK_RESULT_INVALID_PARAMETER;
-        break;
-    }
-    }
+FaceModelEigenfaces::FaceModelEigenfaces()
+{
+    TRACE_F_T("Do not use this constructor");
+}
+FaceModelEigenfaces::~FaceModelEigenfaces()
+{
+    TRACE("~FaceModelEigenfaces");
+}
+FaceModelEigenfaces::FaceModelEigenfaces(std::string userId) : FaceModelAbstract(userId)
+{
+    model = cv::createEigenFaceRecognizer();
+    TRACE("new FaceModelEigenfaces");
 }
 
-FrokResult FaceUserModel::GenerateUserModel(const char *kappaFacesPath)
+FrokResult FaceModelEigenfaces::GenerateUserModel(const char *grayFacesPath)
 {
     TRACE_T("started");
-    if(kappaFacesPath == NULL)
+    if(grayFacesPath == NULL)
     {
-        TRACE_F_T("Invalid parameter: kappaFacesPath = %p", kappaFacesPath);
+        TRACE_F_T("Invalid parameter: grayFacesPath = %p", grayFacesPath);
         return FROK_RESULT_INVALID_PARAMETER;
     }
     std::vector< std::string > photos;
-    if(-1 == getFilesFromDir(kappaFacesPath, photos))
+    if(-1 == getFilesFromDir(grayFacesPath, photos))
     {
-        TRACE_F_T("Failed to get photos from directory %s", kappaFacesPath);
+        TRACE_F_T("Failed to get photos from directory %s", grayFacesPath);
         return FROK_RESULT_UNSPECIFIED_ERROR;
     }
 
     if(photos.empty())
     {
-        TRACE_W_T("No photos found in directory %s. Continue...", kappaFacesPath);
+        TRACE_W_T("No photos found in directory %s. Continue...", grayFacesPath);
     }
     else
     {
         labels.clear();
-        userKappaFaces.clear();
+        userGrayFaces.clear();
 
         for(std::vector<std::string>::const_iterator it = photos.begin(); it != photos.end(); ++it)
         {
@@ -65,15 +57,15 @@ FrokResult FaceUserModel::GenerateUserModel(const char *kappaFacesPath)
                 continue;
             }
             labels.push_back(0);
-            userKappaFaces.push_back(newFace);
+            userGrayFaces.push_back(newFace);
         }
 
-        if(!userKappaFaces.empty())
+        if(!userGrayFaces.empty())
         {
             TRACE_T("Model training started");
             try
             {
-                model->train(userKappaFaces, labels);
+                model->train(userGrayFaces, labels);
             }
             catch(...)
             {
@@ -86,28 +78,29 @@ FrokResult FaceUserModel::GenerateUserModel(const char *kappaFacesPath)
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
-FrokResult FaceUserModel::GenerateUserModel(std::vector<cv::Mat> &kappaFaces)
+FrokResult FaceModelEigenfaces::GenerateUserModel(std::vector<cv::Mat> &grayFaces)
 {
     TRACE_T("started");
-    if(kappaFaces.empty())
+    if(grayFaces.empty())
     {
         TRACE_F_T("Invalid parameter: input vector is empty");
         return FROK_RESULT_INVALID_PARAMETER;
     }
 
     labels.clear();
-    userKappaFaces.clear();
-    userKappaFaces = kappaFaces;
+    userGrayFaces.clear();
+    userGrayFaces = grayFaces;
 
-    for(unsigned i = 0; i < kappaFaces.size(); i++)
+    for(unsigned i = 0; i < grayFaces.size(); i++)
     {
         labels.push_back(0);
     }
 
     TRACE_T("Model training started");
+    TRACE_T("Generating model from %u photos", (unsigned)grayFaces.size());
     try
     {
-        model->train(userKappaFaces, labels);
+        model->train(userGrayFaces, labels);
     }
     catch(...)
     {
@@ -119,41 +112,27 @@ FrokResult FaceUserModel::GenerateUserModel(std::vector<cv::Mat> &kappaFaces)
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceUserModel::AddFaceToModel(cv::Mat &kappaFace)
+FrokResult FaceModelEigenfaces::AddFaceToModel(cv::Mat &grayFace)
 {
     TRACE_T("started");
-    switch(modelType)
+    labels.push_back(0);
+    userGrayFaces.push_back(grayFace);
+    TRACE_T("Updating model started");
+    try
     {
-    case RECOGNIZER_EIGENFACES:
+        model->update(userGrayFaces, labels);
+    }
+    catch(...)
     {
-        labels.push_back(0);
-        userKappaFaces.push_back(kappaFace);
-        TRACE_T("Updating model started");
-        try
-        {
-            model->update(userKappaFaces, labels);
-        }
-        catch(...)
-        {
-            TRACE_F_T("Opencv failed to update model");
-            return FROK_RESULT_OPENCV_ERROR;
-        }
-        TRACE_S_T("Updating model succeed");
-        break;
+        TRACE_F_T("Opencv failed to update model");
+        return FROK_RESULT_OPENCV_ERROR;
     }
-    case RECOGNIZER_FISHER:
-    default:
-    {
-        TRACE_F_T("Recognizer %x is not supported", modelType);
-        return FROK_RESULT_INVALID_PARAMETER;
-        break;
-    }
-    }
+    TRACE_S_T("Updating model succeed");
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceUserModel::LoadUserModel(const char *userPath)
+FrokResult FaceModelEigenfaces::LoadUserModel(const char *userPath)
 {
     TRACE_T("started");
     if(userPath == NULL)
@@ -162,20 +141,8 @@ FrokResult FaceUserModel::LoadUserModel(const char *userPath)
         return FROK_RESULT_INVALID_PARAMETER;
     }
     std::string modelPath(userPath);
-    switch(modelType)
-    {
-    case RECOGNIZER_EIGENFACES:
-    {
-        modelPath.append(USER_MODEL_FILENAME_EIGENFACES);
-    }
-    case RECOGNIZER_FISHER:
-    default:
-    {
-        TRACE_F_T("Recognizer %x is not supported", modelType);
-        return FROK_RESULT_INVALID_PARAMETER;
-        break;
-    }
-    }
+
+    modelPath.append(USER_MODEL_FILENAME_EIGENFACES);
 
     if(-1 == access(modelPath.c_str(), R_OK))
     {
@@ -199,7 +166,7 @@ FrokResult FaceUserModel::LoadUserModel(const char *userPath)
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceUserModel::SaveUserModel(const char *userPath)
+FrokResult FaceModelEigenfaces::SaveUserModel(const char *userPath)
 {
     TRACE_T("started");
     if(userPath == NULL)
@@ -208,21 +175,8 @@ FrokResult FaceUserModel::SaveUserModel(const char *userPath)
         return FROK_RESULT_INVALID_PARAMETER;
     }
     std::string modelPath(userPath);
-    switch(modelType)
-    {
-    case RECOGNIZER_EIGENFACES:
-    {
-        modelPath.append(USER_MODEL_FILENAME_EIGENFACES);
-        break;
-    }
-    case RECOGNIZER_FISHER:
-    default:
-    {
-        TRACE_F_T("Recognizer %x is not supported", modelType);
-        return FROK_RESULT_INVALID_PARAMETER;
-        break;
-    }
-    }
+
+    modelPath.append(USER_MODEL_FILENAME_EIGENFACES);
 
     if(0 == access(modelPath.c_str(), F_OK))
     {
@@ -249,7 +203,7 @@ FrokResult FaceUserModel::SaveUserModel(const char *userPath)
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult FaceUserModel::GetPredictedFace(cv::Mat &targetFace, cv::Mat &predictedFace)
+FrokResult FaceModelEigenfaces::GetPredictedFace(cv::Mat &targetFace, cv::Mat &predictedFace)
 {
     TRACE_T("started");
     try

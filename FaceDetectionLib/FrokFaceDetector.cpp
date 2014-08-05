@@ -1,7 +1,7 @@
 #include "FrokFaceDetector.h"
-
 #include <math.h>
 
+#pragma GCC poison IplImage
 #define MODULE_NAME         "FACE_DETECTOR"
 
 FrokFaceDetector::FrokFaceDetector()
@@ -69,6 +69,7 @@ FrokFaceDetector::FrokFaceDetector()
     aligningScaleFactor = 1;
 
     faceSize = cv::Size(158, 190);
+    defaultImageSize = cv::Size(320, 320);
 
     TRACE("new FrokFaceDetector");
 }
@@ -134,17 +135,55 @@ FrokResult FrokFaceDetector::SetDefaultCascadeParameters(EnumCascades cascade, c
     cascades[cascade].nonDefaultParameters = false;
     return FROK_RESULT_SUCCESS;
 }
-FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath)
+
+FrokResult FrokFaceDetector::SetTargetImage(cv::Mat &image)
 {
-    TRACE_T("started...");
-    targetImageKappa = cv::imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE);
-    if(!targetImageKappa.data)
+    TRACE_T("started");
+    image.copyTo(targetImageGray);
+    TRACE_T("finished");
+    return FROK_RESULT_SUCCESS;
+}
+
+FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath, bool dontResize)
+{
+    TRACE_T("started");
+    targetImageGray = cv::imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE);
+    if(!targetImageGray.data)
     {
         TRACE_F_T("Failed to open image %s", imagePath);
         return FROK_RESULT_INVALID_PARAMETER;
     }
 
-    cascades[CASCADE_FACE].properties.maxObjectSize = cv::Size(targetImageKappa.cols, targetImageKappa.rows);
+    if(!dontResize)
+    {
+        double scale = (double)targetImageGray.cols / targetImageGray.rows;
+        cv::Size newImageSize;
+        if(scale > 1)
+        {
+            newImageSize.width = scale * defaultImageSize.width;
+            newImageSize.height = defaultImageSize.height;
+        }
+        else
+        {
+            newImageSize.width = defaultImageSize.width;
+            newImageSize.height = defaultImageSize.height / scale;
+        }
+        TRACE_T("Resizing image from (%d, %d) to (%d, %d)", targetImageGray.cols, targetImageGray.rows,
+                newImageSize.width, newImageSize.height);
+        try
+        {
+            cv::resize(targetImageGray, targetImageGray, newImageSize);
+        }
+        catch(...)
+        {
+            TRACE_F_T("Opencv failed to resize image");
+            return FROK_RESULT_OPENCV_ERROR;
+        }
+    }
+
+    cascades[CASCADE_FACE].properties.maxObjectSize = cv::Size(targetImageGray.cols, targetImageGray.rows);
+
+    //cv::imwrite("/home/zda/target.jpg", targetImageGray);
 
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
@@ -152,11 +191,11 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath)
 
 FrokResult FrokFaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
 
     try
     {
-        cascades[CASCADE_FACE].cascade.detectMultiScale(targetImageKappa, faces, cascades[CASCADE_FACE].properties.scaleFactor,
+        cascades[CASCADE_FACE].cascade.detectMultiScale(targetImageGray, faces, cascades[CASCADE_FACE].properties.scaleFactor,
                                        cascades[CASCADE_FACE].properties.minNeighbors, 0,
                                        cascades[CASCADE_FACE].properties.minObjectSize,
                                        cascades[CASCADE_FACE].properties.maxObjectSize);
@@ -166,13 +205,15 @@ FrokResult FrokFaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
         TRACE_F_T("detectMultiScale Failed");
         return FROK_RESULT_NOT_A_FACE;
     }
+
+    TRACE_S_T("Found %u faces", (unsigned)faces.size());
     TRACE_T("finished");
 
     return FROK_RESULT_SUCCESS;
 }
 FrokResult FrokFaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
 
     if(coords.empty())
     {
@@ -182,7 +223,7 @@ FrokResult FrokFaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std:
     for(std::vector<cv::Rect>::iterator it = coords.begin(); it != coords.end(); ++it)
     {
         cv::Rect faceCoord = (cv::Rect)*it;
-        cv::Mat faceImage(targetImageKappa, faceCoord);
+        cv::Mat faceImage(targetImageGray, faceCoord);
         faceImages.push_back(faceImage);
     }
     TRACE_T("finished");
@@ -191,7 +232,7 @@ FrokResult FrokFaceDetector::GetFaceImages(std::vector< cv::Rect > &coords, std:
 
 FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &coords, std::vector< cv::Mat > &faceImages)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
 
     size_t imagesBefore = faceImages.size();
 
@@ -203,7 +244,7 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
     FrokResult res;
 
     cv::Mat targetImageCopy;
-    targetImageKappa.copyTo(targetImageCopy);
+    targetImageGray.copyTo(targetImageCopy);
 
     normalizerClahe->apply(targetImageCopy, targetImageCopy);
     cv::normalize(targetImageCopy, targetImageCopy, 10, 250, cv::NORM_MINMAX);
@@ -224,7 +265,7 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
             return res;
         }
 
-        // Resize image to standart meanings
+        // Restore target image to initial size
         cv::resize(faceImage, faceImage, faceSize);
 
         faceImages.push_back(faceImage);
@@ -522,7 +563,7 @@ detect_finish:
 
 FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &processedImage, cv::Mat &alignedFaceImage)
 {
-    TRACE_T("started...");
+    TRACE_T("started");
     FrokResult result;
 
     // [TBD] Nikita resized image to image * 5 if width/height < 200. I do not.
@@ -539,10 +580,10 @@ FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &
         return result;
     }
 
-    /*cv::imwrite("/home/zda/le.jpg", cv::Mat(imageFace, humanFace.leftEye));
-    cv::imwrite("/home/zda/re.jpg", cv::Mat(imageFace, humanFace.rightEye));
-    cv::imwrite("/home/zda/n.jpg", cv::Mat(imageFace, humanFace.nose));
-    cv::imwrite("/home/zda/m.jpg", cv::Mat(imageFace, humanFace.mouth));*/
+    //cv::imwrite("/home/zda/le.jpg", cv::Mat(imageFace, humanFace.leftEye));
+    //cv::imwrite("/home/zda/re.jpg", cv::Mat(imageFace, humanFace.rightEye));
+    //cv::imwrite("/home/zda/n.jpg", cv::Mat(imageFace, humanFace.nose));
+    //cv::imwrite("/home/zda/m.jpg", cv::Mat(imageFace, humanFace.mouth));
 
     TRACE_S_T("GetHumanFaceParts succeed");
 

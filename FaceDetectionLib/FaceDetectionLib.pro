@@ -31,7 +31,8 @@ HEADERS +=                              \
     activities.h                        \
     EigenDetector.h                     \
     commonThread.h                      \
-    FrokFaceDetector.h
+    FrokFaceDetector.h \
+    FaceDetectorAbstarct.h
 
 SOURCES +=                              \
     network.cpp                         \
@@ -41,4 +42,5 @@ SOURCES +=                              \
     activities.cpp                      \
     EigenDetector.cpp                   \
     commonThread.cpp                    \
-    FrokFaceDetector.cpp
+    FrokFaceDetector.cpp \
+    FaceDetectorAbstract.cpp

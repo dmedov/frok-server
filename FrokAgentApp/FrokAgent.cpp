@@ -15,7 +15,7 @@
 
 pthread_mutex_t             frokAgent_trace_cs;
 pthread_mutex_t             frokAgent_cs;
-FrokAgent::FrokAgent(unsigned short localPort, const char *photoBasePath, const char *targetsFolderPath)
+FrokAgent::FrokAgent(std::map<std::string, FrokAPIFunction*> enabledFucntions, unsigned short localPort, const char *photoBasePath, const char *targetsFolderPath)
 {
     this->photoBasePath = new char[strlen(photoBasePath) + 1];
     this->targetsFolderPath = new char[strlen(targetsFolderPath) + 1];
@@ -33,6 +33,18 @@ FrokAgent::FrokAgent(unsigned short localPort, const char *photoBasePath, const 
     localSock = INVALID_SOCKET;
 
     this->localPortNumber = localPort;
+
+    recognizer = new FaceRecognizerEigenfaces;
+    detector = new FrokFaceDetector;
+
+    fapi = new FrokAPI(this->photoBasePath, this->targetsFolderPath, detector, recognizer);
+
+    TRACE("List of included functions:");
+    for(std::map<std::string, FrokAPIFunction*>::iterator it = enabledFucntions.begin(); it != enabledFucntions.end(); ++it)
+    {
+        TRACE("\t%s", it->first.c_str());
+        fapi->AddAPIFunction(it->first, it->second);
+    }
     TRACE("new FrokAgent");
 }
 
@@ -146,7 +158,7 @@ NetResult FrokAgent::StartNetworkServer()
 
     TRACE("Starting ServerListener");
 
-    if(!threadServerListener->startThread((void*(*)(void*))FrokAgent::ServerListener, &pThis, sizeof(FrokAgent*)))
+    if(!threadServerListener->startThread((void*(*)(void*))FrokAgent::ServerListener, NULL, 0, &pThis))
     {
         TRACE_F("Failed to start ServerListener thread. See CommonThread logs for information");
         return NET_COMMON_THREAD_ERROR;
@@ -183,13 +195,15 @@ bool FrokAgent::StopFrokAgent()
 
 void FrokAgent::ServerListener(void* param)
 {
-    FrokAgent                  *pThis                       = NULL;
+    ThreadFunctionParameters   *thParams                    = (ThreadFunctionParameters*)param;
+    FrokAgent                  *pThis                       = (FrokAgent*)thParams->object;
     SOCKET                      accepted_socket             = INVALID_SOCKET;
     int                         dataLength                  = 0;
     char                        data[MAX_SOCKET_BUFF_SIZE]  = {0};
     std::vector<std::string>    mandatoryKeys;
+    std::vector<std::string>    includedFunctions;
 
-    memcpy(&pThis, param, sizeof(FrokAgent*));
+    pThis->fapi->GetAvailableFunctions(includedFunctions);
 
     mandatoryKeys.push_back("cmd");
     mandatoryKeys.push_back("req_id");
@@ -283,6 +297,7 @@ void FrokAgent::ServerListener(void* param)
 
             // Response from agent received
             json::Object requestJson;
+            json::Object resultJson;
             try
             {
                 requestJson = ((json::Value)json::Deserialize((std::string)data)).ToObject();
@@ -305,11 +320,50 @@ void FrokAgent::ServerListener(void* param)
                 break;
             }
 
-            requestJson["result"] = "success";
+            std::string cmd = requestJson["cmd"].ToString();
+            bool noSuchFunction = true;
+            for(std::vector<std::string>::iterator it = includedFunctions.begin(); it != includedFunctions.end(); ++it)
+            {
+                if(*it == cmd)
+                {
+                    noSuchFunction = false;
+                    break;
+                }
+            }
+            if(noSuchFunction == true)
+            {
+                resultJson["result"] = "fail";
+                resultJson["reason"] = "cmd not supported";
+                continue;
+            }
 
-            std::string outJson = json::Serialize(requestJson);
+            std::string responseString;
+            FrokResult res = pThis->fapi->ExecuteFunction(cmd, (std::string)data, responseString);
+            if(res != FROK_RESULT_SUCCESS)
+            {
+                resultJson["result"] = "fail";
+                resultJson["reason"] = FrokResultToString(res);
+                goto sendResult;
+            }
+            try
+            {
+                resultJson = json::Deserialize(responseString);
+            }
+            catch(...)
+            {
+                resultJson["result"] = "fail";
+                resultJson["reason"] = "internal error";
+                goto sendResult;
+            }
 
-            printf("Simply echo with success result %s", outJson.c_str());
+            resultJson["result"] = "success";
+
+sendResult:
+            resultJson["reply_sock"] = requestJson["reply_sock"];
+            resultJson["req_id"] = requestJson["req_id"];
+            std::string outJson = json::Serialize(resultJson);
+
+            TRACE_S("Response json: %s", outJson.c_str());
 
             if(NET_SUCCESS != pThis->SendData(accepted_socket, outJson.c_str(), outJson.size()))
             {
