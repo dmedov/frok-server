@@ -159,7 +159,7 @@ FrokResult TrainUserModel(void *inParams, void **outParams, const char *userBase
                 TRACE_S_T("Processing image %s", ((std::string)*iterImage).c_str());
                 std::string imageFullPath = photosPath;
                 imageFullPath.append((std::string)*iterImage);
-                if(FROK_RESULT_SUCCESS != (res = detector->SetTargetImage(imageFullPath.c_str())))
+                if(FROK_RESULT_SUCCESS != (res = detector->SetTargetImage(imageFullPath.c_str(), true)))
                 {
                     TRACE_F_T("Failed to SetTargetImage on result %s", FrokResultToString(res));
                     continue;

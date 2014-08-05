@@ -195,7 +195,7 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
 
     TRACE_T("Detecting faces on target photo %s", targetImageFullPath.c_str());
 
-    if(FROK_RESULT_SUCCESS != (res = detector->SetTargetImage(targetImageFullPath.c_str())))
+    if(FROK_RESULT_SUCCESS != (res = detector->SetTargetImage(targetImageFullPath.c_str(), true)))
     {
         TRACE_F_T("Failed to SetTargetImage on result %s", FrokResultToString(res));
         return res;

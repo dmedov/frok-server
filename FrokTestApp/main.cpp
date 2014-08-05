@@ -28,11 +28,19 @@ int main(void)
     std::vector<std::string> functions;
     fapi.GetAvailableFunctions(functions);
 
-    //params.jsonParameters = "{\"arrIds\": [\"3\", \"4\"]}";
+    for(int i = 1; i < 18; i++)
+    {
+        std::stringstream str;
+        str << i;
+        FaceModelAbstract *model = new FaceModelEigenfaces(str.str());
+        model->LoadUserModel((((std::string)DEFAULT_PHOTO_BASE_PATH).append(str.str()).append("/")).c_str());
+        recognizer->AddFaceUserModel(str.str(), model);
+    }
+
     std::string inJson= "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
             \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"]}";
     std::string outJson;
-    fapi.ExecuteFunction("train", inJson, outJson);
+    //fapi.ExecuteFunction("train", inJson, outJson);
 
     std::string inJsonRec1 = "{\"arrIds\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\",\
             \"8\", \"9\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\"],\
