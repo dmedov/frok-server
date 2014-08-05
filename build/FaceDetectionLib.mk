@@ -8,7 +8,7 @@ SRCDIR = FaceDetectionLib
 
 # Target settings
 LANG := c++
-TARGET := libFaceDetectionLib.a
+TARGET := libFrokLib.a
 TARGETTYPE := staticlib
 
 LIBS := -L$(BINOUTDIR)			                            \
@@ -25,8 +25,5 @@ SRCDIRS :=  ../$(SRCDIR)/
 HDRDIRS :=  ../$(SRCDIR)/	\
 	../FaceCommonLib/	    \
 	$(OPENCV_INCLUDES)
-
-make_dependencies:
-	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FaceCommonLib.mk build
 
 include makefile.actions

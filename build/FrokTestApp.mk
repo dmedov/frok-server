@@ -1,14 +1,14 @@
 ###########################################################
-# mk for project FrokAgentApp
+# mk for project FrokTestApp
 ###########################################################
 
 include makefile.consts
 include opencv.include
-SRCDIR = FrokAgentApp
+SRCDIR = FrokTestApp
 
 # Target settings
 LANG := c++
-TARGET := FrokAgentApp
+TARGET := FrokTestApp
 TARGETTYPE := executable
 
 CFLAGS += -Wno-unknown-pragmas

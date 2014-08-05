@@ -183,7 +183,7 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath, bool dontResi
 
     cascades[CASCADE_FACE].properties.maxObjectSize = cv::Size(targetImageGray.cols, targetImageGray.rows);
 
-    cv::imwrite("/home/zda/target.jpg", targetImageGray);
+    //cv::imwrite("/home/zda/target.jpg", targetImageGray);
 
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
@@ -580,10 +580,10 @@ FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &
         return result;
     }
 
-    cv::imwrite("/home/zda/le.jpg", cv::Mat(imageFace, humanFace.leftEye));
-    cv::imwrite("/home/zda/re.jpg", cv::Mat(imageFace, humanFace.rightEye));
-    cv::imwrite("/home/zda/n.jpg", cv::Mat(imageFace, humanFace.nose));
-    cv::imwrite("/home/zda/m.jpg", cv::Mat(imageFace, humanFace.mouth));
+    //cv::imwrite("/home/zda/le.jpg", cv::Mat(imageFace, humanFace.leftEye));
+    //cv::imwrite("/home/zda/re.jpg", cv::Mat(imageFace, humanFace.rightEye));
+    //cv::imwrite("/home/zda/n.jpg", cv::Mat(imageFace, humanFace.nose));
+    //cv::imwrite("/home/zda/m.jpg", cv::Mat(imageFace, humanFace.mouth));
 
     TRACE_S_T("GetHumanFaceParts succeed");
 

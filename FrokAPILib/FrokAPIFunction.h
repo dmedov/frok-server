@@ -8,6 +8,7 @@
 #include <cv.h>
 #include <highgui.h>
 
+#include "json.h"
 #include "FrokFaceDetector.h"
 #include "FaceRecognizerEigenfaces.h"
 #include "faceCommonLib.h"

@@ -7,11 +7,13 @@ all: build
 build:
 	@echo $(BRIGHT)$(WHITE)"[BUILD]        "$(RESET) $(TARGET)
 	@$(MAKE) --no-print-directory CCFLAG="$(CFLAGS)" LDFLAG="$(LDFLAGS)" -f FrokServerApp.mk build
+	@$(MAKE) --no-print-directory CCFLAG="$(CFLAGS)" LDFLAG="$(LDFLAGS)" -f FrokTestApp.mk build
 	@$(MAKE) --no-print-directory CCFLAG="$(CFLAGS)" LDFLAG="$(LDFLAGS)" -f FrokAgentApp.mk build
 	@echo $(BRIGHT)$(GREEN)"[BUILD IS DONE]"$(RESET) $(BRIGHT)$(WHITE)$(TARGET)$(RESET)
 
 clean:
 	@echo $(BRIGHT)$(WHITE)"[CLEAN]        "$(RESET) $(TARGET)
+	@$(MAKE) --no-print-directory CCFLAG="$(CFLAGS)" LDFLAG="$(LDFLAGS)" -f FrokTestApp.mk clean
 	@$(MAKE) --no-print-directory CCFLAG="$(CFLAGS)" LDFLAG="$(LDFLAGS)" -f FrokServerApp.mk clean
 	@$(MAKE) --no-print-directory CCFLAG="$(CFLAGS)" LDFLAG="$(LDFLAGS)" -f FrokAgentApp.mk clean
 	@$(MAKE) --no-print-directory CCFLAG="$(CFLAGS)" LDFLAG="$(LDFLAGS)" -f FaceDetectionLib.mk clean

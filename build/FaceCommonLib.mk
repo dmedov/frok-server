@@ -8,7 +8,7 @@ SRCDIR = FaceCommonLib
 
 # Target settings
 LANG := c++
-TARGET := libFaceCommonLib.a
+TARGET := libFrokLib.a
 TARGETTYPE := staticlib
 
 LIBS := -L$(BINOUTDIR)			\
