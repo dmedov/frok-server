@@ -32,7 +32,6 @@ private:
     SOCKET                              localSock;
     std::vector < FrokAgentConnector* > agents;
     std::vector < CommonThread* >       threadVecSocketListener;
-    CommonThread                       *threadAcceptConnection;
 
 public:
     FrokServer(std::vector<AgentInfo*> &agentsInfo, unsigned short localPort = DEFAULT_PORT);
@@ -45,7 +44,7 @@ protected:
     NetResult StopNetworkServer();
     NetResult SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize);
 private:
-    static void AcceptConnection(void* param);
+    void AcceptConnection();
     static void SocketListener(void* param);
 };
 

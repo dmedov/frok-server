@@ -1,7 +1,13 @@
 #include <stdlib.h>
+#include <signal.h>
+#include <unistd.h>
 #include "FrokServer.h"
 
-#include "unistd.h"
+
+
+#define MODULE_NAME "SERVER"
+
+FrokServer *server;
 
 void usage()
 {
@@ -9,12 +15,21 @@ void usage()
     return;
 }
 
+static void sigusr1Handler(int sig, siginfo_t *si, void *p)
+{
+    UNREFERENCED_PARAMETER(sig);
+    UNREFERENCED_PARAMETER(si);
+    UNREFERENCED_PARAMETER(p);
+
+    TRACE_S("SIGUSR1 captured!");
+    if(server != NULL)
+    {
+        server->StopFrokServer();
+    }
+}
+
 int main(int argc, char *argv[])
 {
-    if(!InitFaceCommonLib())
-    {
-        return -1;
-    }
     if(argc != 3)
     {
         usage();
@@ -33,11 +48,23 @@ int main(int argc, char *argv[])
 
     std::vector<AgentInfo*> agentInfoVec;
     agentInfoVec.push_back(info);
-    FrokServer server(agentInfoVec, 27015);
-    server.StartFrokServer();
 
-    getchar();
+    server = new FrokServer(agentInfoVec, 27015);
 
-    DeinitFaceCommonLib();
+    struct sigaction sigusr1Action;
+
+   sigusr1Action.sa_flags = SA_SIGINFO;
+   sigemptyset(&sigusr1Action.sa_mask);
+   sigusr1Action.sa_sigaction = sigusr1Handler;
+
+   if (-1 == sigaction(SIGUSR1, &sigusr1Action, NULL))
+   {
+       TRACE_F("Failed to set custom action on SIGUSR1 on error %s", strerror(errno));
+       return -1;
+   }
+
+    server->StartFrokServer();
+
+    TRACE("Finished");
     return 0;
 }

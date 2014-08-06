@@ -22,22 +22,58 @@ FrokAgent::FrokAgent(std::map<std::string, FrokAPIFunction*> enabledFucntions, u
     strcpy(this->photoBasePath, photoBasePath);
     strcpy(this->photoBasePath, photoBasePath);
 
+    int res = 0;
     pthread_mutexattr_t mAttr;
-    pthread_mutexattr_init(&mAttr);
-    pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&frokAgent_trace_cs, &mAttr);
-    pthread_mutex_init(&frokAgent_cs, &mAttr);
-    pthread_mutexattr_destroy(&mAttr);
+    if(0 != (res = pthread_mutexattr_init(&mAttr)))
+    {
+        TRACE_F("pthread_mutexattr_init failed on error %s", strerror(res));
+        throw NET_MEM_ALLOCATION_FAIL;
+    }
+    if(0 != (res = pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP)))
+    {
+        TRACE_F("pthread_mutexattr_settype failed on error %s", strerror(res));
+        throw NET_MEM_ALLOCATION_FAIL;
+    }
+    if(0 != (res = pthread_mutex_init(&frokAgent_trace_cs, &mAttr)))
+    {
+        TRACE_F("pthread_mutex_init failed on error %s", strerror(res));
+        throw NET_MEM_ALLOCATION_FAIL;
+    }
+    if(0 != (res = pthread_mutex_init(&frokAgent_cs, &mAttr)))
+    {
+        TRACE_F("pthread_mutex_init failed on error %s", strerror(res));
+        throw NET_MEM_ALLOCATION_FAIL;
+    }
+    if(0 != (res = pthread_mutexattr_destroy(&mAttr)))
+    {
+        TRACE_F("pthread_mutexattr_destroy failed on error %s", strerror(res));
+        throw NET_MEM_ALLOCATION_FAIL;
+    }
 
-    threadServerListener = new CommonThread;
     localSock = INVALID_SOCKET;
 
     this->localPortNumber = localPort;
 
-    recognizer = new FaceRecognizerEigenfaces;
-    detector = new FrokFaceDetector;
+    try
+    {
+        recognizer = new FaceRecognizerEigenfaces;
+        detector = new FrokFaceDetector;
+    }
+    catch(...)
+    {
+        TRACE_F("Failed to create recognizer and detector object");
+        throw NET_MEM_ALLOCATION_FAIL;
+    }
 
-    fapi = new FrokAPI(this->photoBasePath, this->targetsFolderPath, detector, recognizer);
+    try
+    {
+        fapi = new FrokAPI(this->photoBasePath, this->targetsFolderPath, detector, recognizer);
+    }
+    catch(...)
+    {
+        TRACE_F("Failed to create FrokAPI object");
+        throw NET_MEM_ALLOCATION_FAIL;
+    }
 
     TRACE("List of included functions:");
     for(std::map<std::string, FrokAPIFunction*>::iterator it = enabledFucntions.begin(); it != enabledFucntions.end(); ++it)
@@ -50,6 +86,9 @@ FrokAgent::FrokAgent(std::map<std::string, FrokAPIFunction*> enabledFucntions, u
 
 FrokAgent::~FrokAgent()
 {
+    delete recognizer;
+    delete detector;
+
     delete []photoBasePath;
     delete []targetsFolderPath;
 
@@ -58,8 +97,6 @@ FrokAgent::~FrokAgent()
         shutdown(localSock, 2);
         close(localSock);
     }
-    threadServerListener->stopThread();
-    delete threadServerListener;
 
     pthread_mutex_destroy(&frokAgent_cs);
     pthread_mutex_destroy(&frokAgent_trace_cs);
@@ -83,6 +120,8 @@ bool FrokAgent::StartFrokAgent()
         return false;
     }
     TRACE_S("StartNetworkServer succeed");
+
+    ServerListener();
 
     return true;
 }
@@ -154,16 +193,6 @@ NetResult FrokAgent::StartNetworkServer()
         return NET_UNSPECIFIED_ERROR;
     }
 
-    FrokAgent *pThis = this;
-
-    TRACE("Starting ServerListener");
-
-    if(!threadServerListener->startThread((void*(*)(void*))FrokAgent::ServerListener, NULL, 0, &pThis))
-    {
-        TRACE_F("Failed to start ServerListener thread. See CommonThread logs for information");
-        return NET_COMMON_THREAD_ERROR;
-    }
-
     TRACE_S("Succeed, socket = %d, port = %d", localSock, localPortNumber);
 
     return NET_SUCCESS;
@@ -193,23 +222,21 @@ bool FrokAgent::StopFrokAgent()
     return success;
 }
 
-void FrokAgent::ServerListener(void* param)
+void FrokAgent::ServerListener()
 {
-    ThreadFunctionParameters   *thParams                    = (ThreadFunctionParameters*)param;
-    FrokAgent                  *pThis                       = (FrokAgent*)thParams->object;
     SOCKET                      accepted_socket             = INVALID_SOCKET;
     int                         dataLength                  = 0;
     char                        data[MAX_SOCKET_BUFF_SIZE]  = {0};
     std::vector<std::string>    mandatoryKeys;
     std::vector<std::string>    includedFunctions;
 
-    pThis->fapi->GetAvailableFunctions(includedFunctions);
+    fapi->GetAvailableFunctions(includedFunctions);
 
     mandatoryKeys.push_back("cmd");
     mandatoryKeys.push_back("req_id");
     mandatoryKeys.push_back("reply_sock");
 
-    TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
+    TRACE("Accepting single incoming connections for socket %i", localSock);
 
     for(;;)
     {
@@ -219,17 +246,9 @@ void FrokAgent::ServerListener(void* param)
             close(accepted_socket);
         }
 
-        if ((accepted_socket = accept(pThis->localSock, NULL, NULL)) == SOCKET_ERROR)
+        if ((accepted_socket = accept(localSock, NULL, NULL)) == SOCKET_ERROR)
         {
-            if(pThis->threadServerListener->isStopThreadReceived())
-            {
-                TRACE("terminate thread sema received");
-                shutdown(pThis->localSock, 2);
-                close(pThis->localSock);
-                TRACE("AcceptConnection finished");
-                return;
-            }
-            continue;
+            break;
         }
 
         TRACE("Incoming connection accepted. Accepted socket = %u", accepted_socket);
@@ -238,34 +257,29 @@ void FrokAgent::ServerListener(void* param)
         if(0 != setsockopt(accepted_socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)))
         {
             TRACE_F("setsockopt (TCP_NODELAY) failed on error %s", strerror(errno));
-            TRACE_F("Accepting single incoming connections for socket %i", pThis->localSock);
+            TRACE_F("Accepting single incoming connections for socket %i", localSock);
             continue;
         }
 
         if(0 != setsockopt(accepted_socket, SOL_SOCKET, SO_KEEPALIVE, &flag, sizeof(int)))
         {
             TRACE_F("setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
-            TRACE_F("Accepting single incoming connections for socket %i", pThis->localSock);
+            TRACE_F("Accepting single incoming connections for socket %i", localSock);
             continue;
         }
 
         if(0 != setsockopt(accepted_socket, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int)))
         {
             TRACE_F("setsockopt (SO_REUSEADDR) failed on error %s", strerror(errno));
-            TRACE_F("Accepting single incoming connections for socket %i", pThis->localSock);
+            TRACE_F("Accepting single incoming connections for socket %i", localSock);
             continue;
         }
 
         TRACE_S("Socket listener cycle started. The agent will process one request and then connection would be terminated.");
         for(;;)
         {
-            if(pThis->threadServerListener->isStopThreadReceived())
+            if(localSock == INVALID_SOCKET)
             {
-                TRACE("terminate thread sema received");
-                shutdown(accepted_socket, 2);
-                close(accepted_socket);
-                shutdown(pThis->localSock, 2);
-                close(pThis->localSock);
                 TRACE("AcceptConnection finished");
                 return;
             }
@@ -282,14 +296,14 @@ void FrokAgent::ServerListener(void* param)
                 TRACE_W("Listening to socket %u stopped", accepted_socket);
                 shutdown(accepted_socket, 2);
                 close(accepted_socket);
-                TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
+                TRACE("Accepting single incoming connections for socket %i", localSock);
                 break;
             }
 
             if(dataLength == 0)
             {
                 TRACE("Half disconnection received. Terminating...");
-                TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
+                TRACE("Accepting single incoming connections for socket %i", localSock);
                 break;
             }
 
@@ -305,7 +319,7 @@ void FrokAgent::ServerListener(void* param)
             catch (...)
             {
                 TRACE_F("Failed to parse incoming JSON: %s", data);
-                TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
+                TRACE("Accepting single incoming connections for socket %i", localSock);
                 shutdown(accepted_socket, 2);
                 close(accepted_socket);
                 break;
@@ -314,7 +328,7 @@ void FrokAgent::ServerListener(void* param)
             if (!(requestJson.HasKeys(mandatoryKeys)))
             {
                 TRACE_F("Invalid input JSON: no cmd field (%s)", data);
-                TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
+                TRACE("Accepting single incoming connections for socket %i", localSock);
                 shutdown(accepted_socket, 2);
                 close(accepted_socket);
                 break;
@@ -338,7 +352,7 @@ void FrokAgent::ServerListener(void* param)
             }
 
             std::string responseString;
-            FrokResult res = pThis->fapi->ExecuteFunction(cmd, (std::string)data, responseString);
+            FrokResult res = fapi->ExecuteFunction(cmd, (std::string)data, responseString);
             if(res != FROK_RESULT_SUCCESS)
             {
                 resultJson["result"] = "fail";
@@ -365,17 +379,17 @@ sendResult:
 
             TRACE_S("Response json: %s", outJson.c_str());
 
-            if(NET_SUCCESS != pThis->SendData(accepted_socket, outJson.c_str(), outJson.size()))
+            if(NET_SUCCESS != SendData(accepted_socket, outJson.c_str(), outJson.size()))
             {
                 TRACE_F("Failed to send response to server (%u). Reponse = %s", accepted_socket, outJson.c_str());
                 shutdown(accepted_socket, 2);
                 close(accepted_socket);
-                TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
+                TRACE("Accepting single incoming connections for socket %i", localSock);
                 break;
             }
             shutdown(accepted_socket, 2);
             close(accepted_socket);
-            TRACE("Accepting single incoming connections for socket %i", pThis->localSock);
+            TRACE("Accepting single incoming connections for socket %i", localSock);
             break;
         }
     }
@@ -386,8 +400,8 @@ sendResult:
         close(accepted_socket);
     }
 
-    shutdown(pThis->localSock, 2);
-    close(pThis->localSock);
+    shutdown(localSock, 2);
+    close(localSock);
     TRACE("AcceptConnection finished");
     return;
 }
@@ -439,13 +453,7 @@ NetResult FrokAgent::StopNetworkServer()
         TRACE_S("Descriptor successfully closed");
     }
 
-    TRACE("Calling threadServerListener->stopThread");
-    if(!threadServerListener->stopThread())
-    {
-        TRACE_F("threadServerListener->stopThread failed");
-        res = NET_COMMON_THREAD_ERROR;
-    }
-    TRACE_S("threadServerListener->stopThread succeed");
+    localSock = INVALID_SOCKET;
 
     return res;
 }

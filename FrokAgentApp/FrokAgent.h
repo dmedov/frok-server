@@ -39,7 +39,6 @@ private:
     char                   *targetsFolderPath;
     unsigned short          localPortNumber;
     SOCKET                  localSock;
-    CommonThread           *threadServerListener;
     FaceRecognizerAbstract *recognizer;
     FaceDetectorAbstract   *detector;
     FrokAPI                *fapi;
@@ -56,7 +55,7 @@ protected:
     NetResult SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize);
 private:
     // Only one connected server is allowed. Disconnect current connection to allow new server connect
-    static void ServerListener(void* param);
+    void ServerListener();
 };
 
 #endif // FROKAGENT_H
