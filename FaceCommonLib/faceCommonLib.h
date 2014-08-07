@@ -37,7 +37,7 @@ enum FrokResult
 #define CASE_RET_STR(x) case x: return #x
 
 // Library init functions
-char *FrokResultToString(FrokResult res);
+const char *FrokResultToString(FrokResult res);
 bool InitFaceCommonLib(const char *logFileName = DEFAULT_LOG_FILE_NAME);
 bool DeinitFaceCommonLib();
 void set_time_stamp(unsigned *sec, unsigned *usec);

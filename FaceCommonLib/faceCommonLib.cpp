@@ -103,7 +103,7 @@ void print_time(timespec &startTime, timespec &endTime)
     fprintf(stdout, "Time elapsed: %u.%09u\n", sec, nsec);
 }
 
-char *FrokResultToString(FrokResult res)
+const char *FrokResultToString(FrokResult res)
 {
     switch(res)
     {

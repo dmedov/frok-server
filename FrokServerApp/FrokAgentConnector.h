@@ -28,7 +28,7 @@ typedef enum FrokActivityAgentState
     FROK_AGENT_STOPPED,
     FROK_AGENT_ERROR
 } AgentState;
-char *AgentStateToString(AgentState state);
+const char *AgentStateToString(AgentState state);
 #pragma pack(push, 1)
 
 typedef struct AgentInfo
