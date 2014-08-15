@@ -15,13 +15,13 @@ void usage()
     return;
 }
 
-static void sigusr1Handler(int sig, siginfo_t *si, void *p)
+static void sigintHandler(int sig, siginfo_t *si, void *p)
 {
     UNREFERENCED_PARAMETER(sig);
     UNREFERENCED_PARAMETER(si);
     UNREFERENCED_PARAMETER(p);
 
-    TRACE_S("SIGUSR1 captured!");
+    TRACE_S("SIGINT captured!");
     if(server != NULL)
     {
         server->StopFrokServer();
@@ -51,15 +51,15 @@ int main(int argc, char *argv[])
 
     server = new FrokServer(agentInfoVec, 27015);
 
-    struct sigaction sigusr1Action;
+    struct sigaction sigintAction;
 
-   sigusr1Action.sa_flags = SA_SIGINFO;
-   sigemptyset(&sigusr1Action.sa_mask);
-   sigusr1Action.sa_sigaction = sigusr1Handler;
+   sigintAction.sa_flags = SA_SIGINFO;
+   sigemptyset(&sigintAction.sa_mask);
+   sigintAction.sa_sigaction = sigintHandler;
 
-   if (-1 == sigaction(SIGUSR1, &sigusr1Action, NULL))
+   if (-1 == sigaction(SIGINT, &sigintAction, NULL))
    {
-       TRACE_F("Failed to set custom action on SIGUSR1 on error %s", strerror(errno));
+       TRACE_F("Failed to set custom action on SIGINT on error %s", strerror(errno));
        return -1;
    }
 

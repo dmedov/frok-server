@@ -1,6 +1,6 @@
 TEMPLATE = subdirs
 
-btmtest.pro
+FaceSolution.pro
 
 SUBDIRS =               \
     FrokServerApp       \
