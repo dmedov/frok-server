@@ -12,7 +12,7 @@
 pthread_mutex_t             FrokAgentConnector_trace_cs;
 pthread_mutex_t             FrokAgentConnector_cs;
 
-char *AgentStateToString(AgentState state)
+const char *AgentStateToString(AgentState state)
 {
     switch (state)
     {

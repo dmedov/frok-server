@@ -24,14 +24,34 @@ FrokServer::FrokServer(std::vector<AgentInfo*> &agentsInfo, unsigned short local
 
     localPortNumber = localPort;
 
+    int res = 0;
     pthread_mutexattr_t mAttr;
-    pthread_mutexattr_init(&mAttr);
-    pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&frokServer_cs, &mAttr);
-    pthread_mutex_init(&frokServer_trace_cs, &mAttr);
-    pthread_mutexattr_destroy(&mAttr);
+    if (0 != (res = pthread_mutexattr_init(&mAttr)))
+    {
+        TRACE_F("pthread_mutexattr_init failed on error %s", strerror(res));
+        throw NET_MEM_ALLOCATION_FAIL;
+    }
+    if (0 != (res = pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP)))
+    {
+        TRACE_F("pthread_mutexattr_settype failed on error %s", strerror(res));
+        throw NET_MEM_ALLOCATION_FAIL;
+    }
+    if (0 != (res = pthread_mutex_init(&frokServer_cs, &mAttr)))
+    {
+        TRACE_F("pthread_mutex_init failed on error %s", strerror(res));
+        throw NET_MEM_ALLOCATION_FAIL;
+    }
+    if (0 != (res = pthread_mutex_init(&frokServer_trace_cs, &mAttr)))
+    {
+        TRACE_F("pthread_mutex_init failed on error %s", strerror(res));
+        throw NET_MEM_ALLOCATION_FAIL;
+    }
+    if (0 != (res = pthread_mutexattr_destroy(&mAttr)))
+    {
+        TRACE_F("pthread_mutexattr_destroy failed on error %s", strerror(res));
+        throw NET_MEM_ALLOCATION_FAIL;
+    }
 
-    threadAcceptConnection = new CommonThread;
     localSock = INVALID_SOCKET;
     TRACE("new FrokServer");
 }
@@ -47,9 +67,6 @@ FrokServer::~FrokServer()
         delete ((CommonThread*)(*it));
     }
     threadVecSocketListener.clear();
-
-    threadAcceptConnection->stopThread();
-    delete threadAcceptConnection;
 
     pthread_mutex_destroy(&frokServer_cs);
     pthread_mutex_destroy(&frokServer_trace_cs);
@@ -82,6 +99,8 @@ bool FrokServer::StartFrokServer()
         return false;
     }
     TRACE_S("StartNetworkServer succeed!");
+
+    AcceptConnection();
     return true;
 }
 
@@ -132,6 +151,8 @@ NetResult FrokServer::StopNetworkServer()
             res = NET_SOCKET_ERROR;
         }
         TRACE_S("Descriptor successfully closed");
+
+        localSock = INVALID_SOCKET;
     }
 
     for(std::vector<CommonThread*>::iterator it = threadVecSocketListener.begin(); it != threadVecSocketListener.end(); ++it)
@@ -141,25 +162,14 @@ NetResult FrokServer::StopNetworkServer()
     }
     threadVecSocketListener.clear();
 
-    TRACE("Calling threadServerListener->stopThread");
-    if(!threadAcceptConnection->stopThread())
-    {
-        TRACE_F("threadServerListener->stopThread failed");
-        res = NET_COMMON_THREAD_ERROR;
-    }
-    TRACE_S("threadServerListener->stopThread succeed");
-
     return res;
 }
 
-void FrokServer::AcceptConnection(void* param)
+void FrokServer::AcceptConnection()
 {
-    ThreadFunctionParameters *thParams = (ThreadFunctionParameters*)param;
-    FrokServer             *pThis = (FrokServer*)thParams->object;
-
     SOCKET                  accepted_socket;
 
-    TRACE("Accepting all incoming connections for socket %i", pThis->localSock);
+    TRACE("Accepting all incoming connections for socket %i", localSock);
 
     for(;;)
     {
@@ -168,14 +178,9 @@ void FrokServer::AcceptConnection(void* param)
             shutdown(accepted_socket, 2);
             close(accepted_socket);
         }
-        if ((accepted_socket = accept(pThis->localSock, NULL, NULL)) == SOCKET_ERROR)
+        if ((accepted_socket = accept(localSock, NULL, NULL)) == SOCKET_ERROR)
         {
-            if(pThis->threadAcceptConnection->isStopThreadReceived())
-            {
-                TRACE("terminate thread sema received");
-                break;
-            }
-            continue;
+            break;
         }
 
         TRACE_S("Incoming connection accepted. Accepted socket = %u", accepted_socket);
@@ -199,6 +204,7 @@ void FrokServer::AcceptConnection(void* param)
             continue;
         }
 
+        FrokServer *pThis = this;
         CommonThread *thread = new CommonThread;
 
         if(!thread->startThread((void*(*)(void*))FrokServer::SocketListener, &accepted_socket, sizeof(accepted_socket), &pThis))
@@ -208,14 +214,14 @@ void FrokServer::AcceptConnection(void* param)
             continue;
         }
 
-        pThis->threadVecSocketListener.push_back(thread);
+        threadVecSocketListener.push_back(thread);
     }
 
     shutdown(accepted_socket, 2);
     close(accepted_socket);
 
-    shutdown(pThis->localSock, 2);
-    close(pThis->localSock);
+    shutdown(localSock, 2);
+    close(localSock);
     TRACE("AcceptConnection finished");
     return;
 }
@@ -422,18 +428,6 @@ NetResult FrokServer::StartNetworkServer()
         shutdown(localSock, 2);
         close(localSock);
         return NET_UNSPECIFIED_ERROR;
-    }
-
-    FrokServer *pThis = this;
-
-    TRACE("Starting ServerListener");
-
-    if(!threadAcceptConnection->startThread((void*(*)(void*))FrokServer::AcceptConnection, NULL, 0, &pThis))
-    {
-        TRACE_F("Failed to start ServerListener thread. See CommonThread logs for information");
-        shutdown(localSock, 2);
-        close(localSock);
-        return NET_COMMON_THREAD_ERROR;
     }
 
     TRACE_S("Succeed, socket = %d, port = %d", localSock, localPortNumber);

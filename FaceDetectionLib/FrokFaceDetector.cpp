@@ -307,6 +307,8 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
 
     // Try to detect eyes
     std::vector < cv::Rect > eyes;
+    std::vector < cv::Rect > nose;
+    std::vector < cv::Rect > mouth;
     TRACE_T("Detecting eyes with CASCADE_EYE...");
     cascades[CASCADE_EYE].cascade.detectMultiScale(image, eyes,
                                                     cascades[CASCADE_EYE].properties.scaleFactor,
@@ -462,7 +464,13 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
             }
         }
     }
-
+#ifdef FAST_SEARCH_ENABLED
+    if(faceParts->leftEyeFound == false)
+    {
+        TRACE_F_T("One or less eyes found. Eye detection stopped due to FAST_SEARCH_ENABLED algorythm");
+        goto detect_nose;
+    }
+#endif // FAST_SEARCH_ENABLED
     if(faceParts->rightEyeFound == false)
     {
         eyes.clear();
@@ -516,8 +524,15 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
     {
         TRACE_S_T("Eyes detection succeed");
     }
+
+#ifdef FAST_SEARCH_ENABLED
+    if(faceParts->rightEyeFound == true && faceParts->leftEyeFound == true)
+    {
+        TRACE_F_T("Both eyes were found. Mouth and nose detection are being skipped due to FAST_SEARCH_ENABLED algorythm");
+        goto detect_finish;
+    }
+#endif // FAST_SEARCH_ENABLED
 detect_nose:
-    std::vector < cv::Rect > nose;
     TRACE_T("Detecting eyes with CASCADE_NOSE_MSC...");
     cascades[CASCADE_NOSE_MSC].cascade.detectMultiScale(image, nose,
                                                     cascades[CASCADE_NOSE_MSC].properties.scaleFactor,
@@ -535,8 +550,17 @@ detect_nose:
     }
     TRACE_T("Failed to find nose with CASCADE_NOSE_MSC");
     TRACE_W_T("Nose detection failed");
+
+#ifdef FAST_SEARCH_ENABLED
+    if(faceParts->noseFound == false)
+    {
+        TRACE_F_T("Nose was not found. Mouth detection is being skipped due to FAST_SEARCH_ENABLED algorythm");
+        goto detect_finish;
+    }
+#endif // FAST_SEARCH_ENABLED
+
 detect_mouth:
-    std::vector < cv::Rect > mouth;
+
     TRACE_T("Detecting eyes with CASCADE_NOSE_MSC...");
     cascades[CASCADE_MOUTH_MSC].cascade.detectMultiScale(image, mouth,
                                                     cascades[CASCADE_MOUTH_MSC].properties.scaleFactor,
