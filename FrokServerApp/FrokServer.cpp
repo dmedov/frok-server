@@ -1,4 +1,4 @@
-#include <arpa/inet.h>
+/*#include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -8,7 +8,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <list>
-
 #include "FrokServer.h"
 
 #define MODULE_NAME     "SERVER"
@@ -434,3 +433,4 @@ NetResult FrokServer::StartNetworkServer()
 
     return NET_SUCCESS;
 }
+*/

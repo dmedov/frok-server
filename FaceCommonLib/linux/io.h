@@ -1,13 +1,21 @@
-#ifndef TRACE_H
-#define TRACE_H
+#ifndef IO_H
+#define IO_H
 
 // include dependencies
 #include <time.h>
+#include <string.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #pragma GCC poison cout
 
+// externals
+extern pthread_mutex_t trace_cs;
+extern char *log_file;
+
+// Trace system
 #ifdef TRACE_DEBUG
+
 // Colored print defines
 #define _FAIL(__x__, ...)    "[%s->%s] \x1b[1;91m[FAIL] "   __x__ "\n\x1b[0m", MODULE_NAME, __FUNCTION__, ##__VA_ARGS__
 #define _WARN(__x__, ...)    "[%s->%s] \x1b[1;93m[WARN] "   __x__ "\n\x1b[0m", MODULE_NAME, __FUNCTION__, ##__VA_ARGS__
@@ -29,10 +37,13 @@
 
 #define TRACE_PRINT(format...)          fprintf(stdout, ##format)
 
-#define TRACE_TIMESTAMP(format...)      do{unsigned sec, usec;                      \
-                                        set_time_stamp(&sec, &usec);                \
-                                        fprintf(stdout, "[%5u.%06u]", sec, usec);   \
-                                        fprintf(stdout, ##format);}while(0)
+#define TRACE_TIMESTAMP(format...)      do{struct timespec ts;                                  \
+                                        int ret;                                                \
+                                        pthread_mutex_lock(&trace_cs);                          \
+                                        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);           \
+                                        fprintf(stdout, "[%5li.%09li]", ts.tv_sec, ts.tv_nsec);   \
+                                        fprintf(stdout, ##format);                              \
+                                        pthread_mutex_unlock(&trace_cs);}while(0)
 #else
 #define TRACE_F_T(__x__, ...)
 #define TRACE_W_T(__x__, ...)
@@ -45,4 +56,20 @@
 #define TRACE_R(__x__, ...)
 #define TRACE(__x__, ...)
 #endif //TRACE_DEBUG
-#endif // TRACE_H
+
+//externals
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// don't forget '/' in the end of dir name.
+// Example: good = "/home/workspace/" bad: "/home/workspace"
+int getFilesFromDir(const char *dir, char ***files, unsigned *filesNum);
+int getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // IO_H

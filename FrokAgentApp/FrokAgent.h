@@ -2,25 +2,21 @@
 #define FROKAGENT_H
 
 #define DEFAULT_PORT                28015
-#define MAX_SOCKET_BUFF_SIZE            (163840)
 
 // include dependencies
-#include "FrokAPI.h"
 #include "faceCommonLib.h"
 
-typedef enum NetResult
+typedef struct FrokAgentContext
 {
-    NET_SUCCESS                 = 0x00,
-    NET_SOCKET_ERROR            = 0x01,
-    NET_MEM_ALLOCATION_FAIL     = 0x02,
-    NET_NO_CALLBACK             = 0x03,
-    NET_UNSPECIFIED_ERROR       = 0x04,
-    NET_INVALID_PARAM           = 0x05,
-    NET_COMMON_THREAD_ERROR     = 0x06,
-    NET_ALREADY_STARTED         = 0x07
-    //...
-} NetResult;
+    SOCKET localSock;
+}FrokAgentContext;
 
+BOOL InitFrokAgent(FrokAgentContext context, unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath);
+BOOL StartFrokAgent(FrokAgentContext *context);
+BOOL StopFrokAgent(FrokAgentContext *context);
+BOOL DeinitFrokAgent(FrokAgentContext context);
+
+/*
 #pragma pack(push, 1)
 
 typedef struct
@@ -56,6 +52,6 @@ protected:
 private:
     // Only one connected server is allowed. Disconnect current connection to allow new server connect
     void ServerListener();
-};
+};*/
 
 #endif // FROKAGENT_H

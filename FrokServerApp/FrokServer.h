@@ -6,9 +6,10 @@
 #define MAX_SOCKET_BUFF_SIZE            (163840)
 
 // include dependencies
+#include "json.h"
 #include "faceCommonLib.h"
 #include "FrokAgentConnector.h"
-
+/*
 #pragma pack(push, 1)
 
 typedef struct StructFrokRequest
@@ -46,6 +47,6 @@ protected:
 private:
     void AcceptConnection();
     static void SocketListener(void* param);
-};
+};*/
 
 #endif // FROKSERVER_H

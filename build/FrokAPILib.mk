@@ -13,6 +13,7 @@ TARGETTYPE := staticlib
 
 LIBS := -L$(BINOUTDIR)			                    \
 	-L/usr/lib/x86_64-linux-gnu	-lrt -lpthread      \
+    -lFrokJsonlib                                   \
     -lFaceCommonLib                                 \
 	-lFaceDetectionLib                              \
     -lFaceRecognitionLib                            \
@@ -24,6 +25,7 @@ CFLAGS += -Wno-unknown-pragmas
 SRCDIRS :=  ../$(SRCDIR)/
 
 HDRDIRS :=  ../$(SRCDIR)/		                    \
+    ../FrokJsonlib/	                                \
 	../FaceDetectionLib/	                        \
 	../FaceRecognitionLib/	                        \
     ../FaceCommonLib/	                            \

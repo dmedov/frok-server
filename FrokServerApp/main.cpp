@@ -7,7 +7,7 @@
 
 #define MODULE_NAME "SERVER"
 
-FrokServer *server;
+//FrokServer *server;
 
 void usage()
 {
@@ -22,10 +22,10 @@ static void sigintHandler(int sig, siginfo_t *si, void *p)
     UNREFERENCED_PARAMETER(p);
 
     TRACE_S("SIGINT captured!");
-    if(server != NULL)
+    /*if(server != NULL)
     {
-        server->StopFrokServer();
-    }
+        //server->StopFrokServer();
+    }*/
 }
 
 int main(int argc, char *argv[])
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
         usage();
         return -1;
     }
-    AgentInfo *info = new AgentInfo;
+   /* AgentInfo *info = new AgentInfo;
     __int32_t srvIPv4[4];
     sscanf(argv[1], "%u.%u.%u.%u", &srvIPv4[0], &srvIPv4[1], &srvIPv4[2], &srvIPv4[3]);
 
@@ -65,6 +65,6 @@ int main(int argc, char *argv[])
 
     server->StartFrokServer();
 
-    TRACE("Finished");
+    TRACE("Finished");*/
     return 0;
 }

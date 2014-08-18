@@ -1,4 +1,4 @@
-#include <errno.h>
+/*#include <errno.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "FrokAgentConnector.h"
+#include "json.h"
 
 #define MODULE_NAME     "AGENT_CONNECTOR"
 
@@ -316,3 +317,4 @@ NetResult FrokAgentConnector::SendData(SOCKET sock, const char* pBuffer, unsigne
 
     return NET_SUCCESS;
 }
+*/

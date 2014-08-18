@@ -32,7 +32,7 @@ HEADERS +=          \
     FrokAPIFunction.h
 
 SOURCES +=          \
-    main.cpp        \
-    FrokAgent.cpp \
     FrokAPI.cpp \
-    FrokAPIFunction.cpp
+    FrokAPIFunction.cpp \
+    FrokAgent.c \
+    main.c

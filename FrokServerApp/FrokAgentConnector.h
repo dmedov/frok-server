@@ -6,7 +6,7 @@
 
 // include dependencies
 #include "faceCommonLib.h"
-
+/*
 typedef enum NetResult
 {
     NET_SUCCESS                 = 0x00,
@@ -73,5 +73,5 @@ private:
     static void AgentListener(void *param);
 private:
 };
-
+*/
 #endif // FROKAGENTCONNECTOR_H

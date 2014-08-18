@@ -1,28 +1,23 @@
 ###########################################################
-# mk for project FaceCommonLib
+# mk for project FrokJsonlib
 ###########################################################
 
 include makefile.consts
 include opencv.include
-SRCDIR = FaceCommonLib
+SRCDIR = FrokJsonlib
 
 # Target settings
-LANG := c
-TARGET := libFrokLib.a
+LANG := c++
+TARGET := libFrokJsonlib.a
 TARGETTYPE := staticlib
 
-LIBS := -L$(BINOUTDIR)			\
-	-L/usr/lib/x86_64-linux-gnu	-lrt -lpthread \
-	$(OPENCV_LIB)
-
+LIBS := -L$(BINOUTDIR)			                    \
+	-L/usr/lib/x86_64-linux-gnu -lrt
 
 CFLAGS += -Wno-unknown-pragmas
 
 SRCDIRS :=  ../$(SRCDIR)/
-	../$(SRCDIR)/linux/		\
-	
-HDRDIRS :=  ../$(SRCDIR)/		\
-	../$(SRCDIR)/linux/		\
-	$(OPENCV_INCLUDES)
+
+HDRDIRS :=  ../$(SRCDIR)/		                    \
 
 include makefile.actions

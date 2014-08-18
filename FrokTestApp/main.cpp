@@ -17,11 +17,11 @@ void usage()
 
 int main(void)
 {
-    if(!InitFaceCommonLib())
+    /*if(!InitFaceCommonLib())
     {
         TRACE_F("InitFaceCommonLib");
         return -1;
-    }
+    }*/
 
 
     if(-1 == setpriority(PRIO_PROCESS, getpid(), -20))

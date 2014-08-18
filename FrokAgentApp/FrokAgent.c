@@ -1,4 +1,12 @@
-#include <errno.h>
+#include "FrokAgent.h"
+
+BOOL InitFrokAgent(FrokAgentContext *context, unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath);
+BOOL StartFrokAgent(FrokAgentContext *context);
+BOOL StopFrokAgent(FrokAgentContext *context);
+BOOL DeinitFrokAgent(FrokAgentContext *context);
+
+
+/*#include <errno.h>
 #include <string.h>
 #include <pthread.h>
 #include <list>
@@ -457,3 +465,4 @@ NetResult FrokAgent::StopNetworkServer()
 
     return res;
 }
+*/

@@ -10,52 +10,14 @@
 
 #define MODULE_NAME     "IO"
 
+pthread_mutex_t trace_cs;
+
 char *log_file;
 
-void FilePrintMessage(const char* expr...)
-{
-    char message[LOG_MESSAGE_MAX_LENGTH];
-    va_list args;
-
-    if (expr)
-    {
-        va_start(args, expr);
-
-        vsprintf(message, expr, args);
-
-        pthread_mutex_lock(&filePrint_cs);
-
-        printf("%s", message);
-        pthread_mutex_unlock(&filePrint_cs);
-
-        if (log_file)
-        {
-            pthread_mutex_lock(&filePrint_cs);
-
-            FILE* fl = NULL;
-
-            if ((fl = fopen(log_file, "a+")) != NULL)
-            {
-                if (fl)
-                {
-                    fprintf(fl, "%s", message);
-                }
-
-                fclose(fl);
-            }
-            else
-            {
-                printf("Failed to open file %s, error = %u", log_file, errno);
-            }
-
-            pthread_mutex_unlock(&filePrint_cs);
-        }
-    }
-}
-
 // don't forget '/' in the end of dir name. Example: good = "/home/workspace/" bad: "/home/workspace"
-int getFilesFromDir(const char *dir, std::vector<std::string> &files)
+int getFilesFromDir(const char *dir, char ***files, unsigned *filesNum)
 {
+    /*
     if(dir == NULL)
     {
         TRACE_F("Invalid parameter dir == NULL in getFilesFromDir\n");
@@ -95,11 +57,13 @@ int getFilesFromDir(const char *dir, std::vector<std::string> &files)
         TRACE_F("failed to close dir stream on error %s\n", strerror(errno));
         return -1;
     }
+    */
     return 0;
 }
 
-int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs)
+int getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
 {
+    /*
     if(dir == NULL)
     {
         TRACE_F("Invalid parameter dir == NULL in getFilesFromDir\n");
@@ -115,7 +79,7 @@ int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs)
         return -1;
     }
 
-    while (NULL != (file = readdir(dirStream)))
+    while (std::vector<std::string> &filesNULL != (file = readdir(dirStream)))
     {
         if(!strcmp(file->d_name, ".") || !strcmp(file->d_name, ".."))
         {
@@ -143,5 +107,23 @@ int getSubdirsFromDir(const char *dir, std::vector<std::string> &subdirs)
         TRACE_F("failed to close dir stream on error %s\n", strerror(errno));
         return -1;
     }
+    */
     return 0;
 }
+
+void print_time(struct timespec startTime, struct timespec endTime)
+{
+    unsigned sec  = endTime.tv_sec - startTime.tv_sec;
+    unsigned nsec = endTime.tv_nsec - startTime.tv_nsec;
+
+    if (startTime.tv_nsec > endTime.tv_nsec)
+    {
+        sec--;
+        nsec += 1e9;
+    }
+
+    pthread_mutex_lock(&trace_cs);
+    fprintf(stdout, "Time elapsed: %u.%09u\n", sec, nsec);
+    pthread_mutex_unlock(&trace_cs);
+}
+

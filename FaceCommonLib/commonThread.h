@@ -1,6 +1,8 @@
 #ifndef COMMONTHREAD_H
 #define COMMONTHREAD_H
 
+#ifdef __cplusplus
+
 // Include dependencies
 #include <semaphore.h>
 #include <stdio.h>
@@ -69,5 +71,7 @@ typedef struct SructStartRoutineParam
 } startRoutineParams;
 
 #pragma pack (pop)
+
+#endif // c++
 
 #endif // COMMONTHREAD_H

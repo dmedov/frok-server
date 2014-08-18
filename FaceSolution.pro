@@ -10,6 +10,7 @@ SUBDIRS =               \
     FaceRecognitionLib  \
     FaceCommonLib       \
     FrokTestApp         \
+    FrokJsonlib         \
 
 FrokServerApp.depends = FaceDetectionLib FaceRecognitionLib FaceCommonLib
 FrokAgentApp.depends = FaceDetectionLib FaceRecognitionLib FaceCommonLib FrokAPILib
