@@ -4,11 +4,13 @@
 #include <sys/types.h>
 #include <netinet/ip.h>
 
-static FrokAgentContext *context;
+static FrokAgentContext *context = NULL;
+static pthread_mutex_t frokAgentMutex = PTHREAD_MUTEX_INITIALIZER;
 
-FrokResult InitFrokAgent(unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath)
+FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath)
 {
-    int option = TRUE;
+    int error, option = TRUE;
+
     if(context != NULL)
     {
         TRACE_F("Already inited");
@@ -22,33 +24,56 @@ FrokResult InitFrokAgent(unsigned short port, const char *photoBaseFolderPath, c
         return FROK_RESULT_MEMORY_FAULT;
     }
 
+    if(-1 == (error = pthread_mutex_lock(&frokAgentMutex)))
+    {
+        TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
+        free(context);
+        context = NULL;
+        return FROK_RESULT_LINUX_ERROR;
+    }
+
     // Create local socket
-    if ((localSock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
+    if ((context->localSock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
     {
         TRACE_F("socket failed on error = %s", strerror(errno));
         free(context);
         context = NULL;
+        pthread_mutex_unlock(&frokAgentMutex);
         return FROK_RESULT_SOCKET_ERROR;
     }
 
     // Enable SO_REUSEADDR option - if socket was already binded to requested address - it will be deleted and new socket will bind.
-    if(0 != setsockopt(localSock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
+    if(0 != setsockopt(context->localSock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
     {
         TRACE_F("setsockopt failed on error %s", strerror(errno));
-        close(localSock);
+        close(context->localSock);
         free(context);
         context = NULL;
+        pthread_mutex_unlock(&frokAgentMutex);
         return FROK_RESULT_SOCKET_ERROR;
     }
 
     // Google SO_KEEPALIVE
-    if(0 != setsockopt(localSock, SOL_SOCKET, SO_KEEPALIVE, &option, sizeof(option)))
+    if(0 != setsockopt(context->localSock, SOL_SOCKET, SO_KEEPALIVE, &option, sizeof(option)))
     {
         TRACE_F("setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
-        close(localSock);
+        close(context->localSock);
         free(context);
         context = NULL;
+        pthread_mutex_unlock(&frokAgentMutex);
         return FROK_RESULT_SOCKET_ERROR;
+    }
+
+    context->localPortNumber = port;
+
+    if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
+    {
+        TRACE_F("pthread_mutex_unlock failed on error %s", strerror(error));
+        close(context->localSock);
+        free(context);
+        context = NULL;
+        pthread_mutex_unlock(&frokAgentMutex);
+        return FROK_RESULT_LINUX_ERROR;
     }
 
     TRACE_S("Succeed");
@@ -56,7 +81,7 @@ FrokResult InitFrokAgent(unsigned short port, const char *photoBaseFolderPath, c
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult StartFrokAgent()
+FrokResult frokAgentStart()
 {
     struct sockaddr_in server;
 
@@ -66,20 +91,34 @@ FrokResult StartFrokAgent()
         return FROK_RESULT_INVALID_STATE;
     }
 
+    if(-1 == (error = pthread_mutex_lock(&frokAgentMutex)))
+    {
+        TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
+        return FROK_RESULT_LINUX_ERROR;
+    }
+
+    if(context->agentStarted == TRUE)
+    {
+        TRACE_F("Agent already started");
+        pthread_mutex_unlock(&frokAgentMutex);
+        return FROK_RESULT_INVALID_STATE;
+    }
+
+    context->agentStarted = TRUE;
+
     memset(&server, 0, sizeof(server));
 
-
+    // Listen to all available IPv4 interfaces. Port = localPortNumber
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_family = AF_INET;
-    server.sin_port = htons(localPortNumber);
+    server.sin_port = htons(context->localPortNumber);
 
-
-
-    if(0 != bind(localSock, (struct sockaddr*)&server, sizeof(server)))
+    if(0 != bind(context->localSock, (struct sockaddr*)&server, sizeof(server)))
     {
         TRACE_F("bind failed on error %s", strerror(errno));
-        shutdown(localSock, 2);
-        close(localSock);
+        DeinitFrokAgent();
+        context->agentStarted = FALSE;
+        pthread_mutex_unlock(&frokAgentMutex);
         return FROK_RESULT_SOCKET_ERROR;
     }
 
@@ -88,25 +127,49 @@ FrokResult StartFrokAgent()
         TRACE_F("listen failed on error %s", strerror(errno));
         shutdown(localSock, 2);
         close(localSock);
+        pthread_mutex_unlock(&frokAgentMutex);
         return FROK_RESULT_SOCKET_ERROR;
     }
 
-    TRACE_S("Succeed, socket = %d, port = %d", localSock, localPortNumber);
+    if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
+    {
+        TRACE_F("pthread_mutex_unlock failed on error %s", strerror(error));
+        shutdown(localSock, 2);
+        close(localSock);
+        pthread_mutex_unlock(&frokAgentMutex);
+        return FROK_RESULT_LINUX_ERROR;
+    }
+
+    TRACE_S("Succeed, Listening to socket = %d, port = %d", context->localPortNumber, context->localSock);
 }
 
-BOOL StopFrokAgent()
+BOOL frokAgentStop()
 {}
 
-BOOL DeinitFrokAgent()
+BOOL frokAgentDeinit()
 {
+    int error;
     if(context == NULL)
     {
         TRACE_F_T("Already deinited");
         return FROK_RESULT_INVALID_STATE;
     }
 
+    if(-1 == (error = pthread_mutex_lock(&frokAgentMutex)))
+    {
+        TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
+        return FROK_RESULT_LINUX_ERROR;
+    }
+
     free(context);
     context = NULL;
+
+    if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
+    {
+        TRACE_F("pthread_mutex_unlock failed on error %s", strerror(error));
+        pthread_mutex_unlock(&frokAgentMutex);
+        return FROK_RESULT_LINUX_ERROR;
+    }
 
     TRACE_S("Succeed");
 
