@@ -22,6 +22,7 @@ void usage()
 int main(int argc, char *argv[])
 {
     struct sigaction sigintAction;
+    FrokResult res;
     
     InitFaceCommonLib("agent.log");
 
@@ -33,6 +34,33 @@ int main(int argc, char *argv[])
     {
         TRACE_F("Failed to set custom action on SIGINT on error %s", strerror(errno));
         return -1;
+    }
+
+    while(1)
+    {
+        if(FROK_RESULT_SUCCESS != (res = frokAgentInit(1, NULL, NULL)))
+        {
+            TRACE_F("frokAgentInit failed on error %s", FrokResultToString(res));
+            return -1;
+        }
+
+        if(FROK_RESULT_SUCCESS != (res = frokAgentStart()))
+        {
+            TRACE_F("frokAgentStart failed on error %s", FrokResultToString(res));
+            return -1;
+        }
+
+        if(FROK_RESULT_SUCCESS != (res = frokAgentStop()))
+        {
+            TRACE_F("frokAgentStop failed on error %s", FrokResultToString(res));
+            return -1;
+        }
+
+        if(FROK_RESULT_SUCCESS != (res = frokAgentDeinit()))
+        {
+            TRACE_F("frokAgentDeinit failed on error %s", FrokResultToString(res));
+            return -1;
+        }
     }
 
     //InitFrokAgent();

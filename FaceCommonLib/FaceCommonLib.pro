@@ -23,7 +23,8 @@ HEADERS +=                  \
     faceCommonLib.h \
     commonMath.h \
     linux/io.h \
-    linux/commonSched.h
+    linux/commonSched.h \
+    linux/linuxDefines.h
 
 SOURCES +=                  \
     json.cpp                \

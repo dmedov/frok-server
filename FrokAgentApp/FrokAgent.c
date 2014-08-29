@@ -1,8 +1,11 @@
 #include "FrokAgent.h"
+#include "linux/linuxDefines.h"
 
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/ip.h>
+
+#define MODULE_NAME     "AGENT"
 
 static FrokAgentContext *context = NULL;
 static pthread_mutex_t frokAgentMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -33,7 +36,7 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
     }
 
     // Create local socket
-    if ((context->localSock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
+    if (-1 == (context->localSock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)))
     {
         TRACE_F("socket failed on error = %s", strerror(errno));
         free(context);
@@ -83,6 +86,7 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
 
 FrokResult frokAgentStart()
 {
+    int error;
     struct sockaddr_in server;
 
     if(context == NULL)
@@ -116,17 +120,16 @@ FrokResult frokAgentStart()
     if(0 != bind(context->localSock, (struct sockaddr*)&server, sizeof(server)))
     {
         TRACE_F("bind failed on error %s", strerror(errno));
-        DeinitFrokAgent();
         context->agentStarted = FALSE;
         pthread_mutex_unlock(&frokAgentMutex);
         return FROK_RESULT_SOCKET_ERROR;
     }
 
-    if (0 != listen(localSock, SOMAXCONN))
+    if (0 != listen(context->localSock, SOMAXCONN))
     {
         TRACE_F("listen failed on error %s", strerror(errno));
-        shutdown(localSock, 2);
-        close(localSock);
+        shutdown(context->localSock, 2);
+        context->agentStarted = FALSE;
         pthread_mutex_unlock(&frokAgentMutex);
         return FROK_RESULT_SOCKET_ERROR;
     }
@@ -134,19 +137,47 @@ FrokResult frokAgentStart()
     if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
     {
         TRACE_F("pthread_mutex_unlock failed on error %s", strerror(error));
-        shutdown(localSock, 2);
-        close(localSock);
+        shutdown(context->localSock, 2);
         pthread_mutex_unlock(&frokAgentMutex);
         return FROK_RESULT_LINUX_ERROR;
     }
 
     TRACE_S("Succeed, Listening to socket = %d, port = %d", context->localPortNumber, context->localSock);
+
+    return FROK_RESULT_SUCCESS;
 }
 
-BOOL frokAgentStop()
-{}
+FrokResult frokAgentStop()
+{
+    int error;
 
-BOOL frokAgentDeinit()
+    if(-1 == (error = pthread_mutex_lock(&frokAgentMutex)))
+    {
+        TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
+        return FROK_RESULT_LINUX_ERROR;
+    }
+
+    if(-1 == shutdown(context->localSock, 2))
+    {
+        TRACE_F("shutdown failed on error %s", strerror(errno));
+        return FROK_RESULT_SOCKET_ERROR;
+    }
+
+    context->agentStarted = FALSE;
+
+    if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
+    {
+        TRACE_F("pthread_mutex_unlock failed on error %s", strerror(error));
+        pthread_mutex_unlock(&frokAgentMutex);
+        return FROK_RESULT_LINUX_ERROR;
+    }
+
+    TRACE_S("Succeed");
+
+    return FROK_RESULT_SUCCESS;
+}
+
+FrokResult frokAgentDeinit()
 {
     int error;
     if(context == NULL)
@@ -159,6 +190,19 @@ BOOL frokAgentDeinit()
     {
         TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
         return FROK_RESULT_LINUX_ERROR;
+    }
+
+    // Close socket if necessary
+    if(INVALID_SOCKET != context->localSock)
+    {
+        if(-1 == close(context->localSock))
+        {
+            TRACE_F("close failed on error %s", strerror(errno));
+            pthread_mutex_unlock(&frokAgentMutex);
+            return FROK_RESULT_SOCKET_ERROR;
+        }
+
+        context->localSock = INVALID_SOCKET;
     }
 
     free(context);

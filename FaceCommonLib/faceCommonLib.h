@@ -5,7 +5,7 @@
 //#include "commonThread.h"       // class for safe working with unix threads
 #include "io.h"                 // File system - depend operations, input - output operations
 #include "commonMath.h"         // Calculating ChiSquare percantage
-
+#include "linux/linuxDefines.h"
 // Common includes
 #include <time.h>
 #include <pthread.h>
@@ -29,10 +29,6 @@ typedef enum FrokResult
 
 // Common defines
 #define UNREFERENCED_PARAMETER(P)           (P=P)
-#define UNUSED(P)                           __attribute__ ((unused)) P
-
-#define SOCKET                              int
-#define SOCKET_ERROR                        (-1)
 
 #define COMMAND_WITH_LENGTH(__CHARS__)      (__CHARS__), strlen((__CHARS__))
 #define CASE_RET_STR(x)                     case x: return #x
