@@ -12,24 +12,25 @@ TARGET := FrokTestApp
 TARGETTYPE := executable
 
 CFLAGS += -Wno-unknown-pragmas
-LIBS := -L$(BINOUTDIR)			                    \
-	-L/usr/lib/x86_64-linux-gnu	-lrt -pthread       \
-    -lFrokLib                                       \
-    -lFrokJsonlib                                       \
-    $(OPENCV_LIB)                                   \
+LIBS := -L$(BINOUTDIR)			                    	\
+	-L/usr/lib/x86_64-linux-gnu	-lrt -pthread       	\
+    -lFrokLib                                       		\
+    -lFrokJsonlib                                   		\
+    $(OPENCV_LIB)
 
 DEPENDENCIES :=                                     \
     $(BINOUTDIR)/FrokLib.a                          \
-    $(BINOUTDIR)/FrokJsonlib.a                      \
+    $(BINOUTDIR)/FrokJsonlib.a
 
 SRCDIRS :=  ../$(SRCDIR)/
 
-HDRDIRS :=  ../$(SRCDIR)/	                        \
-	../FaceCommonLib/	                            \
-	../FaceDetectionLib/	                        \
-	../FaceRecognitionLib/	                        \
-	../FrokAPILib/	                                \
-	../FrokJsonlib/	                                \
+HDRDIRS :=  ../$(SRCDIR)/	        \
+	../FaceCommonLib/	        \
+	../FaceCommonLib/linux/		\
+	../FaceDetectionLib/	        \
+	../FaceRecognitionLib/	        \
+	../FrokAPILib/	                \
+	../FrokJsonlib/	                \
 	$(OPENCV_INCLUDES)
 
 make_dependencies:

@@ -11,10 +11,10 @@ typedef struct FrokAgentContext
     SOCKET localSock;
 }FrokAgentContext;
 
-BOOL InitFrokAgent(FrokAgentContext context, unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath);
-BOOL StartFrokAgent(FrokAgentContext *context);
-BOOL StopFrokAgent(FrokAgentContext *context);
-BOOL DeinitFrokAgent(FrokAgentContext context);
+FrokResult InitFrokAgent(unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath);
+FrokResult StartFrokAgent();
+FrokResult StopFrokAgent();
+FrokResult DeinitFrokAgent();
 
 /*
 #pragma pack(push, 1)

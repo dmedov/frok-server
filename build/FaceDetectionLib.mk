@@ -22,8 +22,9 @@ DEPENDENCIES :=                             \
 
 SRCDIRS :=  ../$(SRCDIR)/
 
-HDRDIRS :=  ../$(SRCDIR)/	\
-	../FaceCommonLib/	    \
+HDRDIRS :=  ../$(SRCDIR)/		\
+	../FaceCommonLib/	    	\
+	../FaceCommonLib/linux/		\
 	$(OPENCV_INCLUDES)
 
 include makefile.actions

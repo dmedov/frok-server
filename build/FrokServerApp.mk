@@ -23,11 +23,12 @@ DEPENDENCIES :=                                     \
 
 SRCDIRS :=  ../$(SRCDIR)/
 
-HDRDIRS :=  ../$(SRCDIR)/	\
-	../FaceDetectionLib/	\
-	../FaceRecognitionLib/	\
-	../FaceCommonLib/	    \
-	../FrokJsonlib/	        \
+HDRDIRS :=  ../$(SRCDIR)/		\
+	../FaceDetectionLib/		\
+	../FaceCommonLib/linux/		\
+	../FaceRecognitionLib/		\
+	../FaceCommonLib/	    	\
+	../FrokJsonlib/	        	\
 	$(OPENCV_INCLUDES)
 
 make_dependencies:

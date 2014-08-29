@@ -20,16 +20,23 @@ typedef enum FrokResult
     FROK_RESULT_INVALID_PARAMETER,
     FROK_RESULT_OPENCV_ERROR,
     FROK_RESULT_NO_MODELS,
+    FROK_RESULT_LINUX_ERROR,
+    FROK_RESULT_INVALID_STATE,
+    FROK_RESULT_SOCKET_ERROR,
+    FROK_RESULT_MEMORY_FAULT
     // etc
 } FrokResult;
 
 // Common defines
 #define UNREFERENCED_PARAMETER(P)           (P=P)
+#define UNUSED(P)                           __attribute__ ((unused)) P
+
 #define SOCKET                              int
 #define SOCKET_ERROR                        (-1)
-#define INVALID_SOCKET                      (-1)
+
 #define COMMAND_WITH_LENGTH(__CHARS__)      (__CHARS__), strlen((__CHARS__))
 #define CASE_RET_STR(x)                     case x: return #x
+
 #define BOOL                                unsigned char
 #define TRUE                                1
 #define FALSE                               0

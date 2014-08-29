@@ -29,19 +29,17 @@ extern char *log_file;
 #define TRACE_R_T(__x__, ...)   TRACE_TIMESTAMP(_RES(__x__, ##__VA_ARGS__))
 #define TRACE_T(__x__, ...)     TRACE_TIMESTAMP(_N(__x__,  ##__VA_ARGS__))
 
-#define TRACE_F(__x__, ...)     TRACE_PRINT(_FAIL(__x__,  ##__VA_ARGS__))
-#define TRACE_W(__x__, ...)     TRACE_PRINT(_WARN(__x__,  ##__VA_ARGS__))
-#define TRACE_S(__x__, ...)     TRACE_PRINT(_SUCC(__x__,  ##__VA_ARGS__))
-#define TRACE_R(__x__, ...)     TRACE_PRINT(_RES(__x__, ##__VA_ARGS__))
-#define TRACE(__x__, ...)       TRACE_PRINT(_N(__x__, ##__VA_ARGS__))
-
-#define TRACE_PRINT(format...)          fprintf(stdout, ##format)
+#define TRACE_F(__x__, ...)     TRACE(_FAIL(__x__,  ##__VA_ARGS__))
+#define TRACE_W(__x__, ...)     TRACE(_WARN(__x__,  ##__VA_ARGS__))
+#define TRACE_S(__x__, ...)     TRACE(_SUCC(__x__,  ##__VA_ARGS__))
+#define TRACE_R(__x__, ...)     TRACE(_RES(__x__, ##__VA_ARGS__))
+#define TRACE_N(__x__, ...)     TRACE(_N(__x__, ##__VA_ARGS__))
 
 #define TRACE_TIMESTAMP(format...)      do{struct timespec ts;                                  \
                                         int ret;                                                \
                                         pthread_mutex_lock(&trace_cs);                          \
                                         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);           \
-                                        fprintf(stdout, "[%5li.%09li]", ts.tv_sec, ts.tv_nsec);   \
+                                        fprintf(stdout, "[%5li.%09li]", ts.tv_sec, ts.tv_nsec); \
                                         fprintf(stdout, ##format);                              \
                                         pthread_mutex_unlock(&trace_cs);}while(0)
 #else
@@ -54,8 +52,10 @@ extern char *log_file;
 #define TRACE_W(__x__, ...)
 #define TRACE_S(__x__, ...)
 #define TRACE_R(__x__, ...)
-#define TRACE(__x__, ...)
+#define TRACE_N(__x__, ...)
 #endif //TRACE_DEBUG
+
+#define TRACE(format...)          fprintf(stdout, ##format)
 
 //externals
 

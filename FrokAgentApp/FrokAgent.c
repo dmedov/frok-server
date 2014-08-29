@@ -1,9 +1,117 @@
 #include "FrokAgent.h"
 
-BOOL InitFrokAgent(FrokAgentContext *context, unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath);
-BOOL StartFrokAgent(FrokAgentContext *context);
-BOOL StopFrokAgent(FrokAgentContext *context);
-BOOL DeinitFrokAgent(FrokAgentContext *context);
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/ip.h>
+
+static FrokAgentContext *context;
+
+FrokResult InitFrokAgent(unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath)
+{
+    int option = TRUE;
+    if(context != NULL)
+    {
+        TRACE_F("Already inited");
+        return FROK_RESULT_INVALID_STATE;
+    }
+
+    context = malloc(sizeof(FrokAgentContext));
+    if(!context)
+    {
+        TRACE_F("malloc failed on error %s", strerror(errno));
+        return FROK_RESULT_MEMORY_FAULT;
+    }
+
+    // Create local socket
+    if ((localSock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET)
+    {
+        TRACE_F("socket failed on error = %s", strerror(errno));
+        free(context);
+        context = NULL;
+        return FROK_RESULT_SOCKET_ERROR;
+    }
+
+    // Enable SO_REUSEADDR option - if socket was already binded to requested address - it will be deleted and new socket will bind.
+    if(0 != setsockopt(localSock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
+    {
+        TRACE_F("setsockopt failed on error %s", strerror(errno));
+        close(localSock);
+        free(context);
+        context = NULL;
+        return FROK_RESULT_SOCKET_ERROR;
+    }
+
+    // Google SO_KEEPALIVE
+    if(0 != setsockopt(localSock, SOL_SOCKET, SO_KEEPALIVE, &option, sizeof(option)))
+    {
+        TRACE_F("setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
+        close(localSock);
+        free(context);
+        context = NULL;
+        return FROK_RESULT_SOCKET_ERROR;
+    }
+
+    TRACE_S("Succeed");
+
+    return FROK_RESULT_SUCCESS;
+}
+
+FrokResult StartFrokAgent()
+{
+    struct sockaddr_in server;
+
+    if(context == NULL)
+    {
+        TRACE_F("Not inited");
+        return FROK_RESULT_INVALID_STATE;
+    }
+
+    memset(&server, 0, sizeof(server));
+
+
+    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_family = AF_INET;
+    server.sin_port = htons(localPortNumber);
+
+
+
+    if(0 != bind(localSock, (struct sockaddr*)&server, sizeof(server)))
+    {
+        TRACE_F("bind failed on error %s", strerror(errno));
+        shutdown(localSock, 2);
+        close(localSock);
+        return FROK_RESULT_SOCKET_ERROR;
+    }
+
+    if (0 != listen(localSock, SOMAXCONN))
+    {
+        TRACE_F("listen failed on error %s", strerror(errno));
+        shutdown(localSock, 2);
+        close(localSock);
+        return FROK_RESULT_SOCKET_ERROR;
+    }
+
+    TRACE_S("Succeed, socket = %d, port = %d", localSock, localPortNumber);
+}
+
+BOOL StopFrokAgent()
+{}
+
+BOOL DeinitFrokAgent()
+{
+    if(context == NULL)
+    {
+        TRACE_F_T("Already deinited");
+        return FROK_RESULT_INVALID_STATE;
+    }
+
+    free(context);
+    context = NULL;
+
+    TRACE_S("Succeed");
+
+    return FROK_RESULT_SUCCESS;
+}
 
 
 /*#include <errno.h>

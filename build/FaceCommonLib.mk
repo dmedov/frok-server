@@ -18,8 +18,8 @@ LIBS := -L$(BINOUTDIR)			\
 
 CFLAGS += -Wno-unknown-pragmas
 
-SRCDIRS :=  ../$(SRCDIR)/
-	../$(SRCDIR)/linux/		\
+SRCDIRS :=  ../$(SRCDIR)/		\
+	../$(SRCDIR)/linux/
 	
 HDRDIRS :=  ../$(SRCDIR)/		\
 	../$(SRCDIR)/linux/		\

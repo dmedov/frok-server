@@ -24,11 +24,12 @@ CFLAGS += -Wno-unknown-pragmas
 
 SRCDIRS :=  ../$(SRCDIR)/
 
-HDRDIRS :=  ../$(SRCDIR)/		                    \
-    ../FrokJsonlib/	                                \
-	../FaceDetectionLib/	                        \
-	../FaceRecognitionLib/	                        \
-    ../FaceCommonLib/	                            \
+HDRDIRS :=  ../$(SRCDIR)/		\
+	../FrokJsonlib/			\
+    	../FaceCommonLib/linux/		\
+	../FaceDetectionLib/	        \
+	../FaceRecognitionLib/	        \
+	../FaceCommonLib/	        \
 	$(OPENCV_INCLUDES)
 
 include makefile.actions

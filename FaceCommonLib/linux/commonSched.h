@@ -1,0 +1,4 @@
+#ifndef COMMONSCHED_H
+#define COMMONSCHED_H
+
+#endif // COMMONSCHED_H
