@@ -17,6 +17,8 @@ static pthread_mutex_t frokAgentMutex = PTHREAD_MUTEX_INITIALIZER;
 
 // private functions declaration
 FrokResult frokAgentSocketListener();
+BOOL isFullPacketReceived(char *packet, size_t packetSize, size_t *realPacketLength);
+BOOL isPacketValid(char *packet, size_t packetSize);
 
 // API implementation
 FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath)
@@ -193,6 +195,8 @@ FrokResult frokAgentSocketListener()
     char *tmp_reallocPointer;
     size_t receivedDataSize = 0;
     size_t tmp_dataSize;
+    size_t receivedPacketSize;
+    BOOL invalidPacket = FALSE;
 
     TRACE_S("started");
 
@@ -339,9 +343,58 @@ FrokResult frokAgentSocketListener()
                     tmp_dataSize -= result;
                     receivedDataSize += result;
                 }
-                    // Received client data
 
-                TRACE_W("Received data: %s", incomingRequest);
+                // Verify that packet is valid. Valid packet starts with "{
+                if(FALSE == isPacketValid(incomingRequest, receivedDataSize))
+                {
+                    TRACE_F("Invalid packet received: %s", incomingRequest);
+                    break;
+                }
+
+                // Seems like packet is valid. If it isn't - we should wait for timeout
+
+                // Verify that full packet received
+                while(TRUE == isFullPacketReceived(incomingRequest, receivedDataSize, &receivedPacketSize))
+                {
+                    // Call functions
+
+                    TRACE_S("%zu bytes to function", receivedPacketSize);
+                    write(STDOUT_FILENO, incomingRequest, receivedPacketSize);
+                    // Function call finished
+                    // Copy tail from incoming request
+                    if(receivedDataSize != receivedPacketSize)
+                    {
+                        tmp_reallocPointer = malloc(receivedDataSize - receivedPacketSize);
+                        if(!tmp_reallocPointer)
+                        {
+                            TRACE_F("malloc failed on error %s", strerror(errno));
+                            return FROK_RESULT_MEMORY_FAULT;
+                        }
+                        memcpy(tmp_reallocPointer, incomingRequest + receivedPacketSize, receivedDataSize - receivedPacketSize);
+                        free(incomingRequest);
+                        incomingRequest = tmp_reallocPointer;
+
+                        receivedDataSize -= receivedPacketSize;
+
+                        if(FALSE == isPacketValid(incomingRequest, receivedDataSize))
+                        {
+                            TRACE_F("Invalid packet received: %s", incomingRequest);
+                            invalidPacket = TRUE;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        free(incomingRequest);
+                        receivedDataSize = 0;
+                    }
+
+                }
+
+                if(invalidPacket == TRUE)   // [TBD] This can be replaced with break label, or goto label
+                {
+                    break;
+                }
             }
             else
             {
@@ -371,6 +424,67 @@ FrokResult frokAgentSocketListener()
     TRACE_S("finished");
 }
 
+// Full packet begins with "{ and ends with }". Number of { and } symbols has to be equal
+BOOL isFullPacketReceived(char *packet, size_t packetSize, size_t *realPacketLength)
+{
+    size_t i;
+    size_t entries = 0;
+
+    if(realPacketLength == NULL)
+    {
+        TRACE_F("Invalid input data. realPacketLength = %p", realPacketLength);
+        return FALSE;
+    }
+
+    // Not ehough data for any json packet
+    if(packetSize < 4)
+    {
+        return FALSE;
+    }
+
+    for(i = 0; i < packetSize - 1; i++)
+    {
+        if(packet[i] == '{')
+        {
+            entries++;
+        }
+        else if(packet[i] == '}')
+        {
+            entries--;
+            if(entries == 0)
+            {
+                if(packet[i + 1] == '\"')
+                {
+                    // Full packet is received;
+                    *realPacketLength = i + 2;
+                    return TRUE;
+                }
+            }
+        }
+    }
+    return FALSE;
+}
+
+BOOL isPacketValid(char *packet, size_t packetSize)
+{
+    if(packetSize < 1)
+    {
+        return FALSE;
+    }
+    if(packet[0] != '\"')
+    {
+        return FALSE;
+    }
+
+    if(packetSize > 1)
+    {
+        if(packet[1] != '{')
+        {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
 
     /*SOCKET                      accepted_socket             = INVALID_SOCKET;
     int                         dataLength                  = 0;
