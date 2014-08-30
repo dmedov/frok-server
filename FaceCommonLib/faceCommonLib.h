@@ -13,6 +13,7 @@
 // Result of Face*Libraries
 typedef enum FrokResult
 {
+    FROK_RESULT_NULL,
     FROK_RESULT_SUCCESS,
     FROK_RESULT_CASCADE_ERROR,
     FROK_RESULT_UNSPECIFIED_ERROR,

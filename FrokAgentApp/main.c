@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     TRACE_S("sigaction succeed");
 
     TRACE_N("Calling frokAgentInit...");
-    if(FROK_RESULT_SUCCESS != (res = frokAgentInit(27015, NULL, NULL)))
+    if(FROK_RESULT_SUCCESS != (res = frokAgentInit(27015, DEFAULT_PHOTO_BASE_PATH, DEFAULT_TARGETS_FOLDER_PATH)))
     {
         TRACE_F("frokAgentInit failed on error %s", FrokResultToString(res));
         DeinitFaceCommonLib();
