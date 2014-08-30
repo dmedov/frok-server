@@ -6,11 +6,14 @@
 // include dependencies
 #include "faceCommonLib.h"
 
+#include "pthread.h"
+
 typedef struct FrokAgentContext
 {
     SOCKET localSock;
     unsigned short localPortNumber;
     BOOL agentStarted;
+    pthread_t agentThread;
 }FrokAgentContext;
 
 FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath);

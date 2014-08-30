@@ -1,8 +1,9 @@
 #ifndef LINUXINCLUDES_H
 #define LINUXINCLUDES_H
 
-#include "stdlib.h"
+#include <stdlib.h>
 #include <errno.h>
+#include <pthread.h>
 
 #define SOCKET                              int
 #define SOCKET_ERROR                        (-1)

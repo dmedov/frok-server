@@ -43,8 +43,8 @@ extern "C" {
 
 // Library init functions
 const char *FrokResultToString(FrokResult res);
-BOOL InitFaceCommonLib(const char *logFileName);
-BOOL DeinitFaceCommonLib();
+FrokResult InitFaceCommonLib(const char *log_name);
+FrokResult DeinitFaceCommonLib();
 void set_time_stamp(unsigned *sec, unsigned *usec);
 //void print_time(timespec startTime, timespec endTime);
 

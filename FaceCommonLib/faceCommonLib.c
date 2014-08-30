@@ -7,9 +7,9 @@
 
 static pthread_mutex_t file_cs;
 struct timespec startTime;
-BOOL init;
+static BOOL init;
 
-BOOL InitFaceCommonLib(const char *log_name)
+FrokResult InitFaceCommonLib(const char *log_name)
 {
     int result = 0;
     pthread_mutexattr_t mAttr;
@@ -17,36 +17,43 @@ BOOL InitFaceCommonLib(const char *log_name)
     if(init == TRUE)
     {
         TRACE_W("Already inited");
-        return TRUE;
+        return FROK_RESULT_SUCCESS;
     }
+
+    init = TRUE;
 
     if(0 != (result = pthread_mutexattr_init(&mAttr)))
     {
         TRACE_F("pthread_mutexattr_init failed on error %s", strerror(result));
-        return FALSE;
+        init = FALSE;
+        return FROK_RESULT_LINUX_ERROR;
     }
     if(0 != (result = pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP)))
     {
         TRACE_F("pthread_mutexattr_settype failed on error %s", strerror(result));
-        return FALSE;
+        init = FALSE;
+        return FROK_RESULT_LINUX_ERROR;
     }
 
     if(0 != (result = pthread_mutex_init(&file_cs, &mAttr)))
     {
         TRACE_F("pthread_mutex_init failed on error %s", strerror(result));
-        return FALSE;
+        init = FALSE;
+        return FROK_RESULT_LINUX_ERROR;
     }
 
     if(0 != (result = pthread_mutex_init(&trace_cs, &mAttr)))
     {
         TRACE_F("pthread_mutex_init failed on error %s", strerror(result));
-        return FALSE;
+        init = FALSE;
+        return FROK_RESULT_LINUX_ERROR;
     }
 
     if(0 != (result = pthread_mutexattr_destroy(&mAttr)))
     {
         TRACE_F("pthread_mutexattr_destroy failed on error %s", strerror(result));
-        return FALSE;
+        init = FALSE;
+        return FROK_RESULT_LINUX_ERROR;
     }
 
     if(log_name != NULL)
@@ -55,6 +62,12 @@ BOOL InitFaceCommonLib(const char *log_name)
 
         free(log_file);
         log_file = malloc(strlen(log_name) + 1);
+        if(!log_file)
+        {
+            TRACE_F("malloc failed on error %s", strerror(errno));
+            init = FALSE;
+            return FROK_RESULT_MEMORY_FAULT;
+        }
 
         strcpy(log_file, log_name);
 
@@ -64,36 +77,36 @@ BOOL InitFaceCommonLib(const char *log_name)
     memset(&startTime, 0, sizeof(startTime));
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &startTime);
 
-    init = TRUE;
-    return TRUE;
+    return FROK_RESULT_SUCCESS;
 }
 
-BOOL DeinitFaceCommonLib()
+FrokResult DeinitFaceCommonLib()
 {
     int result = 0;
 
     if(init == FALSE)
     {
         TRACE_W("Already deinited");
-        return TRUE;
+        return FROK_RESULT_SUCCESS;
     }
+
+    init = FALSE;
 
     free(log_file);
 
     if(0 != (result = pthread_mutex_destroy(&file_cs)))
     {
         TRACE_F("pthread_mutexattr_destroy failed on error %s", strerror(result));
-        return FALSE;
+        return FROK_RESULT_LINUX_ERROR;
     }
 
     if(0 != (result = pthread_mutex_destroy(&trace_cs)))
     {
         TRACE_F("pthread_mutexattr_destroy failed on error %s", strerror(result));
-        return FALSE;
+        return FROK_RESULT_LINUX_ERROR;
     }
 
-    init = FALSE;
-    return TRUE;
+    return FROK_RESULT_SUCCESS;
 }
 
 const char *FrokResultToString(FrokResult res)

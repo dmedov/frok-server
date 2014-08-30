@@ -10,7 +10,14 @@
 
 static void sigintHandler(int UNUSED(sig), siginfo_t UNUSED(*si), void UNUSED(*p))
 {
-    TRACE_S("SIGINT captured!");
+    if(FROK_RESULT_SUCCESS != frokAgentStop())
+    {
+        if(FROK_RESULT_SUCCESS != frokAgentStop())
+        {
+            // Something went wrong - shutdown
+            frokAgentDeinit();
+        }
+    }
 }
 
 void usage()
@@ -24,48 +31,74 @@ int main(int argc, char *argv[])
     struct sigaction sigintAction;
     FrokResult res;
     
-    InitFaceCommonLib("agent.log");
+    if(FROK_RESULT_SUCCESS != (res = InitFaceCommonLib("agent.log")))
+    {
+        TRACE("InitFaceCommonLib failed on error %s", FrokResultToString(res));
+        return -1;
+    }
 
     sigintAction.sa_flags = SA_SIGINFO;
     sigemptyset(&sigintAction.sa_mask);
     sigintAction.sa_sigaction = sigintHandler;
 
+    TRACE_N("Setting custom SIGINT action...");
     if (-1 == sigaction(SIGINT, &sigintAction, NULL))
     {
         TRACE_F("Failed to set custom action on SIGINT on error %s", strerror(errno));
+        DeinitFaceCommonLib();
         return -1;
     }
+    TRACE_S("sigaction succeed");
 
-    while(1)
+    TRACE_N("Calling frokAgentInit...");
+    if(FROK_RESULT_SUCCESS != (res = frokAgentInit(27015, NULL, NULL)))
     {
-        if(FROK_RESULT_SUCCESS != (res = frokAgentInit(1, NULL, NULL)))
-        {
-            TRACE_F("frokAgentInit failed on error %s", FrokResultToString(res));
-            return -1;
-        }
-
-        if(FROK_RESULT_SUCCESS != (res = frokAgentStart()))
-        {
-            TRACE_F("frokAgentStart failed on error %s", FrokResultToString(res));
-            return -1;
-        }
-
-        if(FROK_RESULT_SUCCESS != (res = frokAgentStop()))
-        {
-            TRACE_F("frokAgentStop failed on error %s", FrokResultToString(res));
-            return -1;
-        }
-
-        if(FROK_RESULT_SUCCESS != (res = frokAgentDeinit()))
-        {
-            TRACE_F("frokAgentDeinit failed on error %s", FrokResultToString(res));
-            return -1;
-        }
+        TRACE_F("frokAgentInit failed on error %s", FrokResultToString(res));
+        DeinitFaceCommonLib();
+        return -1;
     }
+    TRACE_S("frokAgentInit succeed");
 
-    //InitFrokAgent();
+    TRACE_N("Calling frokAgentStart...");
+    // Inifinite loop from this function. To stop application send SIGINT signal (^C from console)
+    if(FROK_RESULT_SUCCESS != (res = frokAgentStart()))
+    {
+        TRACE_F("frokAgentStart failed on error %s", FrokResultToString(res));
+        frokAgentDeinit();
+        DeinitFaceCommonLib();
+        return -1;
+    }
+    TRACE_S("frokAgentStart succeed");
 
-    DeinitFaceCommonLib();
+    // SIGINT captured - close application, set default handlers, etc...
 
+    sigintAction.sa_flags = 0;
+    sigemptyset(&sigintAction.sa_mask);
+    sigintAction.sa_handler = SIG_DFL;
+
+    TRACE_N("Setting default SIGINT action...");
+    if (-1 == sigaction(SIGINT, &sigintAction, NULL))
+    {
+        TRACE_F("Failed to set custom action on SIGINT on error %s", strerror(errno));
+        frokAgentDeinit();
+        DeinitFaceCommonLib();
+        return -1;
+    }
+    TRACE_S("sigaction succeed");
+
+    TRACE_N("Calling frokAgentDeinit...");
+    if(FROK_RESULT_SUCCESS != (res = frokAgentDeinit()))
+    {
+        TRACE_F("frokAgentDeinit failed on error %s", FrokResultToString(res));
+        DeinitFaceCommonLib();
+        return -1;
+    }
+    TRACE_S("frokAgentDeinit succeed");
+
+    if(FROK_RESULT_SUCCESS != (res = DeinitFaceCommonLib()))
+    {
+        TRACE("InitFaceCommonLib failed on error %s", FrokResultToString(res));
+        return -1;
+    }
     return 0;
 }

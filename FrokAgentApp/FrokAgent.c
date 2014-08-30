@@ -10,9 +10,15 @@
 static FrokAgentContext *context = NULL;
 static pthread_mutex_t frokAgentMutex = PTHREAD_MUTEX_INITIALIZER;
 
+// private functions declaration
+FrokResult frokAgentSocketListener();
+
+// API implementation
 FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath)
 {
     int error, option = TRUE;
+
+    TRACE_S("started");
 
     if(context != NULL)
     {
@@ -27,6 +33,7 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
         return FROK_RESULT_MEMORY_FAULT;
     }
 
+    TRACE_N("lock frokAgentMutex");
     if(-1 == (error = pthread_mutex_lock(&frokAgentMutex)))
     {
         TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
@@ -36,6 +43,7 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
     }
 
     // Create local socket
+    TRACE_N("Create new local TCP socket");
     if (-1 == (context->localSock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)))
     {
         TRACE_F("socket failed on error = %s", strerror(errno));
@@ -46,6 +54,7 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
     }
 
     // Enable SO_REUSEADDR option - if socket was already binded to requested address - it will be deleted and new socket will bind.
+    TRACE_N("Set SO_REUSEADDR to local socket");
     if(0 != setsockopt(context->localSock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
     {
         TRACE_F("setsockopt failed on error %s", strerror(errno));
@@ -57,6 +66,7 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
     }
 
     // Google SO_KEEPALIVE
+    TRACE_N("Set SO_KEEPALIVE to local socket");
     if(0 != setsockopt(context->localSock, SOL_SOCKET, SO_KEEPALIVE, &option, sizeof(option)))
     {
         TRACE_F("setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
@@ -69,6 +79,7 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
 
     context->localPortNumber = port;
 
+    TRACE_N("unlock frokAgentMutex");
     if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
     {
         TRACE_F("pthread_mutex_unlock failed on error %s", strerror(error));
@@ -79,7 +90,7 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
         return FROK_RESULT_LINUX_ERROR;
     }
 
-    TRACE_S("Succeed");
+    TRACE_S("finished");
 
     return FROK_RESULT_SUCCESS;
 }
@@ -89,12 +100,15 @@ FrokResult frokAgentStart()
     int error;
     struct sockaddr_in server;
 
+    TRACE_S("started");
+
     if(context == NULL)
     {
         TRACE_F("Not inited");
         return FROK_RESULT_INVALID_STATE;
     }
 
+    TRACE_N("lock frokAgentMutex");
     if(-1 == (error = pthread_mutex_lock(&frokAgentMutex)))
     {
         TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
@@ -110,14 +124,15 @@ FrokResult frokAgentStart()
 
     context->agentStarted = TRUE;
 
-    memset(&server, 0, sizeof(server));
+    memset(&server, 0, sizeof(struct sockaddr_in));
 
     // Listen to all available IPv4 interfaces. Port = localPortNumber
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_family = AF_INET;
     server.sin_port = htons(context->localPortNumber);
 
-    if(0 != bind(context->localSock, (struct sockaddr*)&server, sizeof(server)))
+    TRACE_N("bind local socket %d to all available ipV4 itnerfaces. Port is %d", context->localSock, context->localPortNumber);
+    if(-1 == bind(context->localSock, (struct sockaddr*)&server, sizeof(struct sockaddr_in)))
     {
         TRACE_F("bind failed on error %s", strerror(errno));
         context->agentStarted = FALSE;
@@ -125,7 +140,8 @@ FrokResult frokAgentStart()
         return FROK_RESULT_SOCKET_ERROR;
     }
 
-    if (0 != listen(context->localSock, SOMAXCONN))
+    TRACE_N("Listen to socket %d. Max pending connections is %d", context->localSock, SOMAXCONN);
+    if (-1 == listen(context->localSock, SOMAXCONN))
     {
         TRACE_F("listen failed on error %s", strerror(errno));
         shutdown(context->localSock, 2);
@@ -134,29 +150,242 @@ FrokResult frokAgentStart()
         return FROK_RESULT_SOCKET_ERROR;
     }
 
+    TRACE_N("unlock frokAgentMutex");
     if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
     {
         TRACE_F("pthread_mutex_unlock failed on error %s", strerror(error));
         shutdown(context->localSock, 2);
+        context->agentStarted = FALSE;
         pthread_mutex_unlock(&frokAgentMutex);
         return FROK_RESULT_LINUX_ERROR;
     }
 
-    TRACE_S("Succeed, Listening to socket = %d, port = %d", context->localPortNumber, context->localSock);
+    TRACE_S("finished");
 
-    return FROK_RESULT_SUCCESS;
+    return frokAgentSocketListener();
 }
 
+FrokResult frokAgentSocketListener()
+{
+    SOCKET acceptedSocket;
+
+    TRACE_S("started");
+
+    for(;;)
+    {
+        TRACE_S("Accepting connections from socket %d, port is %d", context->localPortNumber, context->localSock);
+        if(-1 == (acceptedSocket = accept(context->localSock, NULL, NULL)))
+        {
+            if((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK))
+            {
+                continue;
+            }
+
+            if(errno == EINVAL)
+            {
+                TRACE_S("Finished");
+                return FROK_RESULT_SUCCESS;
+            }
+            TRACE_F("accept failed on error %s", strerror(errno));
+            return FROK_RESULT_SOCKET_ERROR;
+        }
+    }
+    TRACE_S("finished");
+}
+
+
+    /*SOCKET                      accepted_socket             = INVALID_SOCKET;
+    int                         dataLength                  = 0;
+    char                        data[MAX_SOCKET_BUFF_SIZE]  = {0};
+    std::vector<std::string>    mandatoryKeys;
+    std::vector<std::string>    includedFunctions;
+
+    fapi->GetAvailableFunctions(includedFunctions);
+
+    mandatoryKeys.push_back("cmd");
+    mandatoryKeys.push_back("req_id");
+    mandatoryKeys.push_back("reply_sock");
+
+    TRACE("Accepting single incoming connections for socket %i", localSock);
+
+    for(;;)
+    {
+        if(accepted_socket != INVALID_SOCKET)
+        {
+            shutdown(accepted_socket, 2);
+            close(accepted_socket);
+        }
+
+        if ((accepted_socket = accept(localSock, NULL, NULL)) == SOCKET_ERROR)
+        {
+            break;
+        }
+
+        TRACE("Incoming connection accepted. Accepted socket = %u", accepted_socket);
+
+        int flag = 1;   //TRUE
+        if(0 != setsockopt(accepted_socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)))
+        {
+            TRACE_F("setsockopt (TCP_NODELAY) failed on error %s", strerror(errno));
+            TRACE_F("Accepting single incoming connections for socket %i", localSock);
+            continue;
+        }
+
+        if(0 != setsockopt(accepted_socket, SOL_SOCKET, SO_KEEPALIVE, &flag, sizeof(int)))
+        {
+            TRACE_F("setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
+            TRACE_F("Accepting single incoming connections for socket %i", localSock);
+            continue;
+        }
+
+        if(0 != setsockopt(accepted_socket, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int)))
+        {
+            TRACE_F("setsockopt (SO_REUSEADDR) failed on error %s", strerror(errno));
+            TRACE_F("Accepting single incoming connections for socket %i", localSock);
+            continue;
+        }
+
+        TRACE_S("Socket listener cycle started. The agent will process one request and then connection would be terminated.");
+        for(;;)
+        {
+            if(localSock == INVALID_SOCKET)
+            {
+                TRACE("AcceptConnection finished");
+                return;
+            }
+
+            if( -1 == (dataLength = recv(accepted_socket, data, sizeof(data), MSG_DONTWAIT)))
+            {
+                if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+                {
+                    // Valid errors - continue
+                    continue;
+                }
+                // unspecified error occured
+                TRACE_F("recv failed on error %s", strerror(errno));
+                TRACE_W("Listening to socket %u stopped", accepted_socket);
+                shutdown(accepted_socket, 2);
+                close(accepted_socket);
+                TRACE("Accepting single incoming connections for socket %i", localSock);
+                break;
+            }
+
+            if(dataLength == 0)
+            {
+                TRACE("Half disconnection received. Terminating...");
+                TRACE("Accepting single incoming connections for socket %i", localSock);
+                break;
+            }
+
+            TRACE("Received %d bytes from the server(%u)", dataLength, accepted_socket);
+
+            // Response from agent received
+            json::Object requestJson;
+            json::Object resultJson;
+            try
+            {
+                requestJson = ((json::Value)json::Deserialize((std::string)data)).ToObject();
+            }
+            catch (...)
+            {
+                TRACE_F("Failed to parse incoming JSON: %s", data);
+                TRACE("Accepting single incoming connections for socket %i", localSock);
+                shutdown(accepted_socket, 2);
+                close(accepted_socket);
+                break;
+            }
+
+            if (!(requestJson.HasKeys(mandatoryKeys)))
+            {
+                TRACE_F("Invalid input JSON: no cmd field (%s)", data);
+                TRACE("Accepting single incoming connections for socket %i", localSock);
+                shutdown(accepted_socket, 2);
+                close(accepted_socket);
+                break;
+            }
+
+            std::string cmd = requestJson["cmd"].ToString();
+            bool noSuchFunction = true;
+            for(std::vector<std::string>::iterator it = includedFunctions.begin(); it != includedFunctions.end(); ++it)
+            {
+                if(*it == cmd)
+                {
+                    noSuchFunction = false;
+                    break;
+                }
+            }
+            if(noSuchFunction == true)
+            {
+                resultJson["result"] = "fail";
+                resultJson["reason"] = "cmd not supported";
+                continue;
+            }
+
+            std::string responseString;
+            FrokResult res = fapi->ExecuteFunction(cmd, (std::string)data, responseString);
+            if(res != FROK_RESULT_SUCCESS)
+            {
+                resultJson["result"] = "fail";
+                resultJson["reason"] = FrokResultToString(res);
+                goto sendResult;
+            }
+            try
+            {
+                resultJson = json::Deserialize(responseString);
+            }
+            catch(...)
+            {
+                resultJson["result"] = "fail";
+                resultJson["reason"] = "internal error";
+                goto sendResult;
+            }
+
+            resultJson["result"] = "success";
+
+    sendResult:
+            resultJson["reply_sock"] = requestJson["reply_sock"];
+            resultJson["req_id"] = requestJson["req_id"];
+            std::string outJson = json::Serialize(resultJson);
+
+            TRACE_S("Response json: %s", outJson.c_str());
+
+            if(NET_SUCCESS != SendData(accepted_socket, outJson.c_str(), outJson.size()))
+            {
+                TRACE_F("Failed to send response to server (%u). Reponse = %s", accepted_socket, outJson.c_str());
+                shutdown(accepted_socket, 2);
+                close(accepted_socket);
+                TRACE("Accepting single incoming connections for socket %i", localSock);
+                break;
+            }
+            shutdown(accepted_socket, 2);
+            close(accepted_socket);
+            TRACE("Accepting single incoming connections for socket %i", localSock);
+            break;
+        }
+
+    return NULL;
+}
+*/
 FrokResult frokAgentStop()
 {
     int error;
 
+    TRACE_S("started");
+
+    if(context == NULL)
+    {
+        TRACE_F("Not inited");
+        return FROK_RESULT_INVALID_STATE;
+    }
+
+    TRACE_N("lock frokAgentMutex");
     if(-1 == (error = pthread_mutex_lock(&frokAgentMutex)))
     {
         TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
         return FROK_RESULT_LINUX_ERROR;
     }
 
+    TRACE_N("shutdown local socket %d from reading and writing", context->localSock);
     if(-1 == shutdown(context->localSock, 2))
     {
         TRACE_F("shutdown failed on error %s", strerror(errno));
@@ -165,6 +394,7 @@ FrokResult frokAgentStop()
 
     context->agentStarted = FALSE;
 
+    TRACE_N("unlock frokAgentMutex");
     if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
     {
         TRACE_F("pthread_mutex_unlock failed on error %s", strerror(error));
@@ -172,7 +402,7 @@ FrokResult frokAgentStop()
         return FROK_RESULT_LINUX_ERROR;
     }
 
-    TRACE_S("Succeed");
+    TRACE_S("finished");
 
     return FROK_RESULT_SUCCESS;
 }
@@ -180,12 +410,16 @@ FrokResult frokAgentStop()
 FrokResult frokAgentDeinit()
 {
     int error;
+
+    TRACE_S("started");
+
     if(context == NULL)
     {
         TRACE_F_T("Already deinited");
         return FROK_RESULT_INVALID_STATE;
     }
 
+    TRACE_N("lock frokAgentMutex");
     if(-1 == (error = pthread_mutex_lock(&frokAgentMutex)))
     {
         TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
@@ -193,8 +427,10 @@ FrokResult frokAgentDeinit()
     }
 
     // Close socket if necessary
+    TRACE_N("local socket is %d", context->localSock);
     if(INVALID_SOCKET != context->localSock)
     {
+        TRACE_N("Close local socket %d", context->localSock);
         if(-1 == close(context->localSock))
         {
             TRACE_F("close failed on error %s", strerror(errno));
@@ -208,6 +444,7 @@ FrokResult frokAgentDeinit()
     free(context);
     context = NULL;
 
+    TRACE_N("unlock frokAgentMutex");
     if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
     {
         TRACE_F("pthread_mutex_unlock failed on error %s", strerror(error));
@@ -215,12 +452,36 @@ FrokResult frokAgentDeinit()
         return FROK_RESULT_LINUX_ERROR;
     }
 
-    TRACE_S("Succeed");
+    TRACE_S("finished");
 
     return FROK_RESULT_SUCCESS;
 }
+/*
+NetResult FrokAgent::SendData(SOCKET sock, const char* pBuffer, unsigned uBufferSize)
+{
+int sendlen = 0;
 
+if(sock != INVALID_SOCKET)
+{
+    if (-1 == (sendlen = send(sock, pBuffer, uBufferSize, 0)))
+    {
+        TRACE_F("Failed to send outgoing bytes to the remote peer %u with error %s", sock, strerror(errno));
+        return NET_SOCKET_ERROR;
+    }
 
+    usleep(50000);      // sleep for 1 system monitor tact
+    TRACE("%d bytes were sent to the remote peer %u", sendlen, sock);
+}
+else
+{
+    TRACE_F("Invalid socket");
+    return NET_SOCKET_ERROR;
+}
+
+return NET_SUCCESS;
+}
+
+*/
 /*#include <errno.h>
 #include <string.h>
 #include <pthread.h>
