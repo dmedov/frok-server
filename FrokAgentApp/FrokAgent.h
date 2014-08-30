@@ -9,7 +9,7 @@
 #include "pthread.h"
 
 // Client data timeout. If timeout reqached and no data received - disconnect
-#define FROK_AGENT_CLIENT_DATA_TIMEOUT_MS       1000
+#define FROK_AGENT_CLIENT_DATA_TIMEOUT_MS       10000
 
 typedef struct FrokAgentContext
 {

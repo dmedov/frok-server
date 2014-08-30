@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/ip.h>
+#include <sys/ioctl.h>
 
 #include <sys/eventfd.h>
 
@@ -70,7 +71,8 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
     }
 
     // Google SO_KEEPALIVE
-    TRACE_N("Set SO_KEEPALIVE to local socket");
+    // I'm not sure do we need it here. It may cause lack of EOF in socket fd stream
+    /*TRACE_N("Set SO_KEEPALIVE to local socket");
     if(0 != setsockopt(context->localSock, SOL_SOCKET, SO_KEEPALIVE, &option, sizeof(option)))
     {
         TRACE_F("setsockopt (SO_KEEPALIVE) failed on error %s", strerror(errno));
@@ -79,7 +81,7 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
         context = NULL;
         pthread_mutex_unlock(&frokAgentMutex);
         return FROK_RESULT_SOCKET_ERROR;
-    }
+    }*/
 
     context->localPortNumber = port;
 
@@ -186,7 +188,11 @@ FrokResult frokAgentSocketListener()
 {
     SOCKET acceptedSocket;
     int result;
-    struct pollfd fds[2];       // Network data received and terminate event fd
+    struct pollfd fds[2];               // Network data received and terminate event fd
+    char *incomingRequest = NULL;       // Request sent via network
+    char *tmp_reallocPointer;
+    size_t receivedDataSize = 0;
+    size_t tmp_dataSize;
 
     TRACE_S("started");
 
@@ -215,7 +221,6 @@ FrokResult frokAgentSocketListener()
         TRACE_S("Incoming connection received and accepted. Accepted socket = %d", acceptedSocket);
 
         // Waiting for any data from connected dude. If none data received for FROK_AGENT_CLIENT_DATA_TIMEOUT_MS milliseconds - disconnect
-
         TRACE_N("lock frokAgentMutex");
         if(-1 == (result = pthread_mutex_lock(&frokAgentMutex)))
         {
@@ -252,9 +257,7 @@ FrokResult frokAgentSocketListener()
             }
             else if (0 == result)
             {
-                TRACE_N("Timeout reached for reading socket %d. Terminating connection", acceptedSocket);
-                shutdown(acceptedSocket, 2);
-                close(acceptedSocket);
+                TRACE_N("Timeout reached for reading socket %d. Disconnect", acceptedSocket);
                 break;
             }
 
@@ -281,7 +284,64 @@ FrokResult frokAgentSocketListener()
             }
             else if(fds[0].revents & POLLIN)
             {
-                // Client sent data
+                if(-1 == ioctl(acceptedSocket, FIONREAD, &tmp_dataSize))
+                {
+                    TRACE_F("ioctl failed on error %s", strerror(errno));
+                    break;
+                }
+
+                if(tmp_dataSize == 0)
+                {
+                    TRACE_W("Half disconnection received. Disconnect");
+                    break;
+                }
+                // Alloc memory for new data
+                if(incomingRequest == NULL)
+                {
+                    incomingRequest = calloc(tmp_dataSize, 1);  // sizeof(char) == 1 due to c specification
+                    if(!incomingRequest)
+                    {
+                        // new message
+                        TRACE_F("calloc failed on error %s", strerror(errno));
+                        shutdown(acceptedSocket, 2);
+                        close(acceptedSocket);
+                        return FROK_RESULT_MEMORY_FAULT;
+                    }
+                }
+                else
+                {
+                    // append to existing message
+                    tmp_reallocPointer = incomingRequest;
+                    incomingRequest = realloc(tmp_reallocPointer, receivedDataSize + tmp_dataSize);
+                    if(!incomingRequest)
+                    {
+                        TRACE_F("realloc failed on error %s", strerror(errno));
+                        free(tmp_reallocPointer);
+                        shutdown(acceptedSocket, 2);
+                        close(acceptedSocket);
+                        return FROK_RESULT_MEMORY_FAULT;
+                    }
+                    memset(incomingRequest + receivedDataSize, 0, tmp_dataSize);
+                }
+
+                // Read all available data
+                while(tmp_dataSize != 0)
+                {
+                    if(-1 == (result = recv(acceptedSocket, incomingRequest + receivedDataSize, tmp_dataSize, 0)))
+                    {
+                        if((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK))
+                        {
+                            continue;
+                        }
+                        TRACE_F("recv failed on error %s", strerror(errno));
+                        break;
+                    }
+                    tmp_dataSize -= result;
+                    receivedDataSize += result;
+                }
+                    // Received client data
+
+                TRACE_W("Received data: %s", incomingRequest);
             }
             else
             {
@@ -290,6 +350,23 @@ FrokResult frokAgentSocketListener()
                 return FROK_RESULT_UNSPECIFIED_ERROR;
             }
         }
+
+        TRACE_N("Shutdown client socket %d", acceptedSocket);
+        if(-1 == shutdown(acceptedSocket, 2))
+        {
+            TRACE_W("shutdown socket %d failed on error %s. Continue...", acceptedSocket, strerror(errno));
+        }
+
+        TRACE_N("Close client socket %d", acceptedSocket);
+        if(-1 == close(acceptedSocket))
+        {
+            TRACE_W("close socket %d failed on error %s. Continue...", acceptedSocket, strerror(errno));
+        }
+
+        free(incomingRequest);
+        incomingRequest = NULL;
+
+        receivedDataSize = 0;
     }
     TRACE_S("finished");
 }
@@ -517,6 +594,7 @@ FrokResult frokAgentStop()
 FrokResult frokAgentDeinit()
 {
     int error;
+    FrokResult res;
 
     TRACE_S("started");
 
@@ -531,6 +609,14 @@ FrokResult frokAgentDeinit()
     {
         TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
         return FROK_RESULT_LINUX_ERROR;
+    }
+
+    if(context->agentStarted == TRUE)
+    {
+        if(FROK_RESULT_SUCCESS != (res = frokAgentStop()))
+        {
+            TRACE_W("frokAgentStop failed on error %s", FrokResultToString(res));
+        }
     }
 
     // Close socket if necessary
