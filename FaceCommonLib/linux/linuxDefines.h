@@ -1,6 +1,7 @@
 #ifndef LINUXINCLUDES_H
 #define LINUXINCLUDES_H
 
+#include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <pthread.h>

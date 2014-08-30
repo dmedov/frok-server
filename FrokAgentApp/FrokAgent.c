@@ -5,6 +5,10 @@
 #include <sys/types.h>
 #include <netinet/ip.h>
 
+#include <sys/eventfd.h>
+
+#include <poll.h>
+
 #define MODULE_NAME     "AGENT"
 
 static FrokAgentContext *context = NULL;
@@ -57,7 +61,7 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
     TRACE_N("Set SO_REUSEADDR to local socket");
     if(0 != setsockopt(context->localSock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)))
     {
-        TRACE_F("setsockopt failed on error %s", strerror(errno));
+        TRACE_F("setsockopt (SO_REUSEADDR) failed on error %s", strerror(errno));
         close(context->localSock);
         free(context);
         context = NULL;
@@ -78,6 +82,19 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
     }
 
     context->localPortNumber = port;
+
+    // Create semaphore FD
+
+    TRACE_N("Create semaphore fd");
+    if(-1 == (context->terminateAgentEvent = eventfd(0, EFD_SEMAPHORE)))
+    {
+        TRACE_F("eventfd failed on error %s", strerror(errno));
+        close(context->localSock);
+        free(context);
+        context = NULL;
+        pthread_mutex_unlock(&frokAgentMutex);
+        return FROK_RESULT_LINUX_ERROR;
+    }
 
     TRACE_N("unlock frokAgentMutex");
     if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
@@ -168,11 +185,17 @@ FrokResult frokAgentStart()
 FrokResult frokAgentSocketListener()
 {
     SOCKET acceptedSocket;
+    int result;
+    struct pollfd fds[2];       // Network data received and terminate event fd
 
     TRACE_S("started");
 
     for(;;)
     {
+        // Check that we are not in deinit or stop functions
+        TRACE_N("lock-unlock frokAgentMutex");
+        pthread_mutex_lock(&frokAgentMutex);
+        pthread_mutex_unlock(&frokAgentMutex);
         TRACE_S("Accepting connections from socket %d, port is %d", context->localPortNumber, context->localSock);
         if(-1 == (acceptedSocket = accept(context->localSock, NULL, NULL)))
         {
@@ -188,6 +211,84 @@ FrokResult frokAgentSocketListener()
             }
             TRACE_F("accept failed on error %s", strerror(errno));
             return FROK_RESULT_SOCKET_ERROR;
+        }
+        TRACE_S("Incoming connection received and accepted. Accepted socket = %d", acceptedSocket);
+
+        // Waiting for any data from connected dude. If none data received for FROK_AGENT_CLIENT_DATA_TIMEOUT_MS milliseconds - disconnect
+
+        TRACE_N("lock frokAgentMutex");
+        if(-1 == (result = pthread_mutex_lock(&frokAgentMutex)))
+        {
+            TRACE_F("pthread_mutex_lock failed on error %s", strerror(result));
+            shutdown(acceptedSocket, 2);
+            close(acceptedSocket);
+            return FROK_RESULT_LINUX_ERROR;
+        }
+
+        fds[0].fd = acceptedSocket;
+        fds[0].events = POLLIN;
+
+        fds[1].fd = context->terminateAgentEvent;
+        fds[1].events = POLLIN;
+
+        TRACE_N("unlock frokAgentMutex");
+        if(-1 == (result = pthread_mutex_unlock(&frokAgentMutex)))
+        {
+            TRACE_F("pthread_mutex_unlock failed on error %s", strerror(result));
+            shutdown(acceptedSocket, 2);
+            close(acceptedSocket);
+            pthread_mutex_unlock(&frokAgentMutex);
+            return FROK_RESULT_LINUX_ERROR;
+        }
+
+        TRACE_N("Waiting for incoming data from socket %d", acceptedSocket);
+        for(;;)
+        {
+            result = poll(fds, 2, FROK_AGENT_CLIENT_DATA_TIMEOUT_MS);
+            if(-1 == result)
+            {
+                TRACE_F("poll failed on error %s", strerror(errno));
+                return FROK_RESULT_LINUX_ERROR;
+            }
+            else if (0 == result)
+            {
+                TRACE_N("Timeout reached for reading socket %d. Terminating connection", acceptedSocket);
+                shutdown(acceptedSocket, 2);
+                close(acceptedSocket);
+                break;
+            }
+
+            // Check terminate event
+            if(fds[1].revents & POLLIN)
+            {
+                TRACE_S("Terminate event received - terminating");
+                TRACE_N("Shutdown client socket %d", acceptedSocket);
+                if(-1 == shutdown(acceptedSocket, 2))
+                {
+                    TRACE_F("shutdown failed on error %s", strerror(errno));
+                    return FROK_RESULT_SOCKET_ERROR;
+                }
+
+                TRACE_N("Closing client socket %d", acceptedSocket);
+                if(-1 == close(acceptedSocket))
+                {
+                    TRACE_F("close failed on error %s", strerror(errno));
+                    return FROK_RESULT_SOCKET_ERROR;
+                }
+
+                TRACE_S("finished");
+                return FROK_RESULT_SUCCESS;
+            }
+            else if(fds[0].revents & POLLIN)
+            {
+                // Client sent data
+            }
+            else
+            {
+                // Something went wrong
+                TRACE_F("Poll returned success while no events captured - report problem to D.Zotov");
+                return FROK_RESULT_UNSPECIFIED_ERROR;
+            }
         }
     }
     TRACE_S("finished");
@@ -362,13 +463,11 @@ FrokResult frokAgentSocketListener()
             TRACE("Accepting single incoming connections for socket %i", localSock);
             break;
         }
-
-    return NULL;
-}
 */
 FrokResult frokAgentStop()
 {
     int error;
+    u_int64_t evt = 1;
 
     TRACE_S("started");
 
@@ -382,6 +481,14 @@ FrokResult frokAgentStop()
     if(-1 == (error = pthread_mutex_lock(&frokAgentMutex)))
     {
         TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
+        return FROK_RESULT_LINUX_ERROR;
+    }
+
+    // Send shutdown event
+    TRACE_N("send shutdown event via terminateEvent fd");
+    if(-1 == write(context->terminateAgentEvent, &evt, sizeof(u_int64_t)))
+    {
+        TRACE_F("write failed on error %s", strerror(errno));
         return FROK_RESULT_LINUX_ERROR;
     }
 
@@ -439,6 +546,14 @@ FrokResult frokAgentDeinit()
         }
 
         context->localSock = INVALID_SOCKET;
+    }
+
+    TRACE_N("Close terminate semaphore fd");
+    if(-1 == close(context->terminateAgentEvent))
+    {
+        TRACE_F("close failed on error %s", strerror(errno));
+        pthread_mutex_unlock(&frokAgentMutex);
+        return FROK_RESULT_SOCKET_ERROR;
     }
 
     free(context);

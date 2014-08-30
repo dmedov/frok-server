@@ -8,12 +8,16 @@
 
 #include "pthread.h"
 
+// Client data timeout. If timeout reqached and no data received - disconnect
+#define FROK_AGENT_CLIENT_DATA_TIMEOUT_MS       1000
+
 typedef struct FrokAgentContext
 {
     SOCKET localSock;
     unsigned short localPortNumber;
     BOOL agentStarted;
     pthread_t agentThread;
+    int terminateAgentEvent;
 }FrokAgentContext;
 
 FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath);
