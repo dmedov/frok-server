@@ -9,6 +9,7 @@
 
 #define MODULE_NAME     "COMMON_LIB"
 
+char *tracePrefix = NULL;
 frokCommonContext *commonContext = NULL;
 
 BOOL frokLibCommonParseConfigFile(const char *configFile);
@@ -19,6 +20,20 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
     {
         TRACE_F("Not inited");
         return FALSE;
+    }
+}
+
+void set_trace_prefix(const char *prefix)
+{
+    if(prefix != NULL)
+    {
+
+        free(tracePrefix);
+        tracePrefix = calloc(strlen(prefix) + 1, 1);
+        if(tracePrefix != NULL)
+        {
+            strcpy(tracePrefix, prefix);
+        }
     }
 }
 
@@ -141,8 +156,42 @@ FrokResult frokLibCommonInit(const char *configFilePath)
     }
 
 #ifndef TRACE_DEBUG
-    TRACE_S("Setting std fd for release");
+    /*TRACE_S("Setting std fd for release");
     TRACE_S("\tstdin is now /dev/null\n\tstdout is now %s\n\tstderr is now %s", commonContext->outputFile, commonContext->outputFile);
+
+    TRACE_N("Closing standart streams");
+    if(0 != fclose(stdin))
+    {
+        TRACE_F("Failed to close stdin on error %s", strerror(errno));
+        pthread_mutex_destroy(&commonContext->trace_cs);
+        pthread_mutex_destroy(&commonContext->common_cs);
+        free(commonContext->outputFile);
+        free(commonContext);
+        commonContext = NULL;
+        return FROK_RESULT_LINUX_ERROR;
+    }
+
+    if(0 != fclose(stdout))
+    {
+        TRACE_F("Failed to close stdout on error %s", strerror(errno));
+        pthread_mutex_destroy(&commonContext->trace_cs);
+        pthread_mutex_destroy(&commonContext->common_cs);
+        free(commonContext->outputFile);
+        free(commonContext);
+        commonContext = NULL;
+        return FROK_RESULT_LINUX_ERROR;
+    }
+
+    if(0 != fclose(stderr))
+    {
+        TRACE_F("Failed to close stderr on error %s", strerror(errno));
+        pthread_mutex_destroy(&commonContext->trace_cs);
+        pthread_mutex_destroy(&commonContext->common_cs);
+        free(commonContext->outputFile);
+        free(commonContext);
+        commonContext = NULL;
+        return FROK_RESULT_LINUX_ERROR;
+    }
 
     fd = open("/dev/null", O_RDWR);
     if(fd == -1)
@@ -156,7 +205,17 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         return FROK_RESULT_LINUX_ERROR;
     }
 
-    stdin = fd;
+    stdin = fdopen(fd, "r");
+    if(!stdin)
+    {
+        TRACE_F("fdopen failed on error %s", strerror(errno));
+        pthread_mutex_destroy(&commonContext->trace_cs);
+        pthread_mutex_destroy(&commonContext->common_cs);
+        free(commonContext->outputFile);
+        free(commonContext);
+        commonContext = NULL;
+        return FROK_RESULT_LINUX_ERROR;
+    }
 
     fd = open(commonContext->outputFile, O_CREAT | O_RDWR | O_TRUNC, 0666);
     if(fd == -1)
@@ -170,8 +229,29 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         return FROK_RESULT_LINUX_ERROR;
     }
 
-    stderr = fd;
-    stdout = fd;
+    stdout = fdopen(fd, "r");
+    if(!stdout)
+    {
+        TRACE_F("fdopen failed on error %s", strerror(errno));
+        pthread_mutex_destroy(&commonContext->trace_cs);
+        pthread_mutex_destroy(&commonContext->common_cs);
+        free(commonContext->outputFile);
+        free(commonContext);
+        commonContext = NULL;
+        return FROK_RESULT_LINUX_ERROR;
+    }
+
+    stderr = fdopen(fd, "r");
+    if(!stderr)
+    {
+        TRACE_F("fdopen failed on error %s", strerror(errno));
+        pthread_mutex_destroy(&commonContext->trace_cs);
+        pthread_mutex_destroy(&commonContext->common_cs);
+        free(commonContext->outputFile);
+        free(commonContext);
+        commonContext = NULL;
+        return FROK_RESULT_LINUX_ERROR;
+    }*/
 #endif //TRACE_DEBUG
 
     TRACE_N("Init succeed");

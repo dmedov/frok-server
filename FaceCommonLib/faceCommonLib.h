@@ -65,7 +65,7 @@ const char *FrokResultToString(FrokResult res);
 FrokResult frokLibCommonInit(const char *configFilePath);
 void frokLibCommonDeinit();
 void set_time_stamp(unsigned *sec, unsigned *usec);
-
+void set_trace_prefix(const char *prefix);
 #ifdef __cplusplus
 }
 #endif
