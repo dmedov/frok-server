@@ -99,12 +99,12 @@ FrokFaceDetector::FrokFaceDetector()
     faceSize = cv::Size(158, 190);
     defaultImageSize = cv::Size(320, 320);
 
-    TRACE("new FrokFaceDetector");
+    TRACE_N("new FrokFaceDetector");
 }
 
 FrokFaceDetector::~FrokFaceDetector()
 {
-    TRACE("~FrokFaceDetector");
+    TRACE_N("~FrokFaceDetector");
 }
 
 FrokResult FrokFaceDetector::SetCascadeParameters(EnumCascades cascade, CascadeProperties params)

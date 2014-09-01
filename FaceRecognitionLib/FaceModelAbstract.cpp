@@ -10,11 +10,11 @@ FaceModelAbstract::FaceModelAbstract()
 
 FaceModelAbstract::FaceModelAbstract(std::string userId)
 {
-    TRACE("new FaceModelAbstract");
+    TRACE_N("new FaceModelAbstract");
     this->userId = userId;
 }
 
 FaceModelAbstract::~FaceModelAbstract()
 {
-    TRACE("~FaceModelAbstract");
+    TRACE_N("~FaceModelAbstract");
 }

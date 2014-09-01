@@ -7,6 +7,7 @@
 #define MODULE_NAME "AGENT"
 
 //{"cmd":"train", "arrIds":["1"]}
+//{"cmd":"recognize", "arrIds":["1"], "photoName":"1"}
 
 static void sigintHandler(int UNUSED(sig), siginfo_t UNUSED(*si), void UNUSED(*p))
 {
@@ -31,11 +32,20 @@ int main(int argc, char *argv[])
     struct sigaction sigintAction;
     FrokResult res;
     
-    if(FROK_RESULT_SUCCESS != (res = frokLibCommonInit("agent.log")))
+    if(FROK_RESULT_SUCCESS != (res = frokLibCommonInit(NULL)))
     {
-        TRACE("frokLibCommonInit failed on error %s", FrokResultToString(res));
+        TRACE_N("frokLibCommonInit failed on error %s", FrokResultToString(res));
         exit(EXIT_FAILURE);
     }
+
+    TRACE_N("Becoming a daemon");
+    if(FALSE == frokBecomeADaemon())
+    {
+        TRACE_F("frokBecomeADaemon failed");
+        frokLibCommonDeinit();
+        exit(EXIT_FAILURE);
+    }
+    TRACE_S("Agent is daemon now");
 
     sigintAction.sa_flags = SA_SIGINFO;
     sigemptyset(&sigintAction.sa_mask);
@@ -46,7 +56,7 @@ int main(int argc, char *argv[])
     {
         TRACE_F("Failed to set custom action on SIGINT on error %s", strerror(errno));
         frokLibCommonDeinit();
-        return -1;
+        exit(EXIT_FAILURE);
     }
     TRACE_S("sigaction succeed");
 
@@ -56,7 +66,7 @@ int main(int argc, char *argv[])
     {
         TRACE_F("Failed to create detector instance");
         frokLibCommonDeinit();
-        return -1;
+        exit(EXIT_FAILURE);
     }
     TRACE_S("detector instance created");
 
@@ -68,7 +78,7 @@ int main(int argc, char *argv[])
         TRACE_F("Failed to create recognizer instance");
         frokFaceDetectorDealloc(detector);
         frokLibCommonDeinit();
-        return -1;
+        exit(EXIT_FAILURE);
     }
     TRACE_S("recognizer instance created");
 
@@ -79,7 +89,7 @@ int main(int argc, char *argv[])
         frokFaceDetectorDealloc(detector);
         frokFaceRecognizerEigenfacesDealloc(recognizer);
         frokLibCommonDeinit();
-        return -1;
+        exit(EXIT_FAILURE);
     }
     TRACE_S("frokAgentInit succeed");
 
@@ -92,7 +102,7 @@ int main(int argc, char *argv[])
         frokFaceDetectorDealloc(detector);
         frokFaceRecognizerEigenfacesDealloc(recognizer);
         frokLibCommonDeinit();
-        return -1;
+        exit(EXIT_FAILURE);
     }
     TRACE_S("frokAgentStart succeed");
 
@@ -108,7 +118,7 @@ int main(int argc, char *argv[])
         TRACE_F("Failed to set custom action on SIGINT on error %s", strerror(errno));
         frokAgentDeinit();
         frokLibCommonDeinit();
-        return -1;
+        exit(EXIT_FAILURE);
     }
     TRACE_S("sigaction succeed");
 
@@ -117,7 +127,7 @@ int main(int argc, char *argv[])
     {
         TRACE_F("frokAgentDeinit failed on error %s", FrokResultToString(res));
         frokLibCommonDeinit();
-        return -1;
+        exit(EXIT_FAILURE);
     }
     TRACE_S("frokAgentDeinit succeed");
 
@@ -132,5 +142,5 @@ int main(int argc, char *argv[])
     TRACE_N("Deinig lib common");
     frokLibCommonDeinit();
 
-    return 0;
+    exit(EXIT_SUCCESS);
 }

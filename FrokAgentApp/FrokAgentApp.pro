@@ -9,7 +9,8 @@ OBJECTS_DIR = ./obj
 
 OBJECTS_DIR = $$OBJECTS_DIR/$$TARGET
 
-DEFINES +=
+DEFINES +=  \
+            TRACE_DEBUG
 
 DEPENDPATH += ../FaceCommonLib/
 DEPENDPATH += ../FrokAPILib/

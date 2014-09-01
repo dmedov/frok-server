@@ -8,9 +8,9 @@
 
 FaceRecognizerAbstract::FaceRecognizerAbstract()
 {
-    TRACE("new FaceRecognizerAbstract");
+    TRACE_N("new FaceRecognizerAbstract");
 }
 FaceRecognizerAbstract::~FaceRecognizerAbstract()
 {
-    TRACE("~FaceRecognizerAbstract");
+    TRACE_N("~FaceRecognizerAbstract");
 }

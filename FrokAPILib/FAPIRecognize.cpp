@@ -53,7 +53,7 @@ bool FAPI_Recognize_JSON2FUNCP(ConvertParams* psConvertParams)
     json::Object jsonParams;
     try
     {
-         jsonParams = json::Deserialize(psConvertParams->jsonParameters);
+         jsonParams = (json::Object)json::Deserialize(psConvertParams->jsonParameters);
     }
     catch(...)
     {
@@ -64,13 +64,13 @@ bool FAPI_Recognize_JSON2FUNCP(ConvertParams* psConvertParams)
     if(!jsonParams.HasKeys(InRecognizeParameters))
     {
         TRACE_F("Invalid parameter: input json doesn't have all mandatory keys.");
-        TRACE("Mandatory parameter:");
+        TRACE_N("Mandatory parameter:");
         for(std::vector<std::string>::const_iterator it = InRecognizeParameters.begin(); it != InRecognizeParameters.end(); ++it)
         {
-            TRACE("\t%s", ((std::string)*it).c_str());
+            TRACE_N("\t%s", ((std::string)*it).c_str());
         }
 
-        TRACE("Input json: %s", psConvertParams->jsonParameters.c_str());
+        TRACE_N("Input json: %s", psConvertParams->jsonParameters.c_str());
         return false;
     }
 

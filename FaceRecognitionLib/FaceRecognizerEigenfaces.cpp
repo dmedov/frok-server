@@ -35,12 +35,12 @@ FaceRecognizerEigenfaces::FaceRecognizerEigenfaces()
 {
     // Set defaults
     maxHammingDistance = 18;
-    TRACE("new FaceRecognizerEigenfaces");
+    TRACE_N("new FaceRecognizerEigenfaces");
 }
 
 FaceRecognizerEigenfaces::~FaceRecognizerEigenfaces()
 {
-    TRACE("~FaceRecognizerEigenfaces");
+    TRACE_N("~FaceRecognizerEigenfaces");
 }
 
 FrokResult FaceRecognizerEigenfaces::AddFaceUserModel(std::string userId, FaceModelAbstract *model)
