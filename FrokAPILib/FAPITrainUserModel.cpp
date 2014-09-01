@@ -43,7 +43,7 @@ bool FAPI_TrainUserModel_JSON2FUNCP(ConvertParams* psConvertParams)
     json::Object jsonParams;
     try
     {
-         jsonParams = json::Deserialize(psConvertParams->jsonParameters);
+         jsonParams = (json::Object)json::Deserialize(psConvertParams->jsonParameters);
     }
     catch(...)
     {

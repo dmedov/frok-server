@@ -5,11 +5,11 @@
 static const char DEFAULT_PHOTO_BASE_PATH [] = "/home/zda/faces/";
 static const char DEFAULT_TARGETS_FOLDER_PATH [] = "/home/zda/faces/";
 
-#ifdef __cplusplus
-
 // include dependencies
 #include "FrokAPIFunction.h"
 #include "faceCommonLib.h"
+
+#ifdef __cplusplus
 
 class FrokAPI
 {

@@ -23,7 +23,7 @@ typedef struct FrokAgentContext
 }FrokAgentContext;
 #pragma pack(pop)
 
-FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath);
+FrokResult frokAgentInit(unsigned short port, void *detector, void *recognizer, const char *photoBaseFolderPath, const char *targetsFolderPath);
 FrokResult frokAgentStart();
 FrokResult frokAgentStop();
 FrokResult frokAgentDeinit();

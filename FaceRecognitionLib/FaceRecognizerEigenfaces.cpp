@@ -4,6 +4,33 @@
 
 #define MODULE_NAME     "FACE_RECOGNIZER_EIGENFACES"
 
+extern "C" {
+
+void *frokFaceRecognizerEigenfacesAlloc()
+{
+    FaceRecognizerEigenfaces *instance = NULL;
+    try
+    {
+        instance = new FaceRecognizerEigenfaces;
+    }
+    catch(...)
+    {
+        TRACE_F("FaceRecognizerEigenfaces constructor failed");
+        return NULL;
+    }
+    return instance;
+}
+void frokFaceRecognizerEigenfacesDealloc(void *instance)
+{
+    if(instance != NULL)
+    {
+        delete (FaceModelEigenfaces*)instance;
+        instance = NULL;
+    }
+}
+
+}
+
 FaceRecognizerEigenfaces::FaceRecognizerEigenfaces()
 {
     // Set defaults

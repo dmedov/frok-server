@@ -4,6 +4,34 @@
 #pragma GCC poison IplImage
 #define MODULE_NAME         "FACE_DETECTOR"
 
+extern "C" {
+
+void* frokFaceDetectorAlloc()
+{
+    FrokFaceDetector *instance = NULL;
+    try
+    {
+        instance = new FrokFaceDetector;
+    }
+    catch(...)
+    {
+        TRACE_F("FrokFaceDetector constructor failed");
+        return NULL;
+    }
+    return instance;
+}
+
+void frokFaceDetectorDealloc(void* instance)
+{
+    if(instance != NULL)
+    {
+        delete (FrokFaceDetector*)instance;
+        instance = NULL;
+    }
+}
+
+}
+
 FrokFaceDetector::FrokFaceDetector()
 {
     StructCascade cascade;

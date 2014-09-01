@@ -23,7 +23,7 @@ BOOL isFullPacketReceived(char *packet, size_t packetSize, size_t *realPacketLen
 BOOL isPacketValid(char *packet, size_t packetSize);
 
 // API implementation
-FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, const char *targetsFolderPath)
+FrokResult frokAgentInit(unsigned short port, void *detector, void *recognizer, const char *photoBaseFolderPath, const char *targetsFolderPath)
 {
     int error, option = TRUE;
 
@@ -103,8 +103,8 @@ FrokResult frokAgentInit(unsigned short port, const char *photoBaseFolderPath, c
     }
 
     TRACE_N("Alloc frokAPI instance");
-    context->api = frokAPIAlloc(photoBaseFolderPath, targetsFolderPath, NULL, NULL);
-
+    context->api = frokAPIAlloc(photoBaseFolderPath, targetsFolderPath, detector, recognizer);
+    frokAPIInit(context->api);
     if(context->api == NULL)
     {
         TRACE_F("frokAPIAlloc failed");
@@ -271,7 +271,7 @@ FrokResult frokAgentSocketListener()
             }
             else if (0 == result)
             {
-                TRACE_N("Timeout reached for reading socket %d. Disconnect", acceptedSocket);
+                TRACE_S("Timeout reached for reading socket %d. Disconnect", acceptedSocket);
                 break;
             }
 
@@ -447,6 +447,7 @@ void frokAgentProcessJson(SOCKET outSock, const char *json, size_t UNUSED(jsonLe
         return;
     }
 
+    TRACE_N("Calling frokAPIExecuteFunction, functionName = %s", functionName);
     res = frokAPIExecuteFunction(context->api, functionName, json, &outJson);
 
     TRACE_N("Send response json %s to remote peer %d", outJson, outSock);

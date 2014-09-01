@@ -38,24 +38,17 @@ void frokAPIDealloc(FrokAPI *instance)
 
 FrokResult frokAPIExecuteFunction(FrokAPI *instance, const char *functionName, const char *inJson, char **outJson)
 {
-    if((instance == NULL) || (functionName = NULL) || (inJson == NULL) || (outJson == NULL))
-    {
-        TRACE_F("Invalid parameters: instance = %p, function name = %p, inJson = %p, outJson = %p", instance, functionName, inJson, outJson);
-        return FROK_RESULT_INVALID_PARAMETER;
-    }
     std::string strFunctionName = functionName;
     std::string strInJson = inJson;
     std::string strOutJson;
-    FrokResult res = instance->ExecuteFunction(strFunctionName, strInJson, strOutJson);
-
     json::Object jOutJson;
     json::Object jInJson;
-
-    try
+    FrokResult res;
+    if((instance == NULL) || (functionName = NULL) || (inJson == NULL) || (outJson == NULL))
     {
-
-        jOutJson = json::Deserialize(strOutJson);
-
+        TRACE_F("Invalid parameters: instance = %p, function name = %p, inJson = %p, outJson = %p", instance, functionName, inJson, outJson);
+        jOutJson["result"] = "fail";
+        jOutJson["reason"] = "internal error";
         try
         {
             jInJson = json::Deserialize(strInJson);
@@ -67,21 +60,51 @@ FrokResult frokAPIExecuteFunction(FrokAPI *instance, const char *functionName, c
             jOutJson["reply_sock"] = -1;
             jOutJson["req_id"] = -1;
         }
+        res = FROK_RESULT_NULL;
+    }
+    else
+    {
+        try
+        {
+            res = instance->ExecuteFunction(strFunctionName, strInJson, strOutJson);
+        }
+        catch(...)
+        {
+            TRACE_F("ExecuteFunction failed");
+            return FROK_RESULT_UNSPECIFIED_ERROR;
+        }
 
-        if(res != FROK_RESULT_SUCCESS)
+
+        try
+        {
+            jOutJson = json::Deserialize(strOutJson);
+            try
+            {
+                jInJson = json::Deserialize(strInJson);
+                jOutJson["reply_sock"] = jInJson["reply_sock"];
+                jOutJson["req_id"] = jInJson["req_id"];
+            }
+            catch(...)
+            {
+                jOutJson["reply_sock"] = -1;
+                jOutJson["req_id"] = -1;
+            }
+
+            if(res != FROK_RESULT_SUCCESS)
+            {
+                jOutJson["result"] = "fail";
+                jOutJson["reason"] = FrokResultToString(res);
+            }
+            else
+            {
+                jOutJson["result"] = "success";
+            }
+        }
+        catch(...)
         {
             jOutJson["result"] = "fail";
-            jOutJson["reason"] = FrokResultToString(res);
+            jOutJson["reason"] = "internal error";
         }
-        else
-        {
-            jOutJson["result"] = "success";
-        }
-    }
-    catch(...)
-    {
-        jOutJson["result"] = "fail";
-        jOutJson["reason"] = "internal error";
     }
 
     std::string str = json::Serialize(jOutJson);
@@ -109,7 +132,7 @@ char *getFunctionFromJson(const char *inJson)
         return NULL;
     }
     std::string cmd = jObject["cmd"].ToString();
-    char *result = new char [cmd.size()];
+    char *result = new char [cmd.size() + 1];
     strcpy(result, cmd.c_str());
     return result;
 }
