@@ -155,8 +155,12 @@ int main(int argc, char *argv[])
 
 
 
-    if(FALSE == obtainCPU(1))
-    {}
+    if(FALSE == obtainCPU(cpu_number))
+    {
+        TRACE_F("obtainCPU failed");
+        frokLibCommonDeinit();
+        exit(EXIT_FAILURE);
+    }
 
     sigintAction.sa_flags = SA_SIGINFO;
     sigemptyset(&sigintAction.sa_mask);
