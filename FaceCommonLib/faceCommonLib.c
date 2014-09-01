@@ -1,112 +1,209 @@
+#include "faceCommonLib.h"
+
 #include <math.h>
 #include <malloc.h>
-
-#include "faceCommonLib.h"
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #define MODULE_NAME     "COMMON_LIB"
 
-static pthread_mutex_t file_cs;
-struct timespec startTime;
-static BOOL init;
+frokCommonContext *commonContext = NULL;
 
-FrokResult InitFaceCommonLib(const char *log_name)
+BOOL frokLibCommonParseConfigFile(const char *configFile);
+
+BOOL frokLibCommonParseConfigFile(const char *configFile)
+{
+    if(commonContext == NULL)
+    {
+        TRACE_F("Not inited");
+        return FALSE;
+    }
+}
+
+FrokResult InitFaceCommonLib(const char *configFilePath)
 {
     int result = 0;
+    int fd;
     pthread_mutexattr_t mAttr;
 
-    if(init == TRUE)
+    if(commonContext != NULL)
     {
         TRACE_W("Already inited");
         return FROK_RESULT_SUCCESS;
     }
 
-    init = TRUE;
+    TRACE_N("Creating memory for commonContext");
+    commonContext = calloc(1, sizeof(frokCommonContext));
+    if(!commonContext)
+    {
+        TRACE_F("calloc failed on error %s", strerror(errno));
+        return FROK_RESULT_MEMORY_FAULT;
+    }
+    TRACE_N("commonContext created");
+
+    TRACE_N("Set starting time");
+    memset(&commonContext->startTime, 0, sizeof(struct timespec));
+    if(-1 == clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &commonContext->startTime))
+    {
+        TRACE_F("clock_gettime failed on error %s", strerror(errno));
+        free(commonContext);
+        commonContext = NULL;
+        return FROK_RESULT_LINUX_ERROR;
+    }
+    TRACE_S("Starting time is set");
+
+    TRACE_N("Configuring common mutex");
 
     if(0 != (result = pthread_mutexattr_init(&mAttr)))
     {
         TRACE_F("pthread_mutexattr_init failed on error %s", strerror(result));
-        init = FALSE;
+        free(commonContext);
+        commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
     }
     if(0 != (result = pthread_mutexattr_settype(&mAttr, PTHREAD_MUTEX_RECURSIVE_NP)))
     {
         TRACE_F("pthread_mutexattr_settype failed on error %s", strerror(result));
-        init = FALSE;
+        free(commonContext);
+        commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
     }
 
-    if(0 != (result = pthread_mutex_init(&file_cs, &mAttr)))
+    if(0 != (result = pthread_mutex_init(&commonContext->common_cs, &mAttr)))
     {
         TRACE_F("pthread_mutex_init failed on error %s", strerror(result));
-        init = FALSE;
+        pthread_mutexattr_destroy(&mAttr);
+        free(commonContext);
+        commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
     }
 
-    if(0 != (result = pthread_mutex_init(&trace_cs, &mAttr)))
+    TRACE_S("common mutext inited");
+
+    TRACE_N("Configuring trace mutex");
+
+    if(0 != (result = pthread_mutex_init(&commonContext->trace_cs, &mAttr)))
     {
         TRACE_F("pthread_mutex_init failed on error %s", strerror(result));
-        init = FALSE;
+        pthread_mutexattr_destroy(&mAttr);
+        pthread_mutex_destroy(&commonContext->common_cs);
+        free(commonContext);
+        commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
     }
+
+    TRACE_S("trace mutex inited");
 
     if(0 != (result = pthread_mutexattr_destroy(&mAttr)))
     {
         TRACE_F("pthread_mutexattr_destroy failed on error %s", strerror(result));
-        init = FALSE;
+        pthread_mutex_destroy(&commonContext->trace_cs);
+        pthread_mutex_destroy(&commonContext->common_cs);
+        free(commonContext);
+        commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
     }
 
-    if(log_name != NULL)
+    if(configFilePath == NULL)
     {
-        pthread_mutex_lock(&file_cs);
-
-        free(log_file);
-        log_file = malloc(strlen(log_name) + 1);
-        if(!log_file)
-        {
-            TRACE_F("malloc failed on error %s", strerror(errno));
-            init = FALSE;
-            return FROK_RESULT_MEMORY_FAULT;
-        }
-
-        strcpy(log_file, log_name);
-
-        pthread_mutex_unlock(&file_cs);
+        configFilePath = FROK_LIB_COMMON_DEFAULT_CONFIG_FILENAME;
     }
 
-    memset(&startTime, 0, sizeof(startTime));
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &startTime);
+    TRACE_N("Parsing config file %s", configFilePath);
+
+    if(FALSE == frokLibCommonParseConfigFile(configFilePath))
+    {
+        TRACE_F("Parsing config file failed");
+        pthread_mutex_destroy(&commonContext->trace_cs);
+        pthread_mutex_destroy(&commonContext->common_cs);
+        free(commonContext);
+        commonContext = NULL;
+        return FROK_RESULT_UNSPECIFIED_ERROR;
+    }
+    TRACE_S("Config file parsed");
+
+    TRACE_N("Setting unspecified defaults");
+    if(commonContext->outputFile == NULL)
+    {
+        commonContext->outputFile = calloc(strlen(FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME) + 1, 1);
+        if(commonContext->outputFile == NULL)
+        {
+            TRACE_F("calloc failed on error %s", strerror(errno));
+            pthread_mutex_destroy(&commonContext->trace_cs);
+            pthread_mutex_destroy(&commonContext->common_cs);
+            free(commonContext);
+            commonContext = NULL;
+            return FROK_RESULT_MEMORY_FAULT;
+        }
+        strcpy(commonContext->outputFile, FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME);
+    }
+
+#ifndef TRACE_DEBUG
+    TRACE_S("Setting std fd for release");
+    TRACE_S("\tstdin is now /dev/null\n\tstdout is now %s\n\tstderr is now %s", commonContext->outputFile, commonContext->outputFile);
+
+    fd = open("/dev/null", O_RDWR);
+    if(fd == -1)
+    {
+        TRACE_F("Failed to open \"/dev/null\" on error %s", strerror(errno));
+        pthread_mutex_destroy(&commonContext->trace_cs);
+        pthread_mutex_destroy(&commonContext->common_cs);
+        free(commonContext->outputFile);
+        free(commonContext);
+        commonContext = NULL;
+        return FROK_RESULT_LINUX_ERROR;
+    }
+
+    stdin = fd;
+
+    fd = open(commonContext->outputFile, O_CREAT | O_RDWR | O_TRUNC, 0666);
+    if(fd == -1)
+    {
+        TRACE_F("Failed to open \"%s\" on error %s", commonContext->outputFile, strerror(errno));
+        pthread_mutex_destroy(&commonContext->trace_cs);
+        pthread_mutex_destroy(&commonContext->common_cs);
+        free(commonContext->outputFile);
+        free(commonContext);
+        commonContext = NULL;
+        return FROK_RESULT_LINUX_ERROR;
+    }
+
+    stderr = fd;
+    stdout = fd;
+#endif //TRACE_DEBUG
+
+    TRACE_N("Init succeed");
 
     return FROK_RESULT_SUCCESS;
 }
 
-FrokResult DeinitFaceCommonLib()
+void DeinitFaceCommonLib()
 {
     int result = 0;
 
-    if(init == FALSE)
+    if(commonContext == NULL)
     {
         TRACE_W("Already deinited");
-        return FROK_RESULT_SUCCESS;
+        return;
     }
 
-    init = FALSE;
-
-    free(log_file);
-
-    if(0 != (result = pthread_mutex_destroy(&file_cs)))
+    if(0 != (result = pthread_mutex_destroy(&commonContext->common_cs)))
     {
-        TRACE_F("pthread_mutexattr_destroy failed on error %s", strerror(result));
-        return FROK_RESULT_LINUX_ERROR;
+        TRACE_W("pthread_mutexattr_destroy failed on error %s", strerror(result));
     }
 
-    if(0 != (result = pthread_mutex_destroy(&trace_cs)))
+    if(0 != (result = pthread_mutex_destroy(&commonContext->trace_cs)))
     {
-        TRACE_F("pthread_mutexattr_destroy failed on error %s", strerror(result));
-        return FROK_RESULT_LINUX_ERROR;
+        TRACE_W("pthread_mutexattr_destroy failed on error %s", strerror(result));
     }
 
-    return FROK_RESULT_SUCCESS;
+    free(commonContext->outputFile);
+    commonContext->outputFile;
+
+    free(commonContext);
+    commonContext = NULL;
 }
 
 const char *FrokResultToString(FrokResult res)

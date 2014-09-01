@@ -151,7 +151,6 @@ double FaceRecognizerEigenfaces::GetSimilarity_ChiSquare(const cv::Mat &firstIma
 
     TRACE_T("Comparing histograms");
     double chiSquare = 0;
-    UNREFERENCED_PARAMETER(chiSquare);
     try
     {
         chiSquare = cv::compareHist(firstImageHist, secondImageHist, CV_COMP_CHISQR);

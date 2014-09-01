@@ -15,12 +15,8 @@ void usage()
     return;
 }
 
-static void sigintHandler(int sig, siginfo_t *si, void *p)
+static void sigintHandler(int UNUSED(sig), siginfo_t *UNUSED(si), void *UNUSED(p))
 {
-    UNREFERENCED_PARAMETER(sig);
-    UNREFERENCED_PARAMETER(si);
-    UNREFERENCED_PARAMETER(p);
-
     TRACE_S("SIGINT captured!");
     /*if(server != NULL)
     {

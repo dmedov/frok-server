@@ -6,9 +6,12 @@
 #include "io.h"                 // File system - depend operations, input - output operations
 #include "commonMath.h"         // Calculating ChiSquare percantage
 #include "linux/linuxDefines.h"
+#include "linux/commonSched.h"
+
 // Common includes
 #include <time.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 // Result of Face*Libraries
 typedef enum FrokResult
@@ -28,9 +31,11 @@ typedef enum FrokResult
     // etc
 } FrokResult;
 
-// Common defines
-#define UNREFERENCED_PARAMETER(P)           (P=P)
+// Common defaults
+#define FROK_LIB_COMMON_DEFAULT_CONFIG_FILENAME "/etc/frok/frok.conf"
+#define FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME "/var/log/frok.log"
 
+// Common defines
 #define COMMAND_WITH_LENGTH(__CHARS__)      (__CHARS__), strlen((__CHARS__))
 #define CASE_RET_STR(x)                     case x: return #x
 
@@ -38,16 +43,27 @@ typedef enum FrokResult
 #define TRUE                                1
 #define FALSE                               0
 
+#pragma pack(push, 1)
+typedef struct frokCommonContext
+{
+    char *outputFile;
+    pthread_mutex_t common_cs;
+    pthread_mutex_t trace_cs;
+    struct timespec startTime;
+}frokCommonContext;
+#pragma pack(pop)
+
+extern frokCommonContext *commonContext;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // Library init functions
 const char *FrokResultToString(FrokResult res);
-FrokResult InitFaceCommonLib(const char *log_name);
-FrokResult DeinitFaceCommonLib();
+FrokResult InitFaceCommonLib(const char *configFilePath);
+void DeinitFaceCommonLib();
 void set_time_stamp(unsigned *sec, unsigned *usec);
-//void print_time(timespec startTime, timespec endTime);
 
 #ifdef __cplusplus
 }

@@ -10,7 +10,7 @@
 
 #define MODULE_NAME     "IO"
 
-pthread_mutex_t trace_cs;
+
 
 char *log_file;
 
@@ -110,20 +110,3 @@ int getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
     */
     return 0;
 }
-
-void print_time(struct timespec startTime, struct timespec endTime)
-{
-    unsigned sec  = endTime.tv_sec - startTime.tv_sec;
-    unsigned nsec = endTime.tv_nsec - startTime.tv_nsec;
-
-    if (startTime.tv_nsec > endTime.tv_nsec)
-    {
-        sec--;
-        nsec += 1e9;
-    }
-
-    pthread_mutex_lock(&trace_cs);
-    fprintf(stdout, "Time elapsed: %u.%09u\n", sec, nsec);
-    pthread_mutex_unlock(&trace_cs);
-}
-

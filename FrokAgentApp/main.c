@@ -6,7 +6,7 @@
 
 #define MODULE_NAME "AGENT"
 
-
+//{"cmd":"train", "arrIds":["1"]}
 
 static void sigintHandler(int UNUSED(sig), siginfo_t UNUSED(*si), void UNUSED(*p))
 {
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     if(FROK_RESULT_SUCCESS != (res = InitFaceCommonLib("agent.log")))
     {
         TRACE("InitFaceCommonLib failed on error %s", FrokResultToString(res));
-        return -1;
+        exit(EXIT_FAILURE);
     }
 
     sigintAction.sa_flags = SA_SIGINFO;
@@ -50,10 +50,34 @@ int main(int argc, char *argv[])
     }
     TRACE_S("sigaction succeed");
 
+    TRACE_N("Create detector instance");
+    void *detector = frokFaceDetectorAlloc();
+    if(detector == NULL)
+    {
+        TRACE_F("Failed to create detector instance");
+        DeinitFaceCommonLib();
+        return -1;
+    }
+    TRACE_S("detector instance created");
+
+
+    TRACE_N("Create recognizer instance");
+    void *recognizer = frokFaceRecognizerEigenfacesAlloc();
+    if(recognizer == NULL)
+    {
+        TRACE_F("Failed to create recognizer instance");
+        frokFaceDetectorDealloc(detector);
+        DeinitFaceCommonLib();
+        return -1;
+    }
+    TRACE_S("recognizer instance created");
+
     TRACE_N("Calling frokAgentInit...");
-    if(FROK_RESULT_SUCCESS != (res = frokAgentInit(27015, DEFAULT_PHOTO_BASE_PATH, DEFAULT_TARGETS_FOLDER_PATH)))
+    if(FROK_RESULT_SUCCESS != (res = frokAgentInit(27015, detector, recognizer, DEFAULT_PHOTO_BASE_PATH, DEFAULT_TARGETS_FOLDER_PATH)))
     {
         TRACE_F("frokAgentInit failed on error %s", FrokResultToString(res));
+        frokFaceDetectorDealloc(detector);
+        frokFaceRecognizerEigenfacesDealloc(recognizer);
         DeinitFaceCommonLib();
         return -1;
     }
@@ -65,6 +89,8 @@ int main(int argc, char *argv[])
     {
         TRACE_F("frokAgentStart failed on error %s", FrokResultToString(res));
         frokAgentDeinit();
+        frokFaceDetectorDealloc(detector);
+        frokFaceRecognizerEigenfacesDealloc(recognizer);
         DeinitFaceCommonLib();
         return -1;
     }
@@ -95,10 +121,16 @@ int main(int argc, char *argv[])
     }
     TRACE_S("frokAgentDeinit succeed");
 
-    if(FROK_RESULT_SUCCESS != (res = DeinitFaceCommonLib()))
-    {
-        TRACE("InitFaceCommonLib failed on error %s", FrokResultToString(res));
-        return -1;
-    }
+    TRACE_N("Delete detector instance");
+    frokFaceDetectorDealloc(detector);
+    TRACE_S("Detector instance deleted");
+
+    TRACE_N("Delete recognizer instance");
+    frokFaceRecognizerEigenfacesDealloc(recognizer);
+    TRACE_S("Recognizer instance deleted");
+
+    TRACE_N("Deinig lib common");
+    DeinitFaceCommonLib();
+
     return 0;
 }
