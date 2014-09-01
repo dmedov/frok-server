@@ -556,7 +556,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
 #ifdef FAST_SEARCH_ENABLED
     if(faceParts->rightEyeFound == true && faceParts->leftEyeFound == true)
     {
-        TRACE_F_T("Both eyes were found. Mouth and nose detection are being skipped due to FAST_SEARCH_ENABLED algorythm");
+        TRACE_W_T("Both eyes were found. Mouth and nose detection are being skipped due to FAST_SEARCH_ENABLED algorythm");
         goto detect_finish;
     }
 #endif // FAST_SEARCH_ENABLED

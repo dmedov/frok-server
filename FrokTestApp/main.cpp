@@ -17,9 +17,9 @@ void usage()
 
 int main(void)
 {
-    /*if(!InitFaceCommonLib())
+    /*if(!frokLibCommonInit())
     {
-        TRACE_F("InitFaceCommonLib");
+        TRACE_F("frokLibCommonInit");
         return -1;
     }*/
 

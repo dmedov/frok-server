@@ -136,7 +136,7 @@ FrokResult TrainUserModel(void *inParams, void **outParams, const char *userBase
         photosPath.append("photos/");
         char **files;
         unsigned filesNum = 0;
-        if(-1 == getFilesFromDir(photosPath.c_str(), &files, &filesNum))
+        if(FALSE == getFilesFromDir(photosPath.c_str(), &files, &filesNum))
         {
             TRACE_F_T("Failed to get photos from directory %s", currentUserFolder.c_str());
             continue;

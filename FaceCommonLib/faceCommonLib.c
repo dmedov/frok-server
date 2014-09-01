@@ -22,7 +22,7 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
     }
 }
 
-FrokResult InitFaceCommonLib(const char *configFilePath)
+FrokResult frokLibCommonInit(const char *configFilePath)
 {
     int result = 0;
     int fd;
@@ -179,7 +179,7 @@ FrokResult InitFaceCommonLib(const char *configFilePath)
     return FROK_RESULT_SUCCESS;
 }
 
-void DeinitFaceCommonLib()
+void frokLibCommonDeinit()
 {
     int result = 0;
 

@@ -1,13 +1,6 @@
 #ifndef FACECOMMONLIB_H
 #define FACECOMMONLIB_H
 
-// Lib includes
-//#include "commonThread.h"       // class for safe working with unix threads
-#include "io.h"                 // File system - depend operations, input - output operations
-#include "commonMath.h"         // Calculating ChiSquare percantage
-#include "linux/linuxDefines.h"
-#include "linux/commonSched.h"
-
 // Common includes
 #include <time.h>
 #include <pthread.h>
@@ -55,14 +48,22 @@ typedef struct frokCommonContext
 
 extern frokCommonContext *commonContext;
 
+
+// Lib includes
+//#include "commonThread.h"       // class for safe working with unix threads
+#include "io.h"                 // File system - depend operations, input - output operations
+#include "commonMath.h"         // Calculating ChiSquare percantage
+#include "linux/linuxDefines.h"
+#include "linux/commonSched.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // Library init functions
 const char *FrokResultToString(FrokResult res);
-FrokResult InitFaceCommonLib(const char *configFilePath);
-void DeinitFaceCommonLib();
+FrokResult frokLibCommonInit(const char *configFilePath);
+void frokLibCommonDeinit();
 void set_time_stamp(unsigned *sec, unsigned *usec);
 
 #ifdef __cplusplus

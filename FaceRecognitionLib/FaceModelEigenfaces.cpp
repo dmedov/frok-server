@@ -29,7 +29,7 @@ FrokResult FaceModelEigenfaces::GenerateUserModel(const char *grayFacesPath)
     std::vector< std::string > photos;
     char **files;
     unsigned filesNum;
-    if(-1 == getFilesFromDir(grayFacesPath, &files, &filesNum))
+    if(FALSE == getFilesFromDir(grayFacesPath, &files, &filesNum))
     {
         TRACE_F_T("Failed to get photos from directory %s", grayFacesPath);
         return FROK_RESULT_UNSPECIFIED_ERROR;

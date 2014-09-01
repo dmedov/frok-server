@@ -75,7 +75,7 @@ FrokServer::~FrokServer()
 
 bool FrokServer::StartFrokServer()
 {
-    if(!InitFaceCommonLib())
+    if(!frokLibCommonInit())
     {
         return false;
     }
@@ -121,7 +121,7 @@ bool FrokServer::StopFrokServer()
         success = false;
     }
 
-    if(!DeinitFaceCommonLib())
+    if(!frokLibCommonDeinit())
     {
         success = false;
     }

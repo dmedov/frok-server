@@ -12,6 +12,12 @@ BOOL frokBecomeADaemon()
     pid_t pid;
     int i;
 
+    if(!commonContext)
+    {
+        TRACE_F("frokLibCommon not inited");
+        return FALSE;
+    }
+
     TRACE_N("Try to become a daemon");
 
     TRACE_N("Create faemon process");

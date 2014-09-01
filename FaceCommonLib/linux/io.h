@@ -58,8 +58,8 @@ extern "C" {
 
 // don't forget '/' in the end of dir name.
 // Example: good = "/home/workspace/" bad: "/home/workspace"
-int getFilesFromDir(const char *dir, char ***files, unsigned *filesNum);
-int getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum);
+BOOL getFilesFromDir(const char *dir, char ***files, unsigned *filesNum);
+BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum);
 
 #ifdef __cplusplus
 }
