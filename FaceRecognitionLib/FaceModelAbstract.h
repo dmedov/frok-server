@@ -7,7 +7,7 @@
 #include <opencv2/contrib/contrib.hpp>
 
 // include dependencies
-#include "faceCommonLib.h"
+#include "frokLibCommon.h"
 
 class FaceModelAbstract
 {

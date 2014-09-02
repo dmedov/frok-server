@@ -43,7 +43,7 @@ bool FAPI_TrainUserModel_JSON2FUNCP(ConvertParams* psConvertParams)
     json::Object jsonParams;
     try
     {
-         jsonParams = json::Deserialize(psConvertParams->jsonParameters);
+         jsonParams = (json::Object)json::Deserialize(psConvertParams->jsonParameters);
     }
     catch(...)
     {
@@ -54,13 +54,13 @@ bool FAPI_TrainUserModel_JSON2FUNCP(ConvertParams* psConvertParams)
     if(!jsonParams.HasKeys(InTrainUserModelParameters))
     {
         TRACE_F("Invalid parameter: input json doesn't have all mandatory keys.");
-        TRACE("Mandatory parameter:");
+        TRACE_N("Mandatory parameter:");
         for(std::vector<std::string>::const_iterator it = InTrainUserModelParameters.begin(); it != InTrainUserModelParameters.end(); ++it)
         {
-            TRACE("\t%s", ((std::string)*it).c_str());
+            TRACE_N("\t%s", ((std::string)*it).c_str());
         }
 
-        TRACE("Input json: %s", psConvertParams->jsonParameters.c_str());
+        TRACE_N("Input json: %s", psConvertParams->jsonParameters.c_str());
         return false;
     }
 
@@ -109,8 +109,6 @@ FrokResult TrainUserModel(void *inParams, void **outParams, const char *userBase
     *outParams = NULL;
 
     std::vector<std::string> ids = in->ids;
-    timespec startTime;
-    timespec endTime;
     bool isSuccess = true;
     TRACE_T("Training started");
     if(ids.empty())
@@ -129,12 +127,6 @@ FrokResult TrainUserModel(void *inParams, void **outParams, const char *userBase
 
     for(std::vector<std::string>::const_iterator it = ids.begin(); it != ids.end(); ++it)
     {
-        memset(&startTime, 0, sizeof(startTime));
-        memset(&endTime, 0, sizeof(endTime));
-
-        printf("Starting train for user %s\n", ((std::string)*it).c_str());
-        clock_gettime(CLOCK_REALTIME, &startTime);
-
         std::string currentUserFolder = userBasePath;
         currentUserFolder.append(*it).append("/");
 
@@ -142,10 +134,17 @@ FrokResult TrainUserModel(void *inParams, void **outParams, const char *userBase
 
         std::string photosPath = currentUserFolder;
         photosPath.append("photos/");
-        if(-1 == getFilesFromDir(photosPath.c_str(), userPhotos))
+        char **files;
+        unsigned filesNum = 0;
+        if(FALSE == getFilesFromDir(photosPath.c_str(), &files, &filesNum))
         {
             TRACE_F_T("Failed to get photos from directory %s", currentUserFolder.c_str());
             continue;
+        }
+
+        for(unsigned i = 0; i < filesNum; i++)
+        {
+            userPhotos.push_back(files[i]);
         }
 
         TRACE_T("Found %u photos for user %s", (unsigned)userPhotos.size(), ((std::string)*it).c_str());
@@ -245,11 +244,6 @@ FrokResult TrainUserModel(void *inParams, void **outParams, const char *userBase
                 isSuccess = false;
             }
         }
-
-        clock_gettime(CLOCK_REALTIME, &endTime);
-
-        printf("Training for user %s finished\n", ((std::string)*it).c_str());
-        print_time(startTime, endTime);
     }
 
     if(isSuccess == false)

@@ -4,14 +4,17 @@
 #define CUT_TIMEOUT            (600)
 #define MAX_THREADS_AND_CASCADES_NUM        (1)
 
+#include "FrokFaceDetector.h"
+#include "FaceRecognizerEigenfaces.h"
+#include "frokLibCommon.h"
+
+#ifdef __cplusplus
+
 // include dependencies
 #include <cv.h>
 #include <highgui.h>
 
 #include "json.h"
-#include "FrokFaceDetector.h"
-#include "FaceRecognizerEigenfaces.h"
-#include "faceCommonLib.h"
 
 #pragma pack(push, 1)
 
@@ -93,5 +96,7 @@ bool FAPI_Recognize_JSON2FUNCP(void* converterParams);
 FrokResult Recognize(std::vector< std::map<std::string, double> > &similarities, std::vector<std::string> ids, const char *userBasePath, std::string photoName, const char *targetPhotosPath, FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer);
 FrokResult GetFacesFromPhoto(void *pContext);
 FrokResult AddFaceFromPhotoToModel(void *pContext);*/
+
+#endif // C++
 
 #endif // FROKAPIFUNCTION_H

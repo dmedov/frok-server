@@ -31,7 +31,9 @@ endif
 ifeq ($(CFG),release)
 LDFLAGS += -Wl,-O1
 CONFIG := build_release
+CFLAGS += -D_GNU_SOURCE
 else
+CFLAGS += -D_GNU_SOURCE
 CFLAGS += -DTRACE_DEBUG
 CFLAGS += -g -fPIC 
 CONFIG := build_debug

@@ -3,6 +3,8 @@
 // FaceServer defaults
 #define MAX_SOCKET_BUFF_SIZE            (163840)
 
+#ifdef __cplusplus
+
 // include dependencies
 #include "FaceDetectorAbstarct.h"
 
@@ -103,4 +105,11 @@ private:
     FrokResult RemoveDrowbackFrokImage(cv::Mat &image);
     FrokResult ResizeFaceAndImage(cv::Mat &targetImage, cv::Rect &faceCoords);
 };
+#else
+
+void* frokFaceDetectorAlloc();
+void frokFaceDetectorDealloc(void* instance);
+
+#endif //C++
+
 #endif

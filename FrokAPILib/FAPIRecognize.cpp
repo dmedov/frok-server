@@ -53,7 +53,7 @@ bool FAPI_Recognize_JSON2FUNCP(ConvertParams* psConvertParams)
     json::Object jsonParams;
     try
     {
-         jsonParams = json::Deserialize(psConvertParams->jsonParameters);
+         jsonParams = (json::Object)json::Deserialize(psConvertParams->jsonParameters);
     }
     catch(...)
     {
@@ -64,13 +64,13 @@ bool FAPI_Recognize_JSON2FUNCP(ConvertParams* psConvertParams)
     if(!jsonParams.HasKeys(InRecognizeParameters))
     {
         TRACE_F("Invalid parameter: input json doesn't have all mandatory keys.");
-        TRACE("Mandatory parameter:");
+        TRACE_N("Mandatory parameter:");
         for(std::vector<std::string>::const_iterator it = InRecognizeParameters.begin(); it != InRecognizeParameters.end(); ++it)
         {
-            TRACE("\t%s", ((std::string)*it).c_str());
+            TRACE_N("\t%s", ((std::string)*it).c_str());
         }
 
-        TRACE("Input json: %s", psConvertParams->jsonParameters.c_str());
+        TRACE_N("Input json: %s", psConvertParams->jsonParameters.c_str());
         return false;
     }
 
@@ -152,13 +152,8 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
     StructInParams *in = (StructInParams*)inParams;
     *outParams = new StructOutParams;
 
-    timespec startTime;
-    timespec endTime;
-
     std::vector<std::string> ids = in->ids;
     std::string photoName = in->photoName;
-
-    TRACE_T("Recognizing started");
 
     ((StructOutParams*)*outParams)->similarities.clear();
     if(ids.empty())
@@ -173,12 +168,6 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
         return FROK_RESULT_INVALID_PARAMETER;
     }
     FrokResult res;
-
-    memset(&startTime, 0, sizeof(startTime));
-    memset(&endTime, 0, sizeof(endTime));
-
-    printf("Starting recognition\n");
-    clock_gettime(CLOCK_REALTIME, &startTime);
 
     TRACE_T("Loading models for requested ids");
 
@@ -236,11 +225,6 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
         }
         ((StructOutParams*)*outParams)->similarities.push_back(currenFaceSimilarities);
     }
-
-    clock_gettime(CLOCK_REALTIME, &endTime);
-
-    printf("Recognition finished\n");
-    print_time(startTime, endTime);
 
     if(((StructOutParams*)*outParams)->similarities.size() == 0)
     {

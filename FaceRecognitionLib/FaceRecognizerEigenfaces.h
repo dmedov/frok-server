@@ -1,10 +1,12 @@
 #ifndef FACERECOGNIZEREIGENFACES_H
 #define FACERECOGNIZEREIGENFACES_H
 
+#ifdef __cplusplus
+
 // include dependencies
 #include "FaceRecognizerAbstract.h"
 #include "FaceModelEigenfaces.h"
-#include "faceCommonLib.h"
+#include "frokLibCommon.h"
 
 typedef std::pair< std::string, FaceModelAbstract* > userIdAndModel;
 typedef std::pair< std::string, double > userIdAndSimilarity;
@@ -29,5 +31,13 @@ private:
     __int64_t calcImageHash(cv::Mat &image);
     __int64_t calcHammingDistance(__int64_t firstHash, __int64_t secondHash);
 };
+
+#else
+
+void *frokFaceRecognizerEigenfacesAlloc();
+BOOL frokFaceRecognizerEigenfacesInit(void *instance, const char *photoBasePath);
+void frokFaceRecognizerEigenfacesDealloc(void *instance);
+
+#endif // C++
 
 #endif // FACERECOGNIZEREIGENFACES_H

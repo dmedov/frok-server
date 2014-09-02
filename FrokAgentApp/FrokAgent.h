@@ -2,25 +2,33 @@
 #define FROKAGENT_H
 
 #define DEFAULT_PORT                28015
-#define MAX_SOCKET_BUFF_SIZE            (163840)
 
 // include dependencies
+#include "frokLibCommon.h"
 #include "FrokAPI.h"
-#include "faceCommonLib.h"
+#include "pthread.h"
 
-typedef enum NetResult
+// Client data timeout. If timeout reqached and no data received - disconnect
+#define FROK_AGENT_CLIENT_DATA_TIMEOUT_MS       10000
+
+#pragma pack(push, 1)
+typedef struct FrokAgentContext
 {
-    NET_SUCCESS                 = 0x00,
-    NET_SOCKET_ERROR            = 0x01,
-    NET_MEM_ALLOCATION_FAIL     = 0x02,
-    NET_NO_CALLBACK             = 0x03,
-    NET_UNSPECIFIED_ERROR       = 0x04,
-    NET_INVALID_PARAM           = 0x05,
-    NET_COMMON_THREAD_ERROR     = 0x06,
-    NET_ALREADY_STARTED         = 0x07
-    //...
-} NetResult;
+    SOCKET localSock;
+    unsigned short localPortNumber;
+    BOOL agentStarted;
+    pthread_t agentThread;
+    int terminateAgentEvent;
+    FrokAPI api;
+}FrokAgentContext;
+#pragma pack(pop)
 
+FrokResult frokAgentInit(unsigned short port, void *detector, void *recognizer, const char *photoBaseFolderPath, const char *targetsFolderPath);
+FrokResult frokAgentStart();
+FrokResult frokAgentStop();
+FrokResult frokAgentDeinit();
+
+/*
 #pragma pack(push, 1)
 
 typedef struct
@@ -56,6 +64,6 @@ protected:
 private:
     // Only one connected server is allowed. Disconnect current connection to allow new server connect
     void ServerListener();
-};
+};*/
 
 #endif // FROKAGENT_H

@@ -13,6 +13,7 @@ TARGETTYPE := staticlib
 
 LIBS := -L$(BINOUTDIR)			                    \
 	-L/usr/lib/x86_64-linux-gnu	-lrt -lpthread      \
+    -lFrokJsonlib                                   \
     -lFaceCommonLib                                 \
 	-lFaceDetectionLib                              \
     -lFaceRecognitionLib                            \
@@ -23,10 +24,12 @@ CFLAGS += -Wno-unknown-pragmas
 
 SRCDIRS :=  ../$(SRCDIR)/
 
-HDRDIRS :=  ../$(SRCDIR)/		                    \
-	../FaceDetectionLib/	                        \
-	../FaceRecognitionLib/	                        \
-    ../FaceCommonLib/	                            \
+HDRDIRS :=  ../$(SRCDIR)/		\
+	../FrokJsonlib/			\
+    	../FrokLibCommon/linux/		\
+	../FaceDetectionLib/	        \
+	../FaceRecognitionLib/	        \
+	../FrokLibCommon/	        \
 	$(OPENCV_INCLUDES)
 
 include makefile.actions

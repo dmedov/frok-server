@@ -1,15 +1,14 @@
 #include <stdio.h>
 #include "FrokAPI.h"
-#include "faceCommonLib.h"
+#include "frokLibCommon.h"
+
+#define MODULE_NAME     "TEST"
 
 void usage()
 {
-    printf("FaceDetectionApp <Local port number>");
+    TRACE_N("FaceDetectionApp <Local port number>");
     return;
 }
-
-#define MODULE_NAME ""
-
 
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -17,11 +16,11 @@ void usage()
 
 int main(void)
 {
-    if(!InitFaceCommonLib())
+    /*if(!frokLibCommonInit())
     {
-        TRACE_F("InitFaceCommonLib");
+        TRACE_F("frokLibCommonInit");
         return -1;
-    }
+    }*/
 
 
     if(-1 == setpriority(PRIO_PROCESS, getpid(), -20))
@@ -66,8 +65,8 @@ int main(void)
     std::string outJsonRec2;
     //fapi.ExecuteFunction("recognize", inJsonRec2, outJsonRec2);
 
-    printf("1.jpg: %s\n", outJsonRec1.c_str());
-    printf("2.jpg: %s\n", outJsonRec2.c_str());
+    TRACE_N("1.jpg: %s\n", outJsonRec1.c_str());
+    TRACE_N("2.jpg: %s\n", outJsonRec2.c_str());
 
     return 0;
 }

@@ -6,7 +6,7 @@
 #include <highgui.h>
 
 // include dependencies
-#include "faceCommonLib.h"
+#include "frokLibCommon.h"
 
 class FaceDetectorAbstract
 {

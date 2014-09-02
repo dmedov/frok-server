@@ -10,12 +10,12 @@ FaceModelEigenfaces::FaceModelEigenfaces()
 }
 FaceModelEigenfaces::~FaceModelEigenfaces()
 {
-    TRACE("~FaceModelEigenfaces");
+    TRACE_N("~FaceModelEigenfaces");
 }
 FaceModelEigenfaces::FaceModelEigenfaces(std::string userId) : FaceModelAbstract(userId)
 {
     model = cv::createEigenFaceRecognizer();
-    TRACE("new FaceModelEigenfaces");
+    TRACE_N("new FaceModelEigenfaces");
 }
 
 FrokResult FaceModelEigenfaces::GenerateUserModel(const char *grayFacesPath)
@@ -27,10 +27,17 @@ FrokResult FaceModelEigenfaces::GenerateUserModel(const char *grayFacesPath)
         return FROK_RESULT_INVALID_PARAMETER;
     }
     std::vector< std::string > photos;
-    if(-1 == getFilesFromDir(grayFacesPath, photos))
+    char **files;
+    unsigned filesNum;
+    if(FALSE == getFilesFromDir(grayFacesPath, &files, &filesNum))
     {
         TRACE_F_T("Failed to get photos from directory %s", grayFacesPath);
         return FROK_RESULT_UNSPECIFIED_ERROR;
+    }
+
+    for(unsigned i = 0; i < filesNum; i++)
+    {
+        photos.push_back(files[i]);
     }
 
     if(photos.empty())

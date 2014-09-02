@@ -8,7 +8,7 @@
 
 // include dependencies
 #include "FaceModelAbstract.h"
-#include "faceCommonLib.h"
+#include "frokLibCommon.h"
 
 class FaceRecognizerAbstract
 {

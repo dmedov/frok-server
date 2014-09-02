@@ -4,6 +4,34 @@
 #pragma GCC poison IplImage
 #define MODULE_NAME         "FACE_DETECTOR"
 
+extern "C" {
+
+void* frokFaceDetectorAlloc()
+{
+    FrokFaceDetector *instance = NULL;
+    try
+    {
+        instance = new FrokFaceDetector;
+    }
+    catch(...)
+    {
+        TRACE_F("FrokFaceDetector constructor failed");
+        return NULL;
+    }
+    return instance;
+}
+
+void frokFaceDetectorDealloc(void* instance)
+{
+    if(instance != NULL)
+    {
+        delete (FrokFaceDetector*)instance;
+        instance = NULL;
+    }
+}
+
+}
+
 FrokFaceDetector::FrokFaceDetector()
 {
     StructCascade cascade;
@@ -71,12 +99,12 @@ FrokFaceDetector::FrokFaceDetector()
     faceSize = cv::Size(158, 190);
     defaultImageSize = cv::Size(320, 320);
 
-    TRACE("new FrokFaceDetector");
+    TRACE_N("new FrokFaceDetector");
 }
 
 FrokFaceDetector::~FrokFaceDetector()
 {
-    TRACE("~FrokFaceDetector");
+    TRACE_N("~FrokFaceDetector");
 }
 
 FrokResult FrokFaceDetector::SetCascadeParameters(EnumCascades cascade, CascadeProperties params)
@@ -528,7 +556,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
 #ifdef FAST_SEARCH_ENABLED
     if(faceParts->rightEyeFound == true && faceParts->leftEyeFound == true)
     {
-        TRACE_F_T("Both eyes were found. Mouth and nose detection are being skipped due to FAST_SEARCH_ENABLED algorythm");
+        TRACE_W_T("Both eyes were found. Mouth and nose detection are being skipped due to FAST_SEARCH_ENABLED algorythm");
         goto detect_finish;
     }
 #endif // FAST_SEARCH_ENABLED
