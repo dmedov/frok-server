@@ -21,12 +21,12 @@ Requirements:
 		2.5. Installation complete. Use google for help.  
 2. compilation tools 4.8.2 or higher  
 	sudo apt-get update  
-	sudo apt-get dist-upgrade	#should be used for Ubuntu 14.04 Desktop only  
+	sudo apt-get dist-upgrade	#should be used for "fresh" Ubuntu 14.04 Desktop only  
 	sudo apt-get install gcc  
 	sudo apt-get install g++  
 3. git 1.9.1 or higher  
 	sudo apt-get git  
-4. QT creator 4.8 or higher (I use 4.8 on Linux Mint and 5.3 on Ubuntu)  
+4. (!!!FOR DEVELOPERS ONLY!!!) QT creator 4.8 or higher (I use 4.8 on Linux Mint and 5.3 on Ubuntu)  
 	3.1. Download "Qt Online Installer for Linux" from http://qt-project.org/downloads  
 	3.2. Run downloaded script, choose all tools and gcc only installation (we don't need cross-platform compilers). Destination folder should be /opt  
 	3.3. Run "/opt/Qt/Tools/QtCretor/bin/qtcreator" to launch qtcreator  
@@ -65,10 +65,31 @@ Issues:
 Build steps:        [TBD] more info + QtCreator info
 1. in terminal go to FaceDetection library
     cd ./build
-        for debug:
+    	for details:
+     make help
+	for debug:
     make CFG=debug build 
+    make CFG=debug clean
+    make CFG=debug rebuild
         for release:
-    make CFG=release build 
+    make CFG=release build
+    etc 
+	for debug withoud daemon mode:
+    make CFG=debug CCFLAG+=-DNO_DAEMON build
+    etc
+
+Run steps:
+FrokAgentApp needs some root capabilities so it should be run via sudo
+run './FrokAgentApp' for FrokAgentApp parameters usage
+First parameter is #CPU that agent will obtain (-1 to run on all available CPUs)
+Second is port number (agent can be accessed via any ipV4 address on local machine on spicified port)
+example: "sudo ./FrokAgentApp 3 27015" This will start FrokAgentApp that will obtain CPU number 3 and port number 27015
+example: "sudo ./FrokAgentApp -1 3000" This will start 'N' FrokAgentApps where N is number of available CPUs. First agent will obtain #CPU1 and port 3000, second #CPU2 and port 3001 etc
+
+
+
+
+
 
 How to install in Windows:
 1. Donwload and install to C:\ opencv from http://sourceforge.net/projects/opencvlibrary/files/opencv-win/2.4.8/opencv-2.4.8.exe/download
