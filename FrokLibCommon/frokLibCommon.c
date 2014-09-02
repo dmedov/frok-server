@@ -158,7 +158,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
     }
 
 #ifndef TRACE_DEBUG
-    /*TRACE_S("Setting std fd for release");
+    TRACE_S("Setting std fd for release");
     TRACE_S("\tstdin is now /dev/null\n\tstdout is now %s\n\tstderr is now %s", commonContext->outputFile, commonContext->outputFile);
 
     TRACE_N("Closing standart streams");
@@ -231,7 +231,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         return FROK_RESULT_LINUX_ERROR;
     }
 
-    stdout = fdopen(fd, "r");
+    stdout = fdopen(fd, "w");
     if(!stdout)
     {
         TRACE_F("fdopen failed on error %s", strerror(errno));
@@ -243,7 +243,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         return FROK_RESULT_LINUX_ERROR;
     }
 
-    stderr = fdopen(fd, "r");
+    stderr = fdopen(fd, "w");
     if(!stderr)
     {
         TRACE_F("fdopen failed on error %s", strerror(errno));
@@ -253,7 +253,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         free(commonContext);
         commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
-    }*/
+    }
 #endif //TRACE_DEBUG
 
     TRACE_N("Init succeed");

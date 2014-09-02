@@ -10,7 +10,7 @@
 #define MODULE_NAME "AGENT"
 
 //{"cmd":"train", "arrIds":["1"]}
-//{"cmd":"recognize", "arrIds":["1"], "photoName":"1"}
+//{"cmd":"recognize", "arrIds":["1"], "photoName":"1.jpg"}
 
 static void sigintHandler(int UNUSED(sig), siginfo_t UNUSED(*si), void UNUSED(*p))
 {
@@ -146,6 +146,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+#ifndef NO_DAEMON
     TRACE_N("Becoming a daemon");
     if(FALSE == frokBecomeADaemon())
     {
@@ -154,9 +155,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     TRACE_S("Agent is daemon now");
-
-
-
+#endif
     if(FALSE == obtainCPU(cpu_number))
     {
         TRACE_F("obtainCPU failed");
@@ -198,6 +197,16 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     TRACE_S("recognizer instance created");
+
+    TRACE_N("Init model with users from path %s", DEFAULT_PHOTO_BASE_PATH);
+    if(FALSE == frokFaceRecognizerEigenfacesInit(recognizer, DEFAULT_PHOTO_BASE_PATH))
+    {
+        TRACE_F("Failed to init recognizer base. Continue");
+    }
+    else
+    {
+        TRACE_S("Recognize base inited");
+    }
 
     TRACE_N("Calling frokAgentInit...");
     if(FROK_RESULT_SUCCESS != (res = frokAgentInit(port_number, detector, recognizer, DEFAULT_PHOTO_BASE_PATH, DEFAULT_TARGETS_FOLDER_PATH)))

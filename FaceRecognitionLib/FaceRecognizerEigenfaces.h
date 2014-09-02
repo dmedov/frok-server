@@ -35,6 +35,7 @@ private:
 #else
 
 void *frokFaceRecognizerEigenfacesAlloc();
+BOOL frokFaceRecognizerEigenfacesInit(void *instance, const char *photoBasePath);
 void frokFaceRecognizerEigenfacesDealloc(void *instance);
 
 #endif // C++

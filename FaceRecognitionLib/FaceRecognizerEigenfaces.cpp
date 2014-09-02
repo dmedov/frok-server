@@ -29,6 +29,54 @@ void frokFaceRecognizerEigenfacesDealloc(void *instance)
     }
 }
 
+BOOL frokFaceRecognizerEigenfacesInit(void *instance, const char *photoBasePath)
+{
+    char **users = NULL;
+    unsigned usersNum = 0;
+    FrokResult res;
+
+    if(instance == NULL || photoBasePath == NULL)
+    {
+        TRACE_F("Invalid parameter: instance = %p, photoBasePath = %p", instance, photoBasePath);
+        return FALSE;
+    }
+
+    if(FALSE == getSubdirsFromDir(photoBasePath, &users, &usersNum))
+    {
+        TRACE_F("getSubdirsFromDir failed");
+        return FALSE;
+    }
+
+    for(int i = 0; i < usersNum; i++)
+    {
+        std::string user = users[i];
+        std::string userPath = photoBasePath;
+        userPath.append(user).append("/");
+        FaceModelAbstract *model;
+        try
+        {
+            model = new FaceModelEigenfaces(user);
+            if(FROK_RESULT_SUCCESS != (res = model->LoadUserModel(userPath.c_str())))
+            {
+                TRACE_F("LoadUserModel for user %s failed on error %s, continue...", user.c_str(), FrokResultToString(res));
+                continue;
+            }
+        }
+        catch(...)
+        {
+            TRACE_F("Failed to create model. Continue...");
+            continue;
+        }
+
+        if(FROK_RESULT_SUCCESS != (res = ((FaceRecognizerEigenfaces*) instance)->AddFaceUserModel(user, model)))
+        {
+            TRACE_F("Failed to add user model for user %s on error %s, continue...", user.c_str(), FrokResultToString(res));
+            continue;
+        }
+    }
+    return TRUE;
+}
+
 }
 
 FaceRecognizerEigenfaces::FaceRecognizerEigenfaces()
