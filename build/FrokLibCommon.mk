@@ -1,10 +1,10 @@
 ###########################################################
-# mk for project FaceCommonLib
+# mk for project FrokLibCommon
 ###########################################################
 
 include makefile.consts
 include opencv.include
-SRCDIR = FaceCommonLib
+SRCDIR = FrokLibCommon
 
 # Target settings
 LANG := c

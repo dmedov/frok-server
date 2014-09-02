@@ -7,7 +7,7 @@
 
 // include dependencies
 #include "json.h"
-#include "faceCommonLib.h"
+#include "frokLibCommon.h"
 #include "FrokAgentConnector.h"
 /*
 #pragma pack(push, 1)

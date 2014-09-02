@@ -4,14 +4,13 @@
 #include "FrokServer.h"
 
 
-
 #define MODULE_NAME "SERVER"
 
 //FrokServer *server;
 
 void usage()
 {
-    printf("FaceServerApp <Agent IP address> <Agent port number>");
+    TRACE_N("FaceServerApp <Agent IP address> <Agent port number>");
     return;
 }
 

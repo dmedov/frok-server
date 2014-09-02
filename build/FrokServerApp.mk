@@ -25,17 +25,16 @@ SRCDIRS :=  ../$(SRCDIR)/
 
 HDRDIRS :=  ../$(SRCDIR)/		\
 	../FaceDetectionLib/		\
-	../FaceCommonLib/linux/		\
+	../FrokLibCommon/linux/		\
 	../FaceRecognitionLib/		\
-	../FaceCommonLib/	    	\
+	../FrokLibCommon/	    	\
 	../FrokJsonlib/	        	\
 	$(OPENCV_INCLUDES)
 
 make_dependencies:
-	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FaceCommonLib.mk build
+	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FrokLibCommon.mk build
 	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FrokJsonlib.mk build
 	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FrokAPILib.mk build
-	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FaceCommonLib.mk build
 	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FaceDetectionLib.mk build
 	@$(MAKE) --no-print-directory CCFLAG="$(CCFLAG)" LDFLAG="$(LDFLAG)" -f FaceRecognitionLib.mk build
 

@@ -6,7 +6,7 @@
 
 #include "FrokFaceDetector.h"
 #include "FaceRecognizerEigenfaces.h"
-#include "faceCommonLib.h"
+#include "frokLibCommon.h"
 
 #ifdef __cplusplus
 

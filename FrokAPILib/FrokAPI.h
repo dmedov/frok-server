@@ -7,7 +7,7 @@ static const char DEFAULT_TARGETS_FOLDER_PATH [] = "/home/zda/faces/";
 
 // include dependencies
 #include "FrokAPIFunction.h"
-#include "faceCommonLib.h"
+#include "frokLibCommon.h"
 
 #ifdef __cplusplus
 

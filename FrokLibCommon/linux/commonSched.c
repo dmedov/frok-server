@@ -1,5 +1,5 @@
 #include "commonSched.h"
-#include "faceCommonLib.h"
+#include "frokLibCommon.h"
 
 #include <sys/resource.h>
 #include <sys/time.h>
@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sched.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define MODULE_NAME     "SCHED"
 

@@ -12,10 +12,10 @@ OBJECTS_DIR = $$OBJECTS_DIR/$$TARGET
 DEFINES +=  \
             TRACE_DEBUG
 
-DEPENDPATH += ../FaceCommonLib/
+DEPENDPATH += ../FrokLibCommon/
 DEPENDPATH += ../FrokJsonlib/
 
-INCLUDEPATH += ../FaceCommonLib/
+INCLUDEPATH += ../FrokLibCommon/
 INCLUDEPATH += ../FrokJsonlib/
 
 QMAKE_CXXFLAGS +=   -Werror -Wall -Wno-unused-function -Wno-write-strings -Wno-unused-result -Wno-unknown-pragmas

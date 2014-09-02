@@ -1,15 +1,13 @@
 #ifndef IO_H
 #define IO_H
 
-#include "faceCommonLib.h"
+#include "frokCommonTypes.h"
 
 // include dependencies
-#include <time.h>
-#include <string.h>
 #include <stdio.h>
-#include <pthread.h>
 
 #pragma GCC poison cout
+#pragma GCC poison printf
 
 extern char *tracePrefix;
 

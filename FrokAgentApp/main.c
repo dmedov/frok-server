@@ -4,6 +4,8 @@
 #include <signal.h>
 #include <errno.h>
 #include <sched.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define MODULE_NAME "AGENT"
 

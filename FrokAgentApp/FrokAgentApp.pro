@@ -12,13 +12,13 @@ OBJECTS_DIR = $$OBJECTS_DIR/$$TARGET
 DEFINES +=  \
             TRACE_DEBUG
 
-DEPENDPATH += ../FaceCommonLib/
+DEPENDPATH += ../FrokLibCommon/
 DEPENDPATH += ../FrokAPILib/
 
 INCLUDEPATH += /opt/opencv-2.4.9/install/include/opencv/
 INCLUDEPATH += /opt/opencv-2.4.9/install/include/opencv2/
 INCLUDEPATH += /opt/opencv-2.4.9/install/include
-INCLUDEPATH += ../FaceCommonLib/
+INCLUDEPATH += ../FrokLibCommon/
 INCLUDEPATH += ../FaceDetectionLib/
 INCLUDEPATH += ../FaceRecognitionLib/
 INCLUDEPATH += ../FrokAPILib

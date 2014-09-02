@@ -1,14 +1,15 @@
 #include "FrokAgent.h"
-#include "linux/linuxDefines.h"
 
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/ip.h>
 #include <sys/ioctl.h>
-
+#include <string.h>
 #include <sys/eventfd.h>
-
+#include <errno.h>
 #include <poll.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 #define MODULE_NAME     "AGENT"
 

@@ -4,7 +4,7 @@
 #define DEFAULT_PORT                28015
 
 // include dependencies
-#include "faceCommonLib.h"
+#include "frokLibCommon.h"
 #include "FrokAPI.h"
 #include "pthread.h"
 

@@ -26,10 +26,10 @@ SRCDIRS :=  ../$(SRCDIR)/
 
 HDRDIRS :=  ../$(SRCDIR)/		\
 	../FrokJsonlib/			\
-    	../FaceCommonLib/linux/		\
+    	../FrokLibCommon/linux/		\
 	../FaceDetectionLib/	        \
 	../FaceRecognitionLib/	        \
-	../FaceCommonLib/	        \
+	../FrokLibCommon/	        \
 	$(OPENCV_INCLUDES)
 
 include makefile.actions

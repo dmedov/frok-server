@@ -11,20 +11,16 @@ LANG := c++
 TARGET := libFrokLib.a
 TARGETTYPE := staticlib
 
-LIBS := -L$(BINOUTDIR)			                            \
-	-L/usr/lib/x86_64-linux-gnu	-lrt -pthread               \
+LIBS := -L$(BINOUTDIR)			                    \
+	-L/usr/lib/x86_64-linux-gnu	-lrt -pthread       \
     -lFaceCommonLib                                         \
     $(OPENCV_LIB)                                           \
-
-
-DEPENDENCIES :=                             \
-    $(BINOUTDIR)/libFaceCommonLib.a         \
 
 SRCDIRS :=  ../$(SRCDIR)/
 
 HDRDIRS :=  ../$(SRCDIR)/		\
-	../FaceCommonLib/	    	\
-	../FaceCommonLib/linux/		\
+	../FrokLibCommon/	    	\
+	../FrokLibCommon/linux/		\
 	$(OPENCV_INCLUDES)
 
 include makefile.actions

@@ -1,7 +1,7 @@
 QT -= core gui
 CONFIG -= qt
 
-TARGET = FaceCommonLib
+TARGET = FrokLibCommon
 TEMPLATE = lib
 CONFIG += staticlib
 DESTDIR = ./bin
@@ -19,18 +19,17 @@ INCLUDEPATH +=              ./linux
 
 HEADERS +=                  \
     json.h                  \
-    commonThread.h          \
-    faceCommonLib.h \
     commonMath.h \
     linux/io.h \
     linux/commonSched.h \
-    linux/linuxDefines.h
+    frokLibCommon.h \
+    frokCommonTypes.h \
+    frokCommonDefaults.h
 
 SOURCES +=                  \
     json.cpp                \
-    commonThread.cpp        \
-    faceCommonLib.c \
     io.c \
     linux/io.c \
-    linux/commonSched.c
+    linux/commonSched.c \
+    frokLibCommon.c
 
