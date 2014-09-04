@@ -25,7 +25,7 @@ Requirements:
 	sudo apt-get install gcc  
 	sudo apt-get install g++  
 3. git 1.9.1 or higher  
-	sudo apt-get git  
+	sudo apt-get install git  
 4. (!!!FOR DEVELOPERS ONLY!!!) QT creator 4.8 or higher (I use 4.8 on Linux Mint and 5.3 on Ubuntu)  
 	3.1. Download "Qt Online Installer for Linux" from http://qt-project.org/downloads  
 	3.2. Run downloaded script, choose all tools and gcc only installation (we don't need cross-platform compilers). Destination folder should be /opt  
