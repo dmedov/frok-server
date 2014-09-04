@@ -19,6 +19,7 @@ BOOL frokLibCommonParseConfigFile(const char *configFile);
 
 BOOL frokLibCommonParseConfigFile(const char *configFile)
 {
+    char *configFilePath;
     FILE *configStream;
     int configDescriptor;
     char lineBuf[LINE_MAX];
@@ -29,6 +30,36 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
     {
         TRACE_F("Not inited");
         return FALSE;
+    }
+
+    // We don't need to create the "/" directory, so we don't need i >= 0 in this cycle
+    for(i = strlen(configFile); i > 0; i--)
+    {
+        if(configFile[i] == '/')
+        {
+            break;
+        }
+    }
+
+    if(i != 0)
+    {
+        configFilePath = calloc(i + 1, 1);
+        if(!configFilePath)
+        {
+            TRACE_F("calloc failed on error %s", strerror(errno));
+            return FALSE;
+        }
+
+        strncpy(configFilePath, configFile, i);
+
+        TRACE_N("Making required directories");
+        if(FALSE == mkpath(configFilePath, 0664))
+        {
+            TRACE_F("Failed to make required directories");
+            return FALSE;
+        }
+
+        free(configFilePath);
     }
 
     TRACE_N("Opening config file. File is automatically created if it doesn't exist");
