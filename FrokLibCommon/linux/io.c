@@ -32,7 +32,7 @@ BOOL getFilesFromDir(const char *dir, char ***files, unsigned *filesNum)
 
     if(NULL == (dirStream = opendir(dir)))
     {
-        TRACE_F("failed to load dir stream on error %s\n", strerror(errno));
+        TRACE_F("failed to load dir %s stream on error %s\n", dir, strerror(errno));
         return FALSE;
     }
 
@@ -144,7 +144,7 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
 
     if(NULL == (dirStream = opendir(dir)))
     {
-        TRACE_F("failed to load dir stream on error %s\n", strerror(errno));
+        TRACE_F("failed to load dir stream %s on error %s\n", dir, strerror(errno));
         return FALSE;
     }
 

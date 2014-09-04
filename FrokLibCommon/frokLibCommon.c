@@ -108,13 +108,15 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
                 continue;
             }
             // find last position of parameter
-            for(j = strlen(lineBuf); j >= i; j--)
+            for(j = strlen(lineBuf) - 1; j >= i; j--)
             {
                 tmp = lineBuf[j];
                 if((tmp == '\r') || (tmp == '\n'))
                 {
                     continue;
                 }
+
+                j++;
                 break;
             }
 
@@ -134,7 +136,6 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
 
             strncpy(commonContext->outputFile, lineBuf + i, j - i);
             TRACE_S("Output file is %s", commonContext->outputFile);
-            continue;
         }
         else if(0 == strncmp(lineBuf, FROK_PARAM_PHOTO_BASE_PATH, strlen(FROK_PARAM_PHOTO_BASE_PATH)))
         {
@@ -154,13 +155,15 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
                 continue;
             }
             // find last position of parameter
-            for(j = strlen(lineBuf); j >= i; j--)
+            for(j = strlen(lineBuf) - 1; j >= i; j--)
             {
                 tmp = lineBuf[j];
                 if((tmp == '\r') || (tmp == '\n'))
                 {
                     continue;
                 }
+
+                j++;
                 break;
             }
 
@@ -169,7 +172,6 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
                 TRACE_N("Parameter is surely empty");
                 continue;
             }
-
 
             free(commonContext->photoBasePath);
             commonContext->photoBasePath = calloc(j - i + 1, 1);
@@ -201,13 +203,15 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
                 continue;
             }
             // find last position of parameter
-            for(j = strlen(lineBuf); j >= i; j--)
+            for(j = strlen(lineBuf) - 1; j >= i; j--)
             {
                 tmp = lineBuf[j];
                 if((tmp == '\r') || (tmp == '\n'))
                 {
                     continue;
                 }
+
+                j++;
                 break;
             }
 
