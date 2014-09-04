@@ -63,7 +63,7 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
     }
 
     TRACE_N("Opening config file. File is automatically created if it doesn't exist");
-    configDescriptor = open(configFile, O_CREAT | O_TRUNC | O_RDWR, 0664);
+    configDescriptor = open(configFile, O_CREAT | O_RDWR, 0664);
     if(configDescriptor == -1)
     {
         TRACE_F("failed to open config file on error %s", strerror(errno));
@@ -88,10 +88,9 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
     commonContext->photoBasePath = NULL;
     commonContext->targetPhotosPath = NULL;
 
-
     while(NULL != fgets(lineBuf, LINE_MAX, configStream))
     {
-        if(0 != strncpy(lineBuf, FROK_PARAM_OUTPUT_FILENAME, strlen(FROK_PARAM_OUTPUT_FILENAME)))
+        if(0 == strncmp(lineBuf, FROK_PARAM_OUTPUT_FILENAME, strlen(FROK_PARAM_OUTPUT_FILENAME)))
         {
             // Find start position of parameter
             for(i = strlen(FROK_PARAM_OUTPUT_FILENAME); i < strlen(lineBuf); i++)
@@ -134,9 +133,10 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
             }
 
             strncpy(commonContext->outputFile, lineBuf + i, j - i);
+            TRACE_S("Output file is %s", commonContext->outputFile);
             continue;
         }
-        else if(0 != strncpy(lineBuf, FROK_PARAM_PHOTO_BASE_PATH, strlen(FROK_PARAM_PHOTO_BASE_PATH)))
+        else if(0 == strncmp(lineBuf, FROK_PARAM_PHOTO_BASE_PATH, strlen(FROK_PARAM_PHOTO_BASE_PATH)))
         {
             // Find start position of parameter
             for(i = strlen(FROK_PARAM_PHOTO_BASE_PATH); i < strlen(lineBuf); i++)
@@ -180,9 +180,10 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
             }
 
             strncpy(commonContext->photoBasePath, lineBuf + i, j - i);
+            TRACE_S("PhotoBasePath is %s", commonContext->photoBasePath);
             continue;
         }
-        else if(0 != strncpy(lineBuf, FROK_PARAM_TARGET_PHOTOS_PATH, strlen(FROK_PARAM_TARGET_PHOTOS_PATH)))
+        else if(0 == strncmp(lineBuf, FROK_PARAM_TARGET_PHOTOS_PATH, strlen(FROK_PARAM_TARGET_PHOTOS_PATH)))
         {
             // Find start position of parameter
             for(i = strlen(FROK_PARAM_TARGET_PHOTOS_PATH); i < strlen(lineBuf); i++)
@@ -225,6 +226,7 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
             }
 
             strncpy(commonContext->targetPhotosPath, lineBuf + i, j - i);
+            TRACE_S("TargetPhotosPath is %s", commonContext->targetPhotosPath);
             continue;
         }
     }

@@ -156,12 +156,6 @@ int main(int argc, char *argv[])
     }
     TRACE_S("Agent is daemon now");
 #endif
-    if(FALSE == obtainCPU(cpu_number))
-    {
-        TRACE_F("obtainCPU failed");
-        frokLibCommonDeinit();
-        exit(EXIT_FAILURE);
-    }
 
     sigintAction.sa_flags = SA_SIGINFO;
     sigemptyset(&sigintAction.sa_mask);
