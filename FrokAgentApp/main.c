@@ -198,8 +198,8 @@ int main(int argc, char *argv[])
     }
     TRACE_S("recognizer instance created");
 
-    TRACE_N("Init model with users from path %s", DEFAULT_PHOTO_BASE_PATH);
-    if(FALSE == frokFaceRecognizerEigenfacesInit(recognizer, DEFAULT_PHOTO_BASE_PATH))
+    TRACE_N("Init model with users from path %s", commonContext->photoBasePath);
+    if(FALSE == frokFaceRecognizerEigenfacesInit(recognizer, commonContext->photoBasePath))
     {
         TRACE_F("Failed to init recognizer base. Continue");
     }
@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
     }
 
     TRACE_N("Calling frokAgentInit...");
-    if(FROK_RESULT_SUCCESS != (res = frokAgentInit(port_number, detector, recognizer, DEFAULT_PHOTO_BASE_PATH, DEFAULT_TARGETS_FOLDER_PATH)))
+    if(FROK_RESULT_SUCCESS != (res = frokAgentInit(port_number, detector, recognizer, commonContext->photoBasePath, commonContext->targetPhotosPath)))
     {
         TRACE_F("frokAgentInit failed on error %s", FrokResultToString(res));
         frokFaceDetectorDealloc(detector);
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
     frokFaceRecognizerEigenfacesDealloc(recognizer);
     TRACE_S("Recognizer instance deleted");
 
-    TRACE_N("Deinig lib common");
+    TRACE_N("Deinit lib common");
     frokLibCommonDeinit();
 
     exit(EXIT_SUCCESS);

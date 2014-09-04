@@ -31,7 +31,7 @@ int main(void)
     FaceDetectorAbstract *detector = new FrokFaceDetector;
     FaceRecognizerAbstract *recognizer = new FaceRecognizerEigenfaces;
 
-    FrokAPI fapi(detector, recognizer);
+    FrokAPI fapi("path", "path", detector, recognizer);
 
     fapi.AddAPIFunction("train", &FAPI_TrainUserModel);
     fapi.AddAPIFunction("recognize", &FAPI_Recognize);

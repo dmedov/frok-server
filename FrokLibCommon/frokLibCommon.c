@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 #define MODULE_NAME     "COMMON_LIB"
 
@@ -18,11 +19,192 @@ BOOL frokLibCommonParseConfigFile(const char *configFile);
 
 BOOL frokLibCommonParseConfigFile(const char *configFile)
 {
+    FILE *configStream;
+    int configDescriptor;
+    char lineBuf[LINE_MAX];
+    char tmp;
+    int i, j;
+
     if(commonContext == NULL)
     {
         TRACE_F("Not inited");
         return FALSE;
     }
+
+    TRACE_N("Opening config file. File is automatically created if it doesn't exist");
+    configDescriptor = open(configFile, O_CREAT | O_TRUNC | O_RDWR, 0664);
+    if(configDescriptor == -1)
+    {
+        TRACE_F("failed to open config file on error %s", strerror(errno));
+        return FALSE;
+    }
+
+    TRACE_N("Opening config file stream");
+    configStream = fdopen(configDescriptor, "r");
+    if(configStream == NULL)
+    {
+        TRACE_F("Failed to open config file stream on error %s", strerror(errno));
+        return FALSE;
+    }
+
+    TRACE_S("Config file stream opened");
+
+    free(commonContext->outputFile);
+    free(commonContext->photoBasePath);
+    free(commonContext->targetPhotosPath);
+
+    commonContext->outputFile = NULL;
+    commonContext->photoBasePath = NULL;
+    commonContext->targetPhotosPath = NULL;
+
+
+    while(NULL != fgets(lineBuf, LINE_MAX, configStream))
+    {
+        if(0 != strncpy(lineBuf, FROK_PARAM_OUTPUT_FILENAME, strlen(FROK_PARAM_OUTPUT_FILENAME)))
+        {
+            // Find start position of parameter
+            for(i = strlen(FROK_PARAM_OUTPUT_FILENAME); i < strlen(lineBuf); i++)
+            {
+                tmp = lineBuf[i];
+                if((tmp == '\r') || (tmp == '\n') || (tmp == '=') || (tmp == ' '))
+                {
+                    continue;
+                }
+                break;
+            }
+            if(i == strlen(lineBuf))
+            {
+                TRACE_N("Parameter is empty");
+                continue;
+            }
+            // find last position of parameter
+            for(j = strlen(lineBuf); j >= i; j--)
+            {
+                tmp = lineBuf[j];
+                if((tmp == '\r') || (tmp == '\n'))
+                {
+                    continue;
+                }
+                break;
+            }
+
+            if(i > j)
+            {
+                TRACE_N("Parameter is surely empty");
+                continue;
+            }
+
+            free(commonContext->outputFile);
+            commonContext->outputFile = calloc(j - i + 1, 1);
+            if(commonContext->outputFile == NULL)
+            {
+                TRACE_F("calloc failed on error %s", strerror(errno));
+                return FALSE;
+            }
+
+            strncpy(commonContext->outputFile, lineBuf + i, j - i);
+            continue;
+        }
+        else if(0 != strncpy(lineBuf, FROK_PARAM_PHOTO_BASE_PATH, strlen(FROK_PARAM_PHOTO_BASE_PATH)))
+        {
+            // Find start position of parameter
+            for(i = strlen(FROK_PARAM_PHOTO_BASE_PATH); i < strlen(lineBuf); i++)
+            {
+                tmp = lineBuf[i];
+                if((tmp == '\r') || (tmp == '\n') || (tmp == '=') || (tmp == ' '))
+                {
+                    continue;
+                }
+                break;
+            }
+            if(i == strlen(lineBuf))
+            {
+                TRACE_N("Parameter is empty");
+                continue;
+            }
+            // find last position of parameter
+            for(j = strlen(lineBuf); j >= i; j--)
+            {
+                tmp = lineBuf[j];
+                if((tmp == '\r') || (tmp == '\n'))
+                {
+                    continue;
+                }
+                break;
+            }
+
+            if(i > j)
+            {
+                TRACE_N("Parameter is surely empty");
+                continue;
+            }
+
+
+            free(commonContext->photoBasePath);
+            commonContext->photoBasePath = calloc(j - i + 1, 1);
+            if(commonContext->photoBasePath == NULL)
+            {
+                TRACE_F("calloc failed on error %s", strerror(errno));
+                return FALSE;
+            }
+
+            strncpy(commonContext->photoBasePath, lineBuf + i, j - i);
+            continue;
+        }
+        else if(0 != strncpy(lineBuf, FROK_PARAM_TARGET_PHOTOS_PATH, strlen(FROK_PARAM_TARGET_PHOTOS_PATH)))
+        {
+            // Find start position of parameter
+            for(i = strlen(FROK_PARAM_TARGET_PHOTOS_PATH); i < strlen(lineBuf); i++)
+            {
+                tmp = lineBuf[i];
+                if((tmp == '\r') || (tmp == '\n') || (tmp == '=') || (tmp == ' '))
+                {
+                    continue;
+                }
+                break;
+            }
+            if(i == strlen(lineBuf))
+            {
+                TRACE_N("Parameter is empty");
+                continue;
+            }
+            // find last position of parameter
+            for(j = strlen(lineBuf); j >= i; j--)
+            {
+                tmp = lineBuf[j];
+                if((tmp == '\r') || (tmp == '\n'))
+                {
+                    continue;
+                }
+                break;
+            }
+
+            if(i > j)
+            {
+                TRACE_N("Parameter is surely empty");
+                continue;
+            }
+
+            free(commonContext->targetPhotosPath);
+            commonContext->targetPhotosPath = calloc(j - i + 1, 1);
+            if(commonContext->targetPhotosPath== NULL)
+            {
+                TRACE_F("calloc failed on error %s", strerror(errno));
+                return FALSE;
+            }
+
+            strncpy(commonContext->targetPhotosPath, lineBuf + i, j - i);
+            continue;
+        }
+    }
+
+    if(ferror(configStream))
+    {
+        TRACE_W("Something failed in file stream")
+    }
+
+    TRACE_S("Parsing finished");
+
 }
 
 void set_trace_prefix(const char *prefix)
@@ -281,8 +463,12 @@ void frokLibCommonDeinit()
         TRACE_W("pthread_mutexattr_destroy failed on error %s", strerror(result));
     }
 
+    free(commonContext->photoBasePath);
+    free(commonContext->targetPhotosPath);
     free(commonContext->outputFile);
-    commonContext->outputFile;
+    commonContext->outputFile = NULL;
+    commonContext->targetPhotosPath = NULL;
+    commonContext->photoBasePath = NULL;
 
     free(commonContext);
     commonContext = NULL;
