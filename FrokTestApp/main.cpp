@@ -16,22 +16,16 @@ void usage()
 
 int main(void)
 {
-    /*if(!frokLibCommonInit())
+    if(!frokLibCommonInit(FROK_LIB_COMMON_DEFAULT_CONFIG_FILENAME))
     {
         TRACE_F("frokLibCommonInit");
-        return -1;
-    }*/
-
-
-    if(-1 == setpriority(PRIO_PROCESS, getpid(), -20))
-    {
         return -1;
     }
 
     FaceDetectorAbstract *detector = new FrokFaceDetector;
     FaceRecognizerAbstract *recognizer = new FaceRecognizerEigenfaces;
 
-    FrokAPI fapi(detector, recognizer);
+    FrokAPI fapi(commonContext->photoBasePath, commonContext->targetPhotosPath, detector, recognizer);
 
     fapi.AddAPIFunction("train", &FAPI_TrainUserModel);
     fapi.AddAPIFunction("recognize", &FAPI_Recognize);

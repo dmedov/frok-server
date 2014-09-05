@@ -5,6 +5,7 @@
 
 // include dependencies
 #include <stdio.h>
+#include <sys/stat.h>
 
 #pragma GCC poison cout
 #pragma GCC poison printf
@@ -59,7 +60,7 @@ extern "C" {
 // Example: good = "/home/workspace/" bad: "/home/workspace"
 BOOL getFilesFromDir(const char *dir, char ***files, unsigned *filesNum);
 BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum);
-
+BOOL mkpath(const char *path, mode_t mode);
 #ifdef __cplusplus
 }
 #endif

@@ -32,7 +32,7 @@ BOOL getFilesFromDir(const char *dir, char ***files, unsigned *filesNum)
 
     if(NULL == (dirStream = opendir(dir)))
     {
-        TRACE_F("failed to load dir stream on error %s\n", strerror(errno));
+        TRACE_F("failed to load dir %s stream on error %s\n", dir, strerror(errno));
         return FALSE;
     }
 
@@ -144,7 +144,7 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
 
     if(NULL == (dirStream = opendir(dir)))
     {
-        TRACE_F("failed to load dir stream on error %s\n", strerror(errno));
+        TRACE_F("failed to load dir stream %s on error %s\n", dir, strerror(errno));
         return FALSE;
     }
 
@@ -234,4 +234,62 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
         *filesNum = foundFilesNum;
     }
     return TRUE;
+}
+
+BOOL do_mkdir(const char *path, mode_t mode)
+{
+    struct stat     st;
+    BOOL            result = TRUE;
+
+    if (stat(path, &st) != 0)
+    {
+        /* Directory does not exist. EEXIST for race condition */
+        if (mkdir(path, mode) != 0 && errno != EEXIST)
+            result = FALSE;
+    }
+    else if (!S_ISDIR(st.st_mode))
+    {
+        errno = ENOTDIR;
+        result = FALSE;
+    }
+
+    return result;
+}
+
+BOOL mkpath(const char *path, mode_t mode)
+{
+    char           *pp;
+    char           *sp;
+    BOOL            result;
+    char           *copypath;
+    if(path == NULL)
+    {
+        TRACE_F("Invalid parameter: path = %p", path);
+        return FALSE;
+    }
+    copypath = calloc(strlen(path) + 1, 1);
+    if(copypath == NULL)
+    {
+        TRACE_F("calloc failed on error %s", strerror(errno));
+        return FALSE;
+    }
+    strcpy(copypath, path);
+
+    result = TRUE;
+    pp = copypath;
+    while (result == TRUE && (sp = strchr(pp, '/')) != 0)
+    {
+        if (sp != pp)
+        {
+            /* Neither root nor double slash in path */
+            *sp = '\0';
+            result = do_mkdir(copypath, mode);
+            *sp = '/';
+        }
+        pp = sp + 1;
+    }
+    if (result == TRUE)
+        result = do_mkdir(path, mode);
+    free(copypath);
+    return result;
 }

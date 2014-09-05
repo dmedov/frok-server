@@ -169,16 +169,6 @@ FrokAPI::FrokAPI(const char *photo_base_path, const char *targets_folder_path, F
     this->recognizer = recognizer;
 }
 
-FrokAPI::FrokAPI(FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer)
-{
-    this->photo_base_path = new char [strlen(DEFAULT_PHOTO_BASE_PATH) + 1];
-    this->targets_folder_path = new char [strlen(DEFAULT_TARGETS_FOLDER_PATH) + 1];
-    strcpy(this->photo_base_path, DEFAULT_PHOTO_BASE_PATH);
-    strcpy(this->targets_folder_path, DEFAULT_TARGETS_FOLDER_PATH);
-    this->detector = detector;
-    this->recognizer = recognizer;
-}
-
 FrokAPI::~FrokAPI()
 {
     delete []photo_base_path;

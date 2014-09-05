@@ -105,12 +105,14 @@ FrokResult frokAgentInit(unsigned short port, void *detector, void *recognizer, 
 
     TRACE_N("Alloc frokAPI instance");
     context->api = frokAPIAlloc(photoBaseFolderPath, targetsFolderPath, detector, recognizer);
-    frokAPIInit(context->api);
     if(context->api == NULL)
     {
         TRACE_F("frokAPIAlloc failed");
         return FROK_RESULT_UNSPECIFIED_ERROR;
     }
+
+    frokAPIInit(context->api);
+
     TRACE_N("unlock frokAgentMutex");
     if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
     {

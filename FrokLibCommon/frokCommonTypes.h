@@ -35,6 +35,8 @@ typedef enum FrokResult
 typedef struct frokCommonContext
 {
     char *outputFile;
+    char *photoBasePath;
+    char *targetPhotosPath;
     pthread_mutex_t common_cs;
     pthread_mutex_t trace_cs;
     struct timespec startTime;

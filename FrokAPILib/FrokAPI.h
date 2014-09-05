@@ -1,10 +1,6 @@
 #ifndef FROKAPI_H
 #define FROKAPI_H
 
-// FaceAgent defaults
-static const char DEFAULT_PHOTO_BASE_PATH [] = "/home/zda/faces/";
-static const char DEFAULT_TARGETS_FOLDER_PATH [] = "/home/zda/faces/";
-
 // include dependencies
 #include "FrokAPIFunction.h"
 #include "frokLibCommon.h"
@@ -22,7 +18,6 @@ private:
 public:
     FrokAPI(const char *photo_base_path, const char *targets_folder_path,
             FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer);
-    FrokAPI(FaceDetectorAbstract *detector, FaceRecognizerAbstract *recognizer);
     ~FrokAPI();
     void AddAPIFunction(std::string functionName, FrokAPIFunction *function);
     FrokResult ExecuteFunction(std::string functionName, std::string inJson, std::string &outJson);

@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 #define MODULE_NAME     "COMMON_LIB"
 
@@ -18,11 +19,316 @@ BOOL frokLibCommonParseConfigFile(const char *configFile);
 
 BOOL frokLibCommonParseConfigFile(const char *configFile)
 {
+    char *configFilePath;
+    FILE *configStream;
+    int configDescriptor;
+    char lineBuf[LINE_MAX];
+    char tmp;
+    int i, j;
+
     if(commonContext == NULL)
     {
         TRACE_F("Not inited");
         return FALSE;
     }
+
+    // We don't need to create the "/" directory, so we don't need i >= 0 in this cycle
+    for(i = strlen(configFile); i > 0; i--)
+    {
+        if(configFile[i] == '/')
+        {
+            break;
+        }
+    }
+
+    if(i != 0)
+    {
+        configFilePath = calloc(i + 1, 1);
+        if(!configFilePath)
+        {
+            TRACE_F("calloc failed on error %s", strerror(errno));
+            return FALSE;
+        }
+
+        strncpy(configFilePath, configFile, i);
+
+        TRACE_N("Making required directories");
+        if(FALSE == mkpath(configFilePath, 0664))
+        {
+            TRACE_F("Failed to make required directories");
+            return FALSE;
+        }
+
+        free(configFilePath);
+    }
+
+    TRACE_N("Opening config file. File is automatically created if it doesn't exist");
+    configDescriptor = open(configFile, O_CREAT | O_RDWR, 0664);
+    if(configDescriptor == -1)
+    {
+        TRACE_F("failed to open config file on error %s", strerror(errno));
+        return FALSE;
+    }
+
+    TRACE_N("Opening config file stream (fd = %x)", configDescriptor);
+    configStream = fdopen(configDescriptor, "r+");
+    if(configStream == NULL)
+    {
+        TRACE_F("Failed to open config file stream on error %s", strerror(errno));
+        close(configDescriptor);
+        return FALSE;
+    }
+
+    TRACE_S("Config file stream opened");
+
+    free(commonContext->outputFile);
+    free(commonContext->photoBasePath);
+    free(commonContext->targetPhotosPath);
+
+    commonContext->outputFile = NULL;
+    commonContext->photoBasePath = NULL;
+    commonContext->targetPhotosPath = NULL;
+
+    while(NULL != fgets(lineBuf, LINE_MAX, configStream))
+    {
+        if(0 == strncmp(lineBuf, FROK_PARAM_OUTPUT_FILENAME, strlen(FROK_PARAM_OUTPUT_FILENAME)))
+        {
+            // Find start position of parameter
+            for(i = strlen(FROK_PARAM_OUTPUT_FILENAME); i < strlen(lineBuf); i++)
+            {
+                tmp = lineBuf[i];
+                if((tmp == '\r') || (tmp == '\n') || (tmp == '=') || (tmp == ' '))
+                {
+                    continue;
+                }
+                break;
+            }
+            if(i == strlen(lineBuf))
+            {
+                TRACE_N("Parameter is empty");
+                continue;
+            }
+            // find last position of parameter
+            for(j = strlen(lineBuf) - 1; j >= i; j--)
+            {
+                tmp = lineBuf[j];
+                if((tmp == '\r') || (tmp == '\n'))
+                {
+                    continue;
+                }
+
+                j++;
+                break;
+            }
+
+            if(i > j)
+            {
+                TRACE_N("Parameter is surely empty");
+                continue;
+            }
+
+            free(commonContext->outputFile);
+            commonContext->outputFile = calloc(j - i + 1, 1);
+            if(commonContext->outputFile == NULL)
+            {
+                TRACE_F("calloc failed on error %s", strerror(errno));
+                fclose(configStream);
+                return FALSE;
+            }
+
+            strncpy(commonContext->outputFile, lineBuf + i, j - i);
+            TRACE_S("Output file is %s", commonContext->outputFile);
+        }
+        else if(0 == strncmp(lineBuf, FROK_PARAM_PHOTO_BASE_PATH, strlen(FROK_PARAM_PHOTO_BASE_PATH)))
+        {
+            // Find start position of parameter
+            for(i = strlen(FROK_PARAM_PHOTO_BASE_PATH); i < strlen(lineBuf); i++)
+            {
+                tmp = lineBuf[i];
+                if((tmp == '\r') || (tmp == '\n') || (tmp == '=') || (tmp == ' '))
+                {
+                    continue;
+                }
+                break;
+            }
+            if(i == strlen(lineBuf))
+            {
+                TRACE_N("Parameter is empty");
+                continue;
+            }
+            // find last position of parameter
+            for(j = strlen(lineBuf) - 1; j >= i; j--)
+            {
+                tmp = lineBuf[j];
+                if((tmp == '\r') || (tmp == '\n'))
+                {
+                    continue;
+                }
+
+                j++;
+                break;
+            }
+
+            if(i > j)
+            {
+                TRACE_N("Parameter is surely empty");
+                continue;
+            }
+
+            free(commonContext->photoBasePath);
+            commonContext->photoBasePath = calloc(j - i + 1, 1);
+            if(commonContext->photoBasePath == NULL)
+            {
+                TRACE_F("calloc failed on error %s", strerror(errno));
+                fclose(configStream);
+                return FALSE;
+            }
+
+            strncpy(commonContext->photoBasePath, lineBuf + i, j - i);
+            TRACE_S("PhotoBasePath is %s", commonContext->photoBasePath);
+            continue;
+        }
+        else if(0 == strncmp(lineBuf, FROK_PARAM_TARGET_PHOTOS_PATH, strlen(FROK_PARAM_TARGET_PHOTOS_PATH)))
+        {
+            // Find start position of parameter
+            for(i = strlen(FROK_PARAM_TARGET_PHOTOS_PATH); i < strlen(lineBuf); i++)
+            {
+                tmp = lineBuf[i];
+                if((tmp == '\r') || (tmp == '\n') || (tmp == '=') || (tmp == ' '))
+                {
+                    continue;
+                }
+                break;
+            }
+            if(i == strlen(lineBuf))
+            {
+                TRACE_N("Parameter is empty");
+                continue;
+            }
+            // find last position of parameter
+            for(j = strlen(lineBuf) - 1; j >= i; j--)
+            {
+                tmp = lineBuf[j];
+                if((tmp == '\r') || (tmp == '\n'))
+                {
+                    continue;
+                }
+
+                j++;
+                break;
+            }
+
+            if(i > j)
+            {
+                TRACE_N("Parameter is surely empty");
+                continue;
+            }
+
+            free(commonContext->targetPhotosPath);
+            commonContext->targetPhotosPath = calloc(j - i + 1, 1);
+            if(commonContext->targetPhotosPath== NULL)
+            {
+                TRACE_F("calloc failed on error %s", strerror(errno));
+                fclose(configStream);
+                return FALSE;
+            }
+
+            strncpy(commonContext->targetPhotosPath, lineBuf + i, j - i);
+            TRACE_S("TargetPhotosPath is %s", commonContext->targetPhotosPath);
+            continue;
+        }
+    }
+
+    // Fill frok.conf with default values if they are not specified
+
+    if(commonContext->outputFile == NULL || commonContext->photoBasePath == NULL || commonContext->targetPhotosPath == NULL)
+    {
+        TRACE_N("Saving default values of unset parameters to config file");
+
+        if(commonContext->outputFile == NULL)
+        {
+            strcpy(lineBuf, FROK_PARAM_OUTPUT_FILENAME);
+            strcat(lineBuf + strlen(FROK_PARAM_OUTPUT_FILENAME), " = ");
+            strcat(lineBuf + strlen(FROK_PARAM_OUTPUT_FILENAME) + strlen(" = "), FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME);
+            strcat(lineBuf + strlen(FROK_PARAM_OUTPUT_FILENAME) + strlen(" = ") + strlen(FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME), "\n\0");
+            if(EOF == fputs(lineBuf, configStream))
+            {
+                TRACE_F("fputs failed");
+                fclose(configStream);
+                return FALSE;
+            }
+
+            commonContext->outputFile = calloc(strlen(FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME) + 1, 1);
+            if(!commonContext->outputFile)
+            {
+                TRACE_F("calloc failed on error %s", strerror(errno));
+                fclose(configStream);
+                return FALSE;
+            }
+            strcpy(commonContext->outputFile, FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME);
+
+            TRACE_S("output file is %s", FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME);
+        }
+
+        if(commonContext->photoBasePath == NULL)
+        {
+            strcpy(lineBuf, FROK_PARAM_PHOTO_BASE_PATH);
+            strcat(lineBuf + strlen(FROK_PARAM_PHOTO_BASE_PATH), " = ");
+            strcat(lineBuf + strlen(FROK_PARAM_PHOTO_BASE_PATH) + strlen(" = "), FROK_DEFAULT_PHOTO_BASE_PATH);
+            strcat(lineBuf + strlen(FROK_PARAM_PHOTO_BASE_PATH) + strlen(" = ") + strlen(FROK_DEFAULT_PHOTO_BASE_PATH), "\n\0");
+            if(EOF == fputs(lineBuf, configStream))
+            {
+                TRACE_F("fputs failed");
+                fclose(configStream);
+                return FALSE;
+            }
+
+            commonContext->photoBasePath = calloc(strlen(FROK_DEFAULT_PHOTO_BASE_PATH) + 1, 1);
+            if(!commonContext->photoBasePath)
+            {
+                TRACE_F("calloc failed on error %s", strerror(errno));
+                fclose(configStream);
+                return FALSE;
+            }
+            strcpy(commonContext->photoBasePath, FROK_DEFAULT_PHOTO_BASE_PATH);
+
+            TRACE_S("photoBasePath is %s", FROK_DEFAULT_PHOTO_BASE_PATH);
+        }
+
+        if(commonContext->targetPhotosPath == NULL)
+        {
+            strcpy(lineBuf, FROK_PARAM_TARGET_PHOTOS_PATH);
+            strcat(lineBuf + strlen(FROK_PARAM_TARGET_PHOTOS_PATH), " = ");
+            strcat(lineBuf + strlen(FROK_PARAM_TARGET_PHOTOS_PATH) + strlen(" = "), FROK_DEFAULT_TARGET_PHOTOS_PATH);
+            strcat(lineBuf + strlen(FROK_PARAM_TARGET_PHOTOS_PATH) + strlen(" = ") + strlen(FROK_DEFAULT_TARGET_PHOTOS_PATH), "\n\0");
+            if(EOF == fputs(lineBuf, configStream))
+            {
+                TRACE_F("fputs failed");
+                fclose(configStream);
+                return FALSE;
+            }
+
+            commonContext->targetPhotosPath = calloc(strlen(FROK_DEFAULT_TARGET_PHOTOS_PATH) + 1, 1);
+            if(!commonContext->targetPhotosPath)
+            {
+                TRACE_F("calloc failed on error %s", strerror(errno));
+                fclose(configStream);
+                return FALSE;
+            }
+            strcpy(commonContext->targetPhotosPath, FROK_DEFAULT_TARGET_PHOTOS_PATH);
+
+            TRACE_S("targetPhotosPath is %s", FROK_DEFAULT_TARGET_PHOTOS_PATH);
+        }
+    }
+
+    if(EOF == fclose(configStream))
+    {
+        TRACE_F("fclose failed on error %s", strerror(errno));
+        return FALSE;
+    }
+
+    TRACE_S("Parsing finished");
+    return TRUE;
 }
 
 void set_trace_prefix(const char *prefix)
@@ -281,8 +587,12 @@ void frokLibCommonDeinit()
         TRACE_W("pthread_mutexattr_destroy failed on error %s", strerror(result));
     }
 
+    free(commonContext->photoBasePath);
+    free(commonContext->targetPhotosPath);
     free(commonContext->outputFile);
-    commonContext->outputFile;
+    commonContext->outputFile = NULL;
+    commonContext->targetPhotosPath = NULL;
+    commonContext->photoBasePath = NULL;
 
     free(commonContext);
     commonContext = NULL;
