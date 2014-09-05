@@ -182,7 +182,7 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath, bool dontResi
         return FROK_RESULT_INVALID_PARAMETER;
     }
 
-    if(!dontResize)
+    if(dontResize == false)
     {
         double scale = (double)targetImageGray.cols / targetImageGray.rows;
         cv::Size newImageSize;

@@ -144,6 +144,7 @@ void frokAPIInit(FrokAPI *instance)
         TRACE_F("Invalid parameter: instance = %p", instance);
         return;
     }
+    instance->AddAPIFunction("addFace", &FAPI_AddFaceFromPhotoToModel);
     instance->AddAPIFunction("train", &FAPI_TrainUserModel);
     instance->AddAPIFunction("recognize", &FAPI_Recognize);
 }
