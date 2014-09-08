@@ -70,10 +70,9 @@ FrokResult frokAPIExecuteFunction(FrokAPI *instance, const char *functionName, c
         }
         catch(...)
         {
-            TRACE_F("ExecuteFunction failed");
+            TRACE_F("ExecuteFunction failed. Exception captured");
             return FROK_RESULT_UNSPECIFIED_ERROR;
         }
-
 
         try
         {
@@ -145,6 +144,7 @@ void frokAPIInit(FrokAPI *instance)
         return;
     }
     instance->AddAPIFunction("addFace", &FAPI_AddFaceFromPhotoToModel);
+    instance->AddAPIFunction("getFaces", &FAPI_GetFacesFromPhoto);
     instance->AddAPIFunction("train", &FAPI_TrainUserModel);
     instance->AddAPIFunction("recognize", &FAPI_Recognize);
 }

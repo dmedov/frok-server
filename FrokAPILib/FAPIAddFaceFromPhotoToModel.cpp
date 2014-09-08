@@ -7,8 +7,8 @@
 // inout parameters
 static std::string strInParams [] = {"id", "photoName", "faceNumber"};
 static std::string strOutParams [] = {};
-static std::vector<std::string> InRecognizeParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
-static std::vector<std::string> OutRecognizeParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
+static std::vector<std::string> InAddFaceFromPhotoToModelParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
+static std::vector<std::string> OutAddFaceFromPhotoToModelParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
 
 typedef struct
 {
@@ -35,7 +35,7 @@ bool FAPI_AddFaceFromPhotoToModel_JSON2FUNCP(ConvertParams* converterParams);
 bool FAPI_AddFaceFromPhotoToModel_FUNCP2JSON(ConvertParams* converterParams);
 
 // FAPI object
-FrokAPIFunction FAPI_AddFaceFromPhotoToModel(AddFaceFromPhotoToModel, InRecognizeParameters, OutRecognizeParameters, functionDescription,
+FrokAPIFunction FAPI_AddFaceFromPhotoToModel(AddFaceFromPhotoToModel, InAddFaceFromPhotoToModelParameters, OutAddFaceFromPhotoToModelParameters, functionDescription,
                 parametersDescription, timeout, FAPI_AddFaceFromPhotoToModel_JSON2FUNCP,
                 FAPI_AddFaceFromPhotoToModel_FUNCP2JSON);
 
@@ -58,11 +58,11 @@ bool FAPI_AddFaceFromPhotoToModel_JSON2FUNCP(ConvertParams* psConvertParams)
         return false;
     }
 
-    if(!jsonParams.HasKeys(InRecognizeParameters))
+    if(!jsonParams.HasKeys(InAddFaceFromPhotoToModelParameters))
     {
         TRACE_F("Invalid parameter: input json doesn't have all mandatory keys.");
         TRACE_N("Mandatory parameter:");
-        for(std::vector<std::string>::const_iterator it = InRecognizeParameters.begin(); it != InRecognizeParameters.end(); ++it)
+        for(std::vector<std::string>::const_iterator it = InAddFaceFromPhotoToModelParameters.begin(); it != InAddFaceFromPhotoToModelParameters.end(); ++it)
         {
             TRACE_N("\t%s", ((std::string)*it).c_str());
         }
