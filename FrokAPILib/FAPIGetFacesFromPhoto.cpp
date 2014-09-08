@@ -174,13 +174,13 @@ FrokResult GetFacesFromPhoto(void *inParams, void **outParams, const char *userB
 
         // Yeah it is face for real. Kappa.
         TRACE_S("Face found: x1 = %d, y1 = %d, x2 = %d. y2 = %d", ((cv::Rect)face[0]).x, ((cv::Rect)face[0]).y, ((cv::Rect)face[0]).x + ((cv::Rect)face[0]).width, ((cv::Rect)face[0]).y + ((cv::Rect)face[0]).height);
-        ((StructOutParams*)outParams)->faceRects.push_back(face.at(0));
+        ((StructOutParams*)*outParams)->faceRects.push_back(face[0]);
 
         face.clear();
         faceImage.clear();
     }
 
-    if(((StructOutParams*)outParams)->faceRects.empty())
+    if(((StructOutParams*)*outParams)->faceRects.empty())
     {
         TRACE_F_T("No faces found");
         return FROK_RESULT_NOT_A_FACE;
