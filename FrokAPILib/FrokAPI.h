@@ -26,25 +26,29 @@ public:
 };
 
 extern FrokAPI FROK_API_FUNCTIONS[];
-#else
-#define FrokAPI void *
+#endif // C++
 
+#ifdef __cplusplus
+extern "C"{
+#endif //c++
 // returns allocated in memory object
-FrokAPI *frokAPIAlloc(const char *photo_base_path, const char *targets_folder_path,
+void *frokAPIAlloc(const char *photo_base_path, const char *targets_folder_path,
                    void *detector, void *recognizer);
 // Adds all FrokAPIFunctions to instance
-void frokAPIInit(FrokAPI *instance);
+void frokAPIInit(void *instance);
 
 // Verifies json and returns function name
 char *getFunctionFromJson(const char *json);
 
 // Executes requested function
-FrokResult frokAPIExecuteFunction(FrokAPI *instance, const char *functionName, const char *inJson, char **outJson);
+FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, const char *inJson, char **outJson);
 
 // does nothing... yet :)
-void frokAPIDeinit(FrokAPI *instance);
+void frokAPIDeinit(void *instance);
 // delets instance
 void frokAPIDealloc(void *instance);
-#endif // C++
+#ifdef __cplusplus
+}
+#endif //c++
 
 #endif // FROKAPI_H

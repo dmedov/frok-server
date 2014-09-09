@@ -4,20 +4,20 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-static std::string strInParams [] = {"arrIds"};
-static std::string strOutParams [] = {};
-static std::vector<std::string> InTrainUserModelParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
-static std::vector<std::string> OutTrainUserModelParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
+static std::string strInTrainUserModelParameters [] = {"arrUserIds"};
+static std::string strOutTrainUserModelParameters [] = {};
+static std::vector<std::string> inTrainUserModelParameters(strInTrainUserModelParameters, strInTrainUserModelParameters + sizeof(strInTrainUserModelParameters) / sizeof(*strInTrainUserModelParameters));
+static std::vector<std::string> outTrainUserModelParameters(strOutTrainUserModelParameters, strOutTrainUserModelParameters + sizeof(strOutTrainUserModelParameters) / sizeof(*strOutTrainUserModelParameters));
 
 typedef struct
 {
     std::vector<std::string> ids;
-} StructInParams;
+} StructInTrainUserModelParams;
 
 // function description
 const char functionDescription [] = "This function generates user's grey faces' database that will be used in \
         rocignition process";
-const char parametersDescription [] = "arrIds: [in] array of users' for whom database would be created";
+const char parametersDescription [] = "arrUserIds: [in] array of users' for whom database would be created";
 
 // timeout
 static unsigned long int timeout = 300;        //300 sec
@@ -28,7 +28,7 @@ bool FAPI_TrainUserModel_JSON2FUNCP(ConvertParams* converterParams);
 bool FAPI_TrainUserModel_FUNCP2JSON(ConvertParams* converterParams);
 
 // FAPI object
-FrokAPIFunction FAPI_TrainUserModel(TrainUserModel, InTrainUserModelParameters, OutTrainUserModelParameters, functionDescription,
+FrokAPIFunction FAPI_TrainUserModel(TrainUserModel, inTrainUserModelParameters, outTrainUserModelParameters, functionDescription,
                 parametersDescription, timeout, FAPI_TrainUserModel_JSON2FUNCP,
                 FAPI_TrainUserModel_FUNCP2JSON);
 
@@ -51,11 +51,11 @@ bool FAPI_TrainUserModel_JSON2FUNCP(ConvertParams* psConvertParams)
         return false;
     }
 
-    if(!jsonParams.HasKeys(InTrainUserModelParameters))
+    if(!jsonParams.HasKeys(inTrainUserModelParameters))
     {
         TRACE_F("Invalid parameter: input json doesn't have all mandatory keys.");
         TRACE_N("Mandatory parameter:");
-        for(std::vector<std::string>::const_iterator it = InTrainUserModelParameters.begin(); it != InTrainUserModelParameters.end(); ++it)
+        for(std::vector<std::string>::const_iterator it = inTrainUserModelParameters.begin(); it != inTrainUserModelParameters.end(); ++it)
         {
             TRACE_N("\t%s", ((std::string)*it).c_str());
         }
@@ -64,12 +64,12 @@ bool FAPI_TrainUserModel_JSON2FUNCP(ConvertParams* psConvertParams)
         return false;
     }
 
-    StructInParams *funcParameters = new StructInParams;
-    json::Array arrIds = jsonParams["arrIds"].ToArray();
+    StructInTrainUserModelParams *funcParameters = new StructInTrainUserModelParams;
+    json::Array arrUserIds = jsonParams["arrUserIds"].ToArray();
 
-    for (unsigned i = 0; i < arrIds.size(); i++)
+    for (unsigned i = 0; i < arrUserIds.size(); i++)
     {
-        funcParameters->ids.push_back(arrIds[i].ToString());
+        funcParameters->ids.push_back(arrUserIds[i].ToString());
     }
 
     psConvertParams->functionParameters = funcParameters;
@@ -89,7 +89,7 @@ bool FAPI_TrainUserModel_FUNCP2JSON(ConvertParams* psConvertParams)
     psConvertParams->jsonParameters = "{}";
     if(psConvertParams->functionParameters != NULL)
     {
-        delete [] (StructInParams*)psConvertParams->functionParameters;
+        delete [] (StructInTrainUserModelParams*)psConvertParams->functionParameters;
         psConvertParams->functionParameters = NULL;
     }
     return true;
@@ -105,7 +105,7 @@ FrokResult TrainUserModel(void *inParams, void **outParams, const char *userBase
                 inParams, outParams, userBasePath, targetPhotosPath, detector, recognizer);
         return FROK_RESULT_INVALID_PARAMETER;
     }
-    StructInParams *in = (StructInParams*)inParams;
+    StructInTrainUserModelParams *in = (StructInTrainUserModelParams*)inParams;
     *outParams = NULL;
 
     std::vector<std::string> ids = in->ids;

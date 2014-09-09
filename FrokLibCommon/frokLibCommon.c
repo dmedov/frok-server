@@ -25,6 +25,7 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
     char lineBuf[LINE_MAX];
     char tmp;
     int i, j;
+    BOOL noWritting = FALSE;
 
     if(commonContext == NULL)
     {
@@ -53,7 +54,7 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
         strncpy(configFilePath, configFile, i);
 
         TRACE_N("Making required directories");
-        if(FALSE == mkpath(configFilePath, 0664))
+        if(FALSE == mkpath(configFilePath, 0775))
         {
             TRACE_F("Failed to make required directories");
             return FALSE;
@@ -66,12 +67,32 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
     configDescriptor = open(configFile, O_CREAT | O_RDWR, 0664);
     if(configDescriptor == -1)
     {
-        TRACE_F("failed to open config file on error %s", strerror(errno));
-        return FALSE;
+        if(errno == EACCES)
+        {
+            configDescriptor = open(configFile, O_RDONLY);
+            if(configDescriptor == -1)
+            {
+                TRACE_F("failed to open config file on error %s", strerror(errno));
+                return FALSE;
+            }
+            noWritting = TRUE;
+        }
+        else
+        {
+            TRACE_F("failed to open config file on error %s", strerror(errno));
+            return FALSE;
+        }
     }
 
     TRACE_N("Opening config file stream (fd = %x)", configDescriptor);
-    configStream = fdopen(configDescriptor, "r+");
+    if(noWritting == FALSE)
+    {
+        configStream = fdopen(configDescriptor, "r+");
+    }
+    else
+    {
+        configStream = fdopen(configDescriptor, "r");
+    }
     if(configStream == NULL)
     {
         TRACE_F("Failed to open config file stream on error %s", strerror(errno));
@@ -247,15 +268,18 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
 
         if(commonContext->outputFile == NULL)
         {
-            strcpy(lineBuf, FROK_PARAM_OUTPUT_FILENAME);
-            strcat(lineBuf + strlen(FROK_PARAM_OUTPUT_FILENAME), " = ");
-            strcat(lineBuf + strlen(FROK_PARAM_OUTPUT_FILENAME) + strlen(" = "), FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME);
-            strcat(lineBuf + strlen(FROK_PARAM_OUTPUT_FILENAME) + strlen(" = ") + strlen(FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME), "\n\0");
-            if(EOF == fputs(lineBuf, configStream))
+            if(noWritting == FALSE)
             {
-                TRACE_F("fputs failed");
-                fclose(configStream);
-                return FALSE;
+                strcpy(lineBuf, FROK_PARAM_OUTPUT_FILENAME);
+                strcat(lineBuf + strlen(FROK_PARAM_OUTPUT_FILENAME), " = ");
+                strcat(lineBuf + strlen(FROK_PARAM_OUTPUT_FILENAME) + strlen(" = "), FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME);
+                strcat(lineBuf + strlen(FROK_PARAM_OUTPUT_FILENAME) + strlen(" = ") + strlen(FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME), "\n\0");
+                if(EOF == fputs(lineBuf, configStream))
+                {
+                    TRACE_F("fputs failed");
+                    fclose(configStream);
+                    return FALSE;
+                }
             }
 
             commonContext->outputFile = calloc(strlen(FROK_LIB_COMMON_DEFAULT_OUTPUT_FILENAME) + 1, 1);
@@ -272,15 +296,18 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
 
         if(commonContext->photoBasePath == NULL)
         {
-            strcpy(lineBuf, FROK_PARAM_PHOTO_BASE_PATH);
-            strcat(lineBuf + strlen(FROK_PARAM_PHOTO_BASE_PATH), " = ");
-            strcat(lineBuf + strlen(FROK_PARAM_PHOTO_BASE_PATH) + strlen(" = "), FROK_DEFAULT_PHOTO_BASE_PATH);
-            strcat(lineBuf + strlen(FROK_PARAM_PHOTO_BASE_PATH) + strlen(" = ") + strlen(FROK_DEFAULT_PHOTO_BASE_PATH), "\n\0");
-            if(EOF == fputs(lineBuf, configStream))
+            if(noWritting == FALSE)
             {
-                TRACE_F("fputs failed");
-                fclose(configStream);
-                return FALSE;
+                strcpy(lineBuf, FROK_PARAM_PHOTO_BASE_PATH);
+                strcat(lineBuf + strlen(FROK_PARAM_PHOTO_BASE_PATH), " = ");
+                strcat(lineBuf + strlen(FROK_PARAM_PHOTO_BASE_PATH) + strlen(" = "), FROK_DEFAULT_PHOTO_BASE_PATH);
+                strcat(lineBuf + strlen(FROK_PARAM_PHOTO_BASE_PATH) + strlen(" = ") + strlen(FROK_DEFAULT_PHOTO_BASE_PATH), "\n\0");
+                if(EOF == fputs(lineBuf, configStream))
+                {
+                    TRACE_F("fputs failed");
+                    fclose(configStream);
+                    return FALSE;
+                }
             }
 
             commonContext->photoBasePath = calloc(strlen(FROK_DEFAULT_PHOTO_BASE_PATH) + 1, 1);
@@ -297,15 +324,18 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
 
         if(commonContext->targetPhotosPath == NULL)
         {
-            strcpy(lineBuf, FROK_PARAM_TARGET_PHOTOS_PATH);
-            strcat(lineBuf + strlen(FROK_PARAM_TARGET_PHOTOS_PATH), " = ");
-            strcat(lineBuf + strlen(FROK_PARAM_TARGET_PHOTOS_PATH) + strlen(" = "), FROK_DEFAULT_TARGET_PHOTOS_PATH);
-            strcat(lineBuf + strlen(FROK_PARAM_TARGET_PHOTOS_PATH) + strlen(" = ") + strlen(FROK_DEFAULT_TARGET_PHOTOS_PATH), "\n\0");
-            if(EOF == fputs(lineBuf, configStream))
+            if(noWritting == FALSE)
             {
-                TRACE_F("fputs failed");
-                fclose(configStream);
-                return FALSE;
+                strcpy(lineBuf, FROK_PARAM_TARGET_PHOTOS_PATH);
+                strcat(lineBuf + strlen(FROK_PARAM_TARGET_PHOTOS_PATH), " = ");
+                strcat(lineBuf + strlen(FROK_PARAM_TARGET_PHOTOS_PATH) + strlen(" = "), FROK_DEFAULT_TARGET_PHOTOS_PATH);
+                strcat(lineBuf + strlen(FROK_PARAM_TARGET_PHOTOS_PATH) + strlen(" = ") + strlen(FROK_DEFAULT_TARGET_PHOTOS_PATH), "\n\0");
+                if(EOF == fputs(lineBuf, configStream))
+                {
+                    TRACE_F("fputs failed");
+                    fclose(configStream);
+                    return FALSE;
+                }
             }
 
             commonContext->targetPhotosPath = calloc(strlen(FROK_DEFAULT_TARGET_PHOTOS_PATH) + 1, 1);
