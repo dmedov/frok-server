@@ -6,7 +6,7 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-static std::string strInParams [] = {"arrIds", "photoName"};
+static std::string strInParams [] = {"arrUserIds", "photoName"};
 static std::string strOutParams [] = {"arrMapSimilarities"};
 static std::vector<std::string> InRecognizeParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
 static std::vector<std::string> OutRecognizeParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
@@ -24,7 +24,7 @@ typedef struct
 
 // function description
 const char functionDescription [] = "This function Recognize users given in parameters at specified photo";
-const char parametersDescription [] = "\"arrIds\": \"[in] array of users` for whom database would be created\", \
+const char parametersDescription [] = "\"arrUserIds\": \"[in] array of users` for whom database would be created\", \
         \"photoName\": \"[in] target photo (the one users will be recognized on)\", \
         \"arrMapSimilarities\": \"[out] probabilities of friend with userId to be the human on the photo. Probabilities\
         are given for all found faces\"";
@@ -75,11 +75,11 @@ bool FAPI_Recognize_JSON2FUNCP(ConvertParams* psConvertParams)
     }
 
     StructInParams *funcParameters = new StructInParams;
-    json::Array arrIds = jsonParams["arrIds"].ToArray();
+    json::Array arrUserIds = jsonParams["arrUserIds"].ToArray();
 
-    for (unsigned i = 0; i < arrIds.size(); i++)
+    for (unsigned i = 0; i < arrUserIds.size(); i++)
     {
-        funcParameters->ids.push_back(arrIds[i].ToString());
+        funcParameters->ids.push_back(arrUserIds[i].ToString());
     }
     funcParameters->photoName = jsonParams["photoName"].ToString();
 

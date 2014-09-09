@@ -5,14 +5,14 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-static std::string strInParams [] = {"id", "photoName", "faceNumber"};
+static std::string strInParams [] = {"userId", "photoName", "faceNumber"};
 static std::string strOutParams [] = {};
 static std::vector<std::string> InAddFaceFromPhotoToModelParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
 static std::vector<std::string> OutAddFaceFromPhotoToModelParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
 
 typedef struct
 {
-    std::string id;
+    std::string userId;
     std::string photoName;
     int faceNumber;
 } StructInParams;
@@ -72,7 +72,7 @@ bool FAPI_AddFaceFromPhotoToModel_JSON2FUNCP(ConvertParams* psConvertParams)
     }
 
     StructInParams *funcParameters = new StructInParams;
-    funcParameters->id = jsonParams["id"].ToString();
+    funcParameters->userId = jsonParams["userId"].ToString();
     funcParameters->photoName = jsonParams["photoName"].ToString();
     funcParameters->faceNumber = atoi(jsonParams["faceNumber"].ToString().c_str());
 
@@ -117,7 +117,7 @@ FrokResult AddFaceFromPhotoToModel(void *inParams, void **outParams, const char 
     FrokResult res;
 
     std::string currentUserFolder = userBasePath;
-    currentUserFolder.append(in->id).append("/");
+    currentUserFolder.append(in->userId).append("/");
 
     std::vector<cv::Mat> faceImage;
     std::vector<cv::Rect> faces;

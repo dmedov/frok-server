@@ -4,14 +4,14 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-static std::string strInParams [] = {"id", "photoName"};
+static std::string strInParams [] = {"userId", "photoName"};
 static std::string strOutParams [] = {"arrObjFaceRects"};
 static std::vector<std::string> InGetFacesFromPhotoParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
 static std::vector<std::string> OutGetFacesFromPhotoParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
 
 typedef struct
 {
-    std::string id;
+    std::string userId;
     std::string photoName;
 } StructInParams;
 
@@ -74,7 +74,7 @@ bool FAPI_GetFacesFromPhoto_JSON2FUNCP(ConvertParams* psConvertParams)
 
     StructInParams *funcParameters = new StructInParams;
 
-    funcParameters->id = jsonParams["id"].ToString();
+    funcParameters->userId = jsonParams["userId"].ToString();
     funcParameters->photoName = jsonParams["photoName"].ToString();
 
     psConvertParams->functionParameters = funcParameters;
@@ -143,7 +143,7 @@ FrokResult GetFacesFromPhoto(void *inParams, void **outParams, const char *userB
     FrokResult res;
 
     std::string imageFullPath = userBasePath;
-    imageFullPath.append(in->id).append("/photos/").append(in->photoName);
+    imageFullPath.append(in->userId).append("/photos/").append(in->photoName);
 
     if(FROK_RESULT_SUCCESS != (res = detector->SetTargetImage(imageFullPath.c_str(), true)))
     {
