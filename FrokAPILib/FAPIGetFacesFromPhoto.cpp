@@ -4,21 +4,21 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-static std::string strInParams [] = {"userId", "photoName"};
-static std::string strOutParams [] = {"arrObjFaceCoords"};
-static std::vector<std::string> InGetFacesFromPhotoParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
-static std::vector<std::string> OutGetFacesFromPhotoParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
+static std::string strInGetFacesFromPhotoParams [] = {"userId", "photoName"};
+static std::string strOutGetFacesFromPhotoParams [] = {"arrObjFaceCoords"};
+static std::vector<std::string> inGetFacesFromPhotoParams(strInGetFacesFromPhotoParams, strInGetFacesFromPhotoParams + sizeof(strInGetFacesFromPhotoParams) / sizeof(*strInGetFacesFromPhotoParams));
+static std::vector<std::string> outGetFacesFromPhotoParams(strOutGetFacesFromPhotoParams, strOutGetFacesFromPhotoParams + sizeof(strOutGetFacesFromPhotoParams) / sizeof(*strOutGetFacesFromPhotoParams));
 
 typedef struct
 {
     std::string userId;
     std::string photoName;
-} StructInParams;
+} StructInGetFacesFromPhotoParams;
 
 typedef struct
 {
     std::vector< cv::Rect > faceRects;
-} StructOutParams;
+} StructOutGetFacesFromPhotoParams;
 
 // function description
 const char functionDescription [] = "This function Recognize users given in parameters at specified photo";
@@ -36,7 +36,7 @@ bool FAPI_GetFacesFromPhoto_JSON2FUNCP(ConvertParams* converterParams);
 bool FAPI_GetFacesFromPhoto_FUNCP2JSON(ConvertParams* converterParams);
 
 // FAPI object
-FrokAPIFunction FAPI_GetFacesFromPhoto(GetFacesFromPhoto, InGetFacesFromPhotoParameters, OutGetFacesFromPhotoParameters, functionDescription,
+FrokAPIFunction FAPI_GetFacesFromPhoto(GetFacesFromPhoto, inGetFacesFromPhotoParams, outGetFacesFromPhotoParams, functionDescription,
                 parametersDescription, timeout, FAPI_GetFacesFromPhoto_JSON2FUNCP,
                 FAPI_GetFacesFromPhoto_FUNCP2JSON);
 
@@ -59,11 +59,11 @@ bool FAPI_GetFacesFromPhoto_JSON2FUNCP(ConvertParams* psConvertParams)
         return false;
     }
 
-    if(!jsonParams.HasKeys(InGetFacesFromPhotoParameters))
+    if(!jsonParams.HasKeys(inGetFacesFromPhotoParams))
     {
         TRACE_F("Invalid parameter: input json doesn't have all mandatory keys.");
         TRACE_N("Mandatory parameter:");
-        for(std::vector<std::string>::const_iterator it = InGetFacesFromPhotoParameters.begin(); it != InGetFacesFromPhotoParameters.end(); ++it)
+        for(std::vector<std::string>::const_iterator it = inGetFacesFromPhotoParams.begin(); it != inGetFacesFromPhotoParams.end(); ++it)
         {
             TRACE_N("\t%s", ((std::string)*it).c_str());
         }
@@ -72,7 +72,7 @@ bool FAPI_GetFacesFromPhoto_JSON2FUNCP(ConvertParams* psConvertParams)
         return false;
     }
 
-    StructInParams *funcParameters = new StructInParams;
+    StructInGetFacesFromPhotoParams *funcParameters = new StructInGetFacesFromPhotoParams;
 
     funcParameters->userId = jsonParams["userId"].ToString();
     funcParameters->photoName = jsonParams["photoName"].ToString();
@@ -92,7 +92,7 @@ bool FAPI_GetFacesFromPhoto_FUNCP2JSON(ConvertParams* psConvertParams)
 
     psConvertParams->jsonParameters.clear();
 
-    StructOutParams *params = (StructOutParams*)psConvertParams->functionParameters;
+    StructOutGetFacesFromPhotoParams *params = (StructOutGetFacesFromPhotoParams*)psConvertParams->functionParameters;
 
     json::Object jResult;
     json::Array jFoundFaces;
@@ -122,7 +122,7 @@ bool FAPI_GetFacesFromPhoto_FUNCP2JSON(ConvertParams* psConvertParams)
 
     if(psConvertParams->functionParameters != NULL)
     {
-        delete (StructOutParams*)psConvertParams->functionParameters;
+        delete (StructOutGetFacesFromPhotoParams*)psConvertParams->functionParameters;
         psConvertParams->functionParameters = NULL;
     }
     return true;
@@ -138,8 +138,8 @@ FrokResult GetFacesFromPhoto(void *inParams, void **outParams, const char *userB
                 inParams, outParams, userBasePath, targetPhotosPath, detector, recognizer);
         return FROK_RESULT_INVALID_PARAMETER;
     }
-    StructInParams *in = (StructInParams*)inParams;
-    *outParams = new StructOutParams;
+    StructInGetFacesFromPhotoParams *in = (StructInGetFacesFromPhotoParams*)inParams;
+    *outParams = new StructOutGetFacesFromPhotoParams;
     FrokResult res;
 
     std::string imageFullPath = userBasePath;
@@ -174,13 +174,13 @@ FrokResult GetFacesFromPhoto(void *inParams, void **outParams, const char *userB
 
         // Yeah it is face for real. Kappa.
         TRACE_S("Face found: x1 = %d, y1 = %d, x2 = %d. y2 = %d", ((cv::Rect)face[0]).x, ((cv::Rect)face[0]).y, ((cv::Rect)face[0]).x + ((cv::Rect)face[0]).width, ((cv::Rect)face[0]).y + ((cv::Rect)face[0]).height);
-        ((StructOutParams*)*outParams)->faceRects.push_back(face[0]);
+        ((StructOutGetFacesFromPhotoParams*)*outParams)->faceRects.push_back(face[0]);
 
         face.clear();
         faceImage.clear();
     }
 
-    if(((StructOutParams*)*outParams)->faceRects.empty())
+    if(((StructOutGetFacesFromPhotoParams*)*outParams)->faceRects.empty())
     {
         TRACE_F_T("No faces found");
         return FROK_RESULT_NOT_A_FACE;

@@ -6,22 +6,22 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-static std::string strInParams [] = {"arrUserIds", "photoName"};
-static std::string strOutParams [] = {"arrOfFacesCoordsWithUserIdAndSimilarity"};
-static std::vector<std::string> InRecognizeParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
-static std::vector<std::string> OutRecognizeParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
+static std::string strInRecognizeParameters [] = {"arrUserIds", "photoName"};
+static std::string strOutRecognizeParameters [] = {"arrOfFacesCoordsWithUserIdAndSimilarity"};
+static std::vector<std::string> inRecognizeParameters(strInRecognizeParameters, strInRecognizeParameters + sizeof(strInRecognizeParameters) / sizeof(*strInRecognizeParameters));
+static std::vector<std::string> outRecognizeParameters(strOutRecognizeParameters, strOutRecognizeParameters + sizeof(strOutRecognizeParameters) / sizeof(*strOutRecognizeParameters));
 
 typedef struct
 {
     std::vector<std::string> ids;
     std::string photoName;
-} StructInParams;
+} StructInRecognizeParams;
 
 typedef struct
 {
     std::vector<  cv::Rect > coords;
     std::vector< std::map <std::string, double> > similarities;
-} StructOutParams;
+} StructOutRecognizeParams;
 
 // function description
 const char functionDescription [] = "This function Recognize users given in parameters at specified photo";
@@ -39,7 +39,7 @@ bool FAPI_Recognize_JSON2FUNCP(ConvertParams* converterParams);
 bool FAPI_Recognize_FUNCP2JSON(ConvertParams* converterParams);
 
 // FAPI object
-FrokAPIFunction FAPI_Recognize(Recognize, InRecognizeParameters, OutRecognizeParameters, functionDescription,
+FrokAPIFunction FAPI_Recognize(Recognize, inRecognizeParameters, outRecognizeParameters, functionDescription,
                 parametersDescription, timeout, FAPI_Recognize_JSON2FUNCP,
                 FAPI_Recognize_FUNCP2JSON);
 
@@ -62,11 +62,11 @@ bool FAPI_Recognize_JSON2FUNCP(ConvertParams* psConvertParams)
         return false;
     }
 
-    if(!jsonParams.HasKeys(InRecognizeParameters))
+    if(!jsonParams.HasKeys(inRecognizeParameters))
     {
         TRACE_F("Invalid parameter: input json doesn't have all mandatory keys.");
         TRACE_N("Mandatory parameter:");
-        for(std::vector<std::string>::const_iterator it = InRecognizeParameters.begin(); it != InRecognizeParameters.end(); ++it)
+        for(std::vector<std::string>::const_iterator it = inRecognizeParameters.begin(); it != inRecognizeParameters.end(); ++it)
         {
             TRACE_N("\t%s", ((std::string)*it).c_str());
         }
@@ -75,7 +75,7 @@ bool FAPI_Recognize_JSON2FUNCP(ConvertParams* psConvertParams)
         return false;
     }
 
-    StructInParams *funcParameters = new StructInParams;
+    StructInRecognizeParams *funcParameters = new StructInRecognizeParams;
     json::Array arrUserIds = jsonParams["arrUserIds"].ToArray();
 
     for (unsigned i = 0; i < arrUserIds.size(); i++)
@@ -99,7 +99,7 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
 
     psConvertParams->jsonParameters.clear();
 
-    StructOutParams *params = (StructOutParams*)psConvertParams->functionParameters;
+    StructOutRecognizeParams *params = (StructOutRecognizeParams*)psConvertParams->functionParameters;
 
     unsigned i = 0;
     json::Object resultJson;
@@ -132,7 +132,7 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
         jFaceRect["y2"] = faceCoords.y + faceCoords.height;
 
         jFaceCoordsAndUsersOnPhoto["coords"] = jFaceRect;
-        jFaceCoordsAndUsersOnPhoto["arrUserIds"] = jsonUsersProbability;
+        jFaceCoordsAndUsersOnPhoto["arrUserIdsAndProbabilities"] = jsonUsersProbability;
 
         jsonArrOfFacesCoordsWithUserIdAndSimilarity.push_back(jFaceCoordsAndUsersOnPhoto);
     }
@@ -150,7 +150,7 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
 
     if(psConvertParams->functionParameters != NULL)
     {
-        delete (StructOutParams*)psConvertParams->functionParameters;
+        delete (StructOutRecognizeParams*)psConvertParams->functionParameters;
         psConvertParams->functionParameters = NULL;
     }
     return true;
@@ -166,13 +166,13 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
                 inParams, outParams, userBasePath, targetPhotosPath, detector, recognizer);
         return FROK_RESULT_INVALID_PARAMETER;
     }
-    StructInParams *in = (StructInParams*)inParams;
-    *outParams = new StructOutParams;
+    StructInRecognizeParams *in = (StructInRecognizeParams*)inParams;
+    *outParams = new StructOutRecognizeParams;
 
     std::vector<std::string> ids = in->ids;
     std::string photoName = in->photoName;
 
-    ((StructOutParams*)*outParams)->similarities.clear();
+    ((StructOutRecognizeParams*)*outParams)->similarities.clear();
     if(ids.empty())
     {
         TRACE_F_T("Invalid parameter: ids vector is empty");
@@ -241,11 +241,11 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
             TRACE_F_T("Failed to GetSimilarityOfFaceWithModels on result %s", FrokResultToString(res));
             continue;
         }
-        ((StructOutParams*)*outParams)->coords.push_back(faces.at(i));
-        ((StructOutParams*)*outParams)->similarities.push_back(currenFaceSimilarities);
+        ((StructOutRecognizeParams*)*outParams)->coords.push_back(faces.at(i));
+        ((StructOutRecognizeParams*)*outParams)->similarities.push_back(currenFaceSimilarities);
     }
 
-    if(((StructOutParams*)*outParams)->similarities.empty())
+    if(((StructOutRecognizeParams*)*outParams)->similarities.empty())
     {
         TRACE_F_T("Nothing similar to requested users was found on picture");
         return FROK_RESULT_UNSPECIFIED_ERROR;

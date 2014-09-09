@@ -5,19 +5,19 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-static std::string strInParams [] = {"userId", "photoName", "faceNumber"};
-static std::string strOutParams [] = {};
-static std::vector<std::string> InAddFaceFromPhotoToModelParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
-static std::vector<std::string> OutAddFaceFromPhotoToModelParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
+static std::string strInAddFaceFromPhotoToModelParams [] = {"userId", "photoName", "faceNumber"};
+static std::string strOutAddFaceFromPhotoToModelParams [] = {};
+static std::vector<std::string> inAddFaceFromPhotoToModelParams(strInAddFaceFromPhotoToModelParams, strInAddFaceFromPhotoToModelParams + sizeof(strInAddFaceFromPhotoToModelParams) / sizeof(*strInAddFaceFromPhotoToModelParams));
+static std::vector<std::string> outAddFaceFromPhotoToModelParams(strOutAddFaceFromPhotoToModelParams, strOutAddFaceFromPhotoToModelParams + sizeof(strOutAddFaceFromPhotoToModelParams) / sizeof(*strOutAddFaceFromPhotoToModelParams));
 
 typedef struct
 {
     std::string userId;
     std::string photoName;
     int faceNumber;
-} StructInParams;
+} StructInAddFaceFromPhotoToModelParams;
 
-typedef struct {} StructOutParams;
+typedef struct {} StructOutAddFaceFromPhotoToModelParams;
 
 // function description
 const char functionDescription [] = "This function Recognize users given in parameters at specified photo";
@@ -35,7 +35,7 @@ bool FAPI_AddFaceFromPhotoToModel_JSON2FUNCP(ConvertParams* converterParams);
 bool FAPI_AddFaceFromPhotoToModel_FUNCP2JSON(ConvertParams* converterParams);
 
 // FAPI object
-FrokAPIFunction FAPI_AddFaceFromPhotoToModel(AddFaceFromPhotoToModel, InAddFaceFromPhotoToModelParameters, OutAddFaceFromPhotoToModelParameters, functionDescription,
+FrokAPIFunction FAPI_AddFaceFromPhotoToModel(AddFaceFromPhotoToModel, outAddFaceFromPhotoToModelParams, outAddFaceFromPhotoToModelParams, functionDescription,
                 parametersDescription, timeout, FAPI_AddFaceFromPhotoToModel_JSON2FUNCP,
                 FAPI_AddFaceFromPhotoToModel_FUNCP2JSON);
 
@@ -58,11 +58,11 @@ bool FAPI_AddFaceFromPhotoToModel_JSON2FUNCP(ConvertParams* psConvertParams)
         return false;
     }
 
-    if(!jsonParams.HasKeys(InAddFaceFromPhotoToModelParameters))
+    if(!jsonParams.HasKeys(inAddFaceFromPhotoToModelParams))
     {
         TRACE_F("Invalid parameter: input json doesn't have all mandatory keys.");
         TRACE_N("Mandatory parameter:");
-        for(std::vector<std::string>::const_iterator it = InAddFaceFromPhotoToModelParameters.begin(); it != InAddFaceFromPhotoToModelParameters.end(); ++it)
+        for(std::vector<std::string>::const_iterator it = inAddFaceFromPhotoToModelParams.begin(); it != inAddFaceFromPhotoToModelParams.end(); ++it)
         {
             TRACE_N("\t%s", ((std::string)*it).c_str());
         }
@@ -71,7 +71,7 @@ bool FAPI_AddFaceFromPhotoToModel_JSON2FUNCP(ConvertParams* psConvertParams)
         return false;
     }
 
-    StructInParams *funcParameters = new StructInParams;
+    StructInAddFaceFromPhotoToModelParams *funcParameters = new StructInAddFaceFromPhotoToModelParams;
     funcParameters->userId = jsonParams["userId"].ToString();
     funcParameters->photoName = jsonParams["photoName"].ToString();
     funcParameters->faceNumber = atoi(jsonParams["faceNumber"].ToString().c_str());
@@ -93,7 +93,7 @@ bool FAPI_AddFaceFromPhotoToModel_FUNCP2JSON(ConvertParams* psConvertParams)
     psConvertParams->jsonParameters = "{}";
     if(psConvertParams->functionParameters != NULL)
     {
-        delete [] (StructInParams*)psConvertParams->functionParameters;
+        delete [] (StructInAddFaceFromPhotoToModelParams*)psConvertParams->functionParameters;
         psConvertParams->functionParameters = NULL;
     }
     return true;
@@ -109,7 +109,7 @@ FrokResult AddFaceFromPhotoToModel(void *inParams, void **outParams, const char 
                 inParams, outParams, userBasePath, targetPhotosPath, detector, recognizer);
         return FROK_RESULT_INVALID_PARAMETER;
     }
-    StructInParams *in = (StructInParams*)inParams;
+    StructInAddFaceFromPhotoToModelParams *in = (StructInAddFaceFromPhotoToModelParams*)inParams;
     *outParams = NULL;
 
     TRACE_T("AddFaceFromPhotoToModel started");
