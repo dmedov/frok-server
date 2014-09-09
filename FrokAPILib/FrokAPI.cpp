@@ -6,7 +6,7 @@
 
 extern "C"
 {
-FrokAPI *frokAPIAlloc(const char *photo_base_path, const char *targets_folder_path,
+void *frokAPIAlloc(const char *photo_base_path, const char *targets_folder_path,
                    void *detector, void *recognizer)
 {
     if((photo_base_path == NULL) || (targets_folder_path == NULL))
@@ -28,7 +28,7 @@ FrokAPI *frokAPIAlloc(const char *photo_base_path, const char *targets_folder_pa
     return instance;
 }
 
-void frokAPIDealloc(FrokAPI *instance)
+void frokAPIDealloc(void *instance)
 {
     if(instance == NULL)
         return;
@@ -36,7 +36,7 @@ void frokAPIDealloc(FrokAPI *instance)
     delete (FrokAPI*)instance;
 }
 
-FrokResult frokAPIExecuteFunction(FrokAPI *instance, const char *functionName, const char *inJson, char **outJson)
+FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, const char *inJson, char **outJson)
 {
     std::string strFunctionName = functionName;
     std::string strInJson = inJson;
@@ -66,7 +66,7 @@ FrokResult frokAPIExecuteFunction(FrokAPI *instance, const char *functionName, c
     {
         try
         {
-            res = instance->ExecuteFunction(strFunctionName, strInJson, strOutJson);
+            res = ((FrokAPI*)instance)->ExecuteFunction(strFunctionName, strInJson, strOutJson);
         }
         catch(...)
         {
@@ -136,20 +136,20 @@ char *getFunctionFromJson(const char *inJson)
     return result;
 }
 
-void frokAPIInit(FrokAPI *instance)
+void frokAPIInit(void *instance)
 {
     if(instance == NULL)
     {
         TRACE_F("Invalid parameter: instance = %p", instance);
         return;
     }
-    instance->AddAPIFunction("addFace", &FAPI_AddFaceFromPhotoToModel);
-    instance->AddAPIFunction("getFaces", &FAPI_GetFacesFromPhoto);
-    instance->AddAPIFunction("train", &FAPI_TrainUserModel);
-    instance->AddAPIFunction("recognize", &FAPI_Recognize);
+    ((FrokAPI*)instance)->AddAPIFunction("addFace", &FAPI_AddFaceFromPhotoToModel);
+    ((FrokAPI*)instance)->AddAPIFunction("getFaces", &FAPI_GetFacesFromPhoto);
+    ((FrokAPI*)instance)->AddAPIFunction("train", &FAPI_TrainUserModel);
+    ((FrokAPI*)instance)->AddAPIFunction("recognize", &FAPI_Recognize);
 }
 
-void frokAPIDeinit(FrokAPI *UNUSED(instance))
+void frokAPIDeinit(void *UNUSED(instance))
 {
     return;
 }

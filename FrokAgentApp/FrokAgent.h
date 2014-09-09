@@ -19,7 +19,7 @@ typedef struct FrokAgentContext
     BOOL agentStarted;
     pthread_t agentThread;
     int terminateAgentEvent;
-    FrokAPI api;
+    void *api;
 }FrokAgentContext;
 #pragma pack(pop)
 

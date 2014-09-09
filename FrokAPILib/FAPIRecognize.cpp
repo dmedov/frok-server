@@ -7,7 +7,7 @@
 
 // inout parameters
 static std::string strInParams [] = {"arrUserIds", "photoName"};
-static std::string strOutParams [] = {"arrMapSimilarities"};
+static std::string strOutParams [] = {"arrOfFacesCoordsWithUserIdAndSimilarity"};
 static std::vector<std::string> InRecognizeParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
 static std::vector<std::string> OutRecognizeParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
 
@@ -19,7 +19,8 @@ typedef struct
 
 typedef struct
 {
-    std::vector< std::map<std::string, double> > similarities;
+    std::vector<  cv::Rect > coords;
+    std::vector< std::map <std::string, double> > similarities;
 } StructOutParams;
 
 // function description
@@ -102,25 +103,41 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
 
     unsigned i = 0;
     json::Object resultJson;
+    json::Array jsonArrOfFacesCoordsWithUserIdAndSimilarity;
 
-    for(std::vector< std::map<std::string, double> >::iterator faceIterator = params->similarities.begin();
+    for(std::vector< std::map <std::string, double> > ::iterator faceIterator = params->similarities.begin();
         faceIterator != params->similarities.end(); ++faceIterator)
     {
+        cv::Rect faceCoords = params->coords.at(i++);
         std::map<std::string, double> currentFace = (std::map<std::string, double>)*faceIterator;
-        json::Object jsonFace;
+
+        json::Array jsonUsersProbability;
         for (std::map<std::string, double>::iterator userIterator = currentFace.begin();
              userIterator != currentFace.end(); ++userIterator)
         {
+            json::Object jsonFace;
             std::stringstream doubleToString;
             doubleToString << (double)userIterator->second;
-            jsonFace[userIterator->first] = doubleToString.str();
-            //std::cout << it->first << " => " << it->second << '\n';
+            jsonFace["userId"] = userIterator->first;
+            jsonFace["probability"] = doubleToString.str();
+            jsonUsersProbability.push_back(jsonFace);
         }
-        std::stringstream intToString;
-        intToString << i++;
-        resultJson[intToString.str()] = jsonFace;
+
+        json::Object jFaceCoordsAndUsersOnPhoto;
+
+        json::Object jFaceRect;
+        jFaceRect["x1"] = faceCoords.x;
+        jFaceRect["y1"] = faceCoords.y;
+        jFaceRect["x2"] = faceCoords.x + faceCoords.width;
+        jFaceRect["y2"] = faceCoords.y + faceCoords.height;
+
+        jFaceCoordsAndUsersOnPhoto["coords"] = jFaceRect;
+        jFaceCoordsAndUsersOnPhoto["arrUserIds"] = jsonUsersProbability;
+
+        jsonArrOfFacesCoordsWithUserIdAndSimilarity.push_back(jFaceCoordsAndUsersOnPhoto);
     }
 
+    resultJson["arrOfFacesCoordsWithUserIdAndSimilarity"] = jsonArrOfFacesCoordsWithUserIdAndSimilarity;
     try
     {
         psConvertParams->jsonParameters = json::Serialize(resultJson);
@@ -206,6 +223,7 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
         return res;
     }
 
+    int i = 0;
     for(std::vector<cv::Mat>::iterator it = faceImages.begin(); it != faceImages.end(); ++it)
     {
         TRACE_T("Recognizing users on new face");
@@ -223,10 +241,11 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
             TRACE_F_T("Failed to GetSimilarityOfFaceWithModels on result %s", FrokResultToString(res));
             continue;
         }
+        ((StructOutParams*)*outParams)->coords.push_back(faces.at(i));
         ((StructOutParams*)*outParams)->similarities.push_back(currenFaceSimilarities);
     }
 
-    if(((StructOutParams*)*outParams)->similarities.size() == 0)
+    if(((StructOutParams*)*outParams)->similarities.empty())
     {
         TRACE_F_T("Nothing similar to requested users was found on picture");
         return FROK_RESULT_UNSPECIFIED_ERROR;

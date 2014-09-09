@@ -5,7 +5,7 @@
 
 // inout parameters
 static std::string strInParams [] = {"userId", "photoName"};
-static std::string strOutParams [] = {"arrObjFaceRectangles"};
+static std::string strOutParams [] = {"arrObjFaceCoords"};
 static std::vector<std::string> InGetFacesFromPhotoParameters(strInParams, strInParams + sizeof(strInParams) / sizeof(*strInParams));
 static std::vector<std::string> OutGetFacesFromPhotoParameters(strOutParams, strOutParams + sizeof(strOutParams) / sizeof(*strOutParams));
 
@@ -108,7 +108,7 @@ bool FAPI_GetFacesFromPhoto_FUNCP2JSON(ConvertParams* psConvertParams)
         jFoundFaces.push_back(jFaceRect);
     }
 
-    jResult["arrObjFaceRectangles"] = jFoundFaces;
+    jResult["arrObjFaceCoords"] = jFoundFaces;
 
     try
     {
