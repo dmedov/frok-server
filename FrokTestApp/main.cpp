@@ -22,8 +22,38 @@ int main(void)
         return -1;
     }
 
-    FaceDetectorAbstract *detector = new FrokFaceDetector;
-    FaceRecognizerAbstract *recognizer = new FaceRecognizerEigenfaces;
+    TRACE_N("Create detector instance");
+    void *detector = frokFaceDetectorAlloc();
+    if(detector == NULL)
+    {
+        TRACE_F("Failed to create detector instance");
+        frokLibCommonDeinit();
+        exit(EXIT_FAILURE);
+    }
+    TRACE_S("detector instance created");
+
+
+    TRACE_N("Create recognizer instance");
+    void *recognizer = frokFaceRecognizerEigenfacesAlloc();
+    if(recognizer == NULL)
+    {
+        TRACE_F("Failed to create recognizer instance");
+        frokFaceDetectorDealloc(detector);
+        frokLibCommonDeinit();
+        exit(EXIT_FAILURE);
+    }
+    TRACE_S("recognizer instance created");
+
+    TRACE_N("Init model with users from path %s", commonContext->photoBasePath);
+    if(FALSE == frokFaceRecognizerEigenfacesInit(recognizer, commonContext->photoBasePath))
+    {
+        TRACE_F("Failed to init recognizer base. Continue");
+    }
+    else
+    {
+        TRACE_S("Recognize base inited");
+    }
+
 
     void *fapi = frokAPIAlloc(commonContext->photoBasePath, commonContext->targetPhotosPath, detector, recognizer);
     frokAPIInit(fapi);
