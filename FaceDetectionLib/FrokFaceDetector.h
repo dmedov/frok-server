@@ -105,11 +105,16 @@ private:
     FrokResult RemoveDrowbackFrokImage(cv::Mat &image);
     FrokResult ResizeFaceAndImage(cv::Mat &targetImage, cv::Rect &faceCoords);
 };
-#else
+#endif //C++
+
+#ifdef __cplusplus
+extern "C"{
+#endif //C++
 
 void* frokFaceDetectorAlloc();
 void frokFaceDetectorDealloc(void* instance);
-
+#ifdef __cplusplus
+}
 #endif //C++
 
 #endif

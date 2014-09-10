@@ -10,7 +10,7 @@
 #define MODULE_NAME "AGENT"
 
 //{"cmd":"train", "arrUserIds":["1"]}
-//{"cmd":"recognize", "arrUserIds":["1"], "photoName":"1.jpg"}
+//{"cmd":"recognize", "arrUserIds":["1", "13"], "photoName":"1.jpg"}
 //{"cmd":"addFace", "userId":"0", "photoName":"snapshot2.png", "faceNumber": "2"}
 //{"cmd":"getFaces", "userId":"0", "photoName":"snapshot2.png"}
 static void sigintHandler(int UNUSED(sig), siginfo_t UNUSED(*si), void UNUSED(*p))

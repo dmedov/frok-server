@@ -31,13 +31,16 @@ private:
     __int64_t calcImageHash(cv::Mat &image);
     __int64_t calcHammingDistance(__int64_t firstHash, __int64_t secondHash);
 };
+#endif //C++
 
-#else
-
+#ifdef __cplusplus
+extern "C"{
+#endif //C++
 void *frokFaceRecognizerEigenfacesAlloc();
 BOOL frokFaceRecognizerEigenfacesInit(void *instance, const char *photoBasePath);
 void frokFaceRecognizerEigenfacesDealloc(void *instance);
-
-#endif // C++
+#ifdef __cplusplus
+}
+#endif //C++
 
 #endif // FACERECOGNIZEREIGENFACES_H

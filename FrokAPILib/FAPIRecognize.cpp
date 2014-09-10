@@ -111,28 +111,28 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
         cv::Rect faceCoords = params->coords.at(i++);
         std::map<std::string, double> currentFace = (std::map<std::string, double>)*faceIterator;
 
-        json::Array jsonUsersProbability;
+        std::map<std::string, double>::iterator predictedUserIterator;
+        double maxLikelihood = -1;
         for (std::map<std::string, double>::iterator userIterator = currentFace.begin();
              userIterator != currentFace.end(); ++userIterator)
         {
-            json::Object jsonFace;
-            std::stringstream doubleToString;
-            doubleToString << (double)userIterator->second;
-            jsonFace["userId"] = userIterator->first;
-            jsonFace["probability"] = doubleToString.str();
-            jsonUsersProbability.push_back(jsonFace);
+            if((double)userIterator->second > maxLikelihood)
+            {
+                predictedUserIterator = userIterator;
+                maxLikelihood = (double)userIterator->second;
+            }
         }
 
         json::Object jFaceCoordsAndUsersOnPhoto;
 
-        json::Object jFaceRect;
-        jFaceRect["x1"] = faceCoords.x;
-        jFaceRect["y1"] = faceCoords.y;
-        jFaceRect["x2"] = faceCoords.x + faceCoords.width;
-        jFaceRect["y2"] = faceCoords.y + faceCoords.height;
-
-        jFaceCoordsAndUsersOnPhoto["coords"] = jFaceRect;
-        jFaceCoordsAndUsersOnPhoto["arrUserIdsAndProbabilities"] = jsonUsersProbability;
+        jFaceCoordsAndUsersOnPhoto["x1"] = faceCoords.x;
+        jFaceCoordsAndUsersOnPhoto["y1"] = faceCoords.y;
+        jFaceCoordsAndUsersOnPhoto["x2"] = faceCoords.x + faceCoords.width;
+        jFaceCoordsAndUsersOnPhoto["y2"] = faceCoords.y + faceCoords.height;
+        jFaceCoordsAndUsersOnPhoto["userId"] = predictedUserIterator->first;
+        std::stringstream doubleToString;
+        doubleToString << (double)predictedUserIterator->second;
+        jFaceCoordsAndUsersOnPhoto["probability"] = doubleToString.str();
 
         jsonArrOfFacesCoordsWithUserIdAndSimilarity.push_back(jFaceCoordsAndUsersOnPhoto);
     }
