@@ -241,7 +241,7 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
             TRACE_F_T("Failed to GetSimilarityOfFaceWithModels on result %s", FrokResultToString(res));
             continue;
         }
-        ((StructOutRecognizeParams*)*outParams)->coords.push_back(faces.at(i));
+        ((StructOutRecognizeParams*)*outParams)->coords.push_back(faces.at(i++));
         ((StructOutRecognizeParams*)*outParams)->similarities.push_back(currenFaceSimilarities);
     }
 

@@ -34,6 +34,7 @@ void frokAPIDealloc(void *instance)
         return;
 
     delete (FrokAPI*)instance;
+    instance = NULL;
 }
 
 FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, const char *inJson, char **outJson)
@@ -107,8 +108,10 @@ FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, cons
     }
 
     std::string str = json::Serialize(jOutJson);
-    *outJson = new char [str.size() + 1];
+    *outJson = new char [str.size() + 2];
     strcpy(*outJson, str.c_str());
+    strcat(*outJson, "\n\0");
+
     return res;
 }
 
@@ -174,6 +177,8 @@ FrokAPI::~FrokAPI()
 {
     delete []photo_base_path;
     delete []targets_folder_path;
+    photo_base_path = NULL;
+    targets_folder_path = NULL;
 }
 
 void FrokAPI::AddAPIFunction(std::string functionName, FrokAPIFunction *function)
