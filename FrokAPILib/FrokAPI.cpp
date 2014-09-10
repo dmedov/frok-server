@@ -201,10 +201,18 @@ FrokResult FrokAPI::ExecuteFunction(std::string functionName, std::string inJson
     ConvertParams inParams;
     ConvertParams outParams;
     inParams.jsonParameters = inJson;
-    function->ConvertJsonToFunctionParameters(&inParams);
+    if(!function->ConvertJsonToFunctionParameters(&inParams))
+    {
+        TRACE_F("ConvertJsonToFunctionParameters failed");
+        return FROK_RESULT_INVALID_PARAMETER;
+    }
     FrokResult res = function->function(inParams.functionParameters, &outParams.functionParameters,
                                         photo_base_path, targets_folder_path, detector, recognizer);
-    function->ConvertFunctionReturnToJson(&outParams);
+    if(!function->ConvertFunctionReturnToJson(&outParams))
+    {
+        TRACE_F("ConvertFunctionReturnToJson failed");
+        return FROK_RESULT_UNSPECIFIED_ERROR;
+    }
     outJson = outParams.jsonParameters;
     return res;
 }

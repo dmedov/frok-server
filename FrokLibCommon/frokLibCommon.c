@@ -61,6 +61,7 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
         }
 
         free(configFilePath);
+        configFilePath = NULL;
     }
 
     TRACE_N("Opening config file. File is automatically created if it doesn't exist");
@@ -149,6 +150,7 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
             }
 
             free(commonContext->outputFile);
+            commonContext->outputFile = NULL;
             commonContext->outputFile = calloc(j - i + 1, 1);
             if(commonContext->outputFile == NULL)
             {
@@ -197,6 +199,7 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
             }
 
             free(commonContext->photoBasePath);
+            commonContext->photoBasePath = NULL;
             commonContext->photoBasePath = calloc(j - i + 1, 1);
             if(commonContext->photoBasePath == NULL)
             {
@@ -246,6 +249,7 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
             }
 
             free(commonContext->targetPhotosPath);
+            commonContext->targetPhotosPath = NULL;
             commonContext->targetPhotosPath = calloc(j - i + 1, 1);
             if(commonContext->targetPhotosPath== NULL)
             {
@@ -367,6 +371,7 @@ void set_trace_prefix(const char *prefix)
     {
 
         free(tracePrefix);
+        tracePrefix = NULL;
         tracePrefix = calloc(strlen(prefix) + 1, 1);
         if(tracePrefix != NULL)
         {
@@ -504,6 +509,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         pthread_mutex_destroy(&commonContext->trace_cs);
         pthread_mutex_destroy(&commonContext->common_cs);
         free(commonContext->outputFile);
+        commonContext->outputFile = NULL;
         free(commonContext);
         commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
@@ -515,6 +521,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         pthread_mutex_destroy(&commonContext->trace_cs);
         pthread_mutex_destroy(&commonContext->common_cs);
         free(commonContext->outputFile);
+        commonContext->outputFile = NULL;
         free(commonContext);
         commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
@@ -526,6 +533,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         pthread_mutex_destroy(&commonContext->trace_cs);
         pthread_mutex_destroy(&commonContext->common_cs);
         free(commonContext->outputFile);
+        commonContext->outputFile = NULL;
         free(commonContext);
         commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
@@ -538,6 +546,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         pthread_mutex_destroy(&commonContext->trace_cs);
         pthread_mutex_destroy(&commonContext->common_cs);
         free(commonContext->outputFile);
+        commonContext->outputFile = NULL;
         free(commonContext);
         commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
@@ -550,6 +559,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         pthread_mutex_destroy(&commonContext->trace_cs);
         pthread_mutex_destroy(&commonContext->common_cs);
         free(commonContext->outputFile);
+        commonContext->outputFile = NULL;
         free(commonContext);
         commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
@@ -562,6 +572,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         pthread_mutex_destroy(&commonContext->trace_cs);
         pthread_mutex_destroy(&commonContext->common_cs);
         free(commonContext->outputFile);
+        commonContext->outputFile = NULL;
         free(commonContext);
         commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
@@ -574,6 +585,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         pthread_mutex_destroy(&commonContext->trace_cs);
         pthread_mutex_destroy(&commonContext->common_cs);
         free(commonContext->outputFile);
+        commonContext->outputFile = NULL;
         free(commonContext);
         commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
@@ -586,6 +598,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         pthread_mutex_destroy(&commonContext->trace_cs);
         pthread_mutex_destroy(&commonContext->common_cs);
         free(commonContext->outputFile);
+        commonContext->outputFile = NULL;
         free(commonContext);
         commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
