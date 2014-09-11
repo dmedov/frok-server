@@ -219,7 +219,7 @@ FrokResult frokAgentSocketListener()
         TRACE_N("lock-unlock frokAgentMutex");
         pthread_mutex_lock(&frokAgentMutex);
         pthread_mutex_unlock(&frokAgentMutex);
-        TRACE_S("Accepting connections from socket %d, port is %d", context->localPortNumber, context->localSock);
+        TRACE_S("Accepting connections from socket %d, port is %d", context->localSock, context->localPortNumber);
         if(-1 == (acceptedSocket = accept(context->localSock, NULL, NULL)))
         {
             if((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK))
@@ -334,6 +334,7 @@ FrokResult frokAgentSocketListener()
                     {
                         TRACE_F("realloc failed on error %s", strerror(errno));
                         free(tmp_reallocPointer);
+                        tmp_reallocPointer = NULL;
                         shutdown(acceptedSocket, 2);
                         close(acceptedSocket);
                         return FROK_RESULT_MEMORY_FAULT;
@@ -384,6 +385,7 @@ FrokResult frokAgentSocketListener()
                         }
                         memcpy(tmp_reallocPointer, incomingRequest + receivedPacketSize, receivedDataSize - receivedPacketSize);
                         free(incomingRequest);
+                        incomingRequest = NULL;
                         incomingRequest = tmp_reallocPointer;
 
                         receivedDataSize -= receivedPacketSize;
@@ -398,6 +400,7 @@ FrokResult frokAgentSocketListener()
                     else
                     {
                         free(incomingRequest);
+                        incomingRequest = NULL;
                         receivedDataSize = 0;
                     }
 
@@ -461,7 +464,9 @@ void frokAgentProcessJson(SOCKET outSock, const char *json, size_t UNUSED(jsonLe
     }
 
     free(outJson);
+    outJson = NULL;
     free(functionName);
+    functionName = NULL;
 }
 
 // Full packet begins with "{ and ends with }". Number of { and } symbols has to be equal

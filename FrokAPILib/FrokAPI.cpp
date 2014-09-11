@@ -34,6 +34,7 @@ void frokAPIDealloc(void *instance)
         return;
 
     delete (FrokAPI*)instance;
+    instance = NULL;
 }
 
 FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, const char *inJson, char **outJson)
@@ -107,8 +108,10 @@ FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, cons
     }
 
     std::string str = json::Serialize(jOutJson);
-    *outJson = new char [str.size() + 1];
+    *outJson = new char [str.size() + 2];
     strcpy(*outJson, str.c_str());
+    strcat(*outJson, "\n\0");
+
     return res;
 }
 
@@ -174,6 +177,8 @@ FrokAPI::~FrokAPI()
 {
     delete []photo_base_path;
     delete []targets_folder_path;
+    photo_base_path = NULL;
+    targets_folder_path = NULL;
 }
 
 void FrokAPI::AddAPIFunction(std::string functionName, FrokAPIFunction *function)
@@ -201,10 +206,18 @@ FrokResult FrokAPI::ExecuteFunction(std::string functionName, std::string inJson
     ConvertParams inParams;
     ConvertParams outParams;
     inParams.jsonParameters = inJson;
-    function->ConvertJsonToFunctionParameters(&inParams);
+    if(!function->ConvertJsonToFunctionParameters(&inParams))
+    {
+        TRACE_F("ConvertJsonToFunctionParameters failed");
+        return FROK_RESULT_INVALID_PARAMETER;
+    }
     FrokResult res = function->function(inParams.functionParameters, &outParams.functionParameters,
                                         photo_base_path, targets_folder_path, detector, recognizer);
-    function->ConvertFunctionReturnToJson(&outParams);
+    if(!function->ConvertFunctionReturnToJson(&outParams))
+    {
+        TRACE_F("ConvertFunctionReturnToJson failed");
+        return FROK_RESULT_UNSPECIFIED_ERROR;
+    }
     outJson = outParams.jsonParameters;
     return res;
 }

@@ -273,6 +273,8 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
         FaceModelAbstract *model = ((userIdAndModel)*it).second;
         std::string userId = ((userIdAndModel)*it).first;
         cv::Mat predictedFace;
+
+        TRACE_T("Getting similarity for user %s", userId.c_str());
         if(FROK_RESULT_SUCCESS != (res = model->GetPredictedFace(targetFace, predictedFace)))
         {
             TRACE_F_T("GetPredictedFace failed on result %s for user %s", FrokResultToString(res), userId.c_str());
@@ -299,6 +301,7 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
 
             double weightMean = 0.25 * geometricMean + 0.75 * prob3;
 
+            TRACE_S_T("User %s results:", userId.c_str());
             TRACE_S_T("geometric mean probability = %lf", geometricMean);
             TRACE_S_T("arithmetic mean probability = %lf", arithmeticMean);
             TRACE_S_T("weightMean mean probability = %lf", weightMean);

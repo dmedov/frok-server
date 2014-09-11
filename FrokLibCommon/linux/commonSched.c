@@ -90,13 +90,13 @@ BOOL obtainCPU(short cpu_number)
         return FALSE;
     }
 
-    TRACE_N("Set nice value to -15");
+    /*TRACE_N("Set nice value to -15");
 
     if(-1 == setpriority(PRIO_PROCESS, 0, -15))
     {
         TRACE_F("setpriority failed on error %s", strerror(errno));
         return FALSE;
-    }
+    }*/
 
     TRACE_S("finished");
     return TRUE;
