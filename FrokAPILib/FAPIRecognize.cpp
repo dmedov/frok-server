@@ -113,14 +113,26 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
 
         std::map<std::string, double>::iterator predictedUserIterator;
         double maxLikelihood = -1;
-        for (std::map<std::string, double>::iterator userIterator = currentFace.begin();
-             userIterator != currentFace.end(); ++userIterator)
+        json::Array jUsersAndProbabilities;
+        for(int n = 0; n < currentFace.size(); n++)
         {
-            if((double)userIterator->second > maxLikelihood)
+            for (std::map<std::string, double>::iterator userIterator = currentFace.begin();
+                 userIterator != currentFace.end(); ++userIterator)
             {
-                predictedUserIterator = userIterator;
-                maxLikelihood = (double)userIterator->second;
+                if((double)userIterator->second > maxLikelihood)
+                {
+                    predictedUserIterator = userIterator;
+                    maxLikelihood = (double)userIterator->second;
+                }
             }
+            json::Object jUserAndProbability;
+            jUserAndProbability["userId"] = predictedUserIterator->first;
+            std::stringstream doubleToString;
+            doubleToString << (double)predictedUserIterator->second;
+            jUserAndProbability["probability"] = doubleToString.str();
+            jUsersAndProbabilities.push_back(jUserAndProbability);
+            currentFace.erase(predictedUserIterator);
+            maxLikelihood = -1;
         }
 
         json::Object jFaceCoordsAndUsersOnPhoto;
@@ -129,10 +141,9 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
         jFaceCoordsAndUsersOnPhoto["y1"] = faceCoords.y;
         jFaceCoordsAndUsersOnPhoto["x2"] = faceCoords.x + faceCoords.width;
         jFaceCoordsAndUsersOnPhoto["y2"] = faceCoords.y + faceCoords.height;
-        jFaceCoordsAndUsersOnPhoto["userId"] = predictedUserIterator->first;
-        std::stringstream doubleToString;
-        doubleToString << (double)predictedUserIterator->second;
-        jFaceCoordsAndUsersOnPhoto["probability"] = doubleToString.str();
+        jFaceCoordsAndUsersOnPhoto["userId"] = jUsersAndProbabilities[0]["userId"];
+        jFaceCoordsAndUsersOnPhoto["probability"] = jUsersAndProbabilities[0]["probability"];;
+        jFaceCoordsAndUsersOnPhoto["userIdsAndProbabilities"] = jUsersAndProbabilities;
 
         jsonArrOfFacesCoordsWithUserIdAndSimilarity.push_back(jFaceCoordsAndUsersOnPhoto);
     }
