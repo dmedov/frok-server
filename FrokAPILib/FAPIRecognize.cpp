@@ -129,7 +129,7 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
             jUserAndProbability["userId"] = predictedUserIterator->first;
             std::stringstream doubleToString;
             doubleToString << (double)predictedUserIterator->second;
-            jUserAndProbability["probability"] = doubleToString.str();
+            jUserAndProbability["P"] = doubleToString.str();
             jUsersAndProbabilities.push_back(jUserAndProbability);
             currentFace.erase(predictedUserIterator);
             maxLikelihood = -1;
