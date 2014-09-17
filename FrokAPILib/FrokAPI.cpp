@@ -75,7 +75,7 @@ FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, cons
         catch(...)
         {
             TRACE_F("ExecuteFunction failed. Exception captured");
-            return FROK_RESULT_UNSPECIFIED_ERROR;
+            res = FROK_RESULT_UNSPECIFIED_ERROR;
         }
 
         try
