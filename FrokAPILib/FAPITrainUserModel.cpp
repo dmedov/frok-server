@@ -4,7 +4,7 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-static std::string strInTrainUserModelParameters [] = {"arrUserIds"};
+static std::string strInTrainUserModelParameters [] = {"userIds"};
 static std::string strOutTrainUserModelParameters [] = {};
 static std::vector<std::string> inTrainUserModelParameters(strInTrainUserModelParameters, strInTrainUserModelParameters + sizeof(strInTrainUserModelParameters) / sizeof(*strInTrainUserModelParameters));
 static std::vector<std::string> outTrainUserModelParameters(strOutTrainUserModelParameters, strOutTrainUserModelParameters + sizeof(strOutTrainUserModelParameters) / sizeof(*strOutTrainUserModelParameters));
@@ -65,7 +65,7 @@ bool FAPI_TrainUserModel_JSON2FUNCP(ConvertParams* psConvertParams)
     }
 
     StructInTrainUserModelParams *funcParameters = new StructInTrainUserModelParams;
-    json::Array arrUserIds = jsonParams["arrUserIds"].ToArray();
+    json::Array arrUserIds = jsonParams["userIds"].ToArray();
 
     for (unsigned i = 0; i < arrUserIds.size(); i++)
     {
