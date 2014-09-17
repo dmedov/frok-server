@@ -2,7 +2,9 @@
 build_*
 bin
 obj
+*.user
 #temporary files
 *.*~
 *~
 *.bak
+

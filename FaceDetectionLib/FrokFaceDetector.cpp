@@ -337,6 +337,9 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
     std::vector < cv::Rect > eyes;
     std::vector < cv::Rect > nose;
     std::vector < cv::Rect > mouth;
+
+    std::vector <cv::Rect> eyesCandidates;
+
     TRACE_T("Detecting eyes with CASCADE_EYE...");
     cascades[CASCADE_EYE].cascade.detectMultiScale(image, eyes,
                                                     cascades[CASCADE_EYE].properties.scaleFactor,
@@ -362,6 +365,11 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
         faceParts->leftEyeFound = true;
         faceParts->rightEyeFound = true;
         goto detect_nose;
+    }
+    else if(eyes.size() > 2)
+    {
+        eyesCandidates = eyes;
+        TRACE_W("Found more then 2 eyes. Need to implement additional logic");
     }
     TRACE_T("Failed to find 2 eyes with CASCADE_EYE");
     TRACE_T("Now trying to detect eyes in glasses");
@@ -392,6 +400,16 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
         faceParts->rightEyeFound = true;
         goto detect_nose;
     }
+    else if(eyes.size() > 2)
+    {
+
+        for(std::vector<cv::Rect>::iterator it = eyes.begin(); it != eyes.end(); ++it)
+        {
+            eyesCandidates.push_back(*it);
+        }
+        TRACE_W("Found more then 2 eyes. Need to implement additional logic");
+    }
+
     TRACE_T("Failed to find 2 eyes with CASCADE_EYE_WITH_GLASSES");
     TRACE_T("Now trying to detect left eye with CASCADE_EYE_LEFT and CASCADE_EYE_LEFT_SPLITTED");
 
@@ -409,6 +427,14 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
         TRACE_S_T("Left eye was successfully detected with CASCADE_EYE_LEFT");
         faceParts->leftEye = eyes[0];
         faceParts->leftEyeFound = true;
+    }
+    else if(eyes.size() > 1)
+    {
+        for(std::vector<cv::Rect>::iterator it = eyes.begin(); it != eyes.end(); ++it)
+        {
+            eyesCandidates.push_back(*it);
+        }
+        TRACE_W("Found more then 1 eye. Need to implement additional logic");
     }
 
     eyes.clear();
@@ -449,6 +475,14 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
                 faceParts->rightEyeFound = true;
             }
         }
+    }
+    else if(eyes.size() > 1)
+    {
+        for(std::vector<cv::Rect>::iterator it = eyes.begin(); it != eyes.end(); ++it)
+        {
+            eyesCandidates.push_back(*it);
+        }
+        TRACE_W("Found more then 1 eye. Need to implement additional logic");
     }
 
     if(faceParts->leftEyeFound == false)
@@ -491,9 +525,17 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
                 }
             }
         }
+        else if(eyes.size() > 1)
+        {
+            for(std::vector<cv::Rect>::iterator it = eyes.begin(); it != eyes.end(); ++it)
+            {
+                eyesCandidates.push_back(*it);
+            }
+            TRACE_W("Found more then 1 eye. Need to implement additional logic");
+        }
     }
 #ifdef FAST_SEARCH_ENABLED
-    if(faceParts->leftEyeFound == false)
+    if((faceParts->leftEyeFound == false) && (eyesCandidates.empty()))
     {
         TRACE_F_T("One or less eyes found. Eye detection stopped due to FAST_SEARCH_ENABLED algorythm");
         goto detect_nose;
@@ -538,6 +580,14 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
                 }
             }
         }
+        else if(eyes.size() > 1)
+        {
+            for(std::vector<cv::Rect>::iterator it = eyes.begin(); it != eyes.end(); ++it)
+            {
+                eyesCandidates.push_back(*it);
+            }
+            TRACE_W("Found more then 1 eye. Need to implement additional logic");
+        }
     }
 
     if(faceParts->rightEyeFound == false && faceParts->leftEyeFound == false)
@@ -576,6 +626,10 @@ detect_nose:
         faceParts->noseFound = true;
         goto detect_mouth;
     }
+    else if(nose.size() > 1)
+    {
+        TRACE_W("Found more then 1 nose. Need to implement additional logic");
+    }
     TRACE_T("Failed to find nose with CASCADE_NOSE_MSC");
     TRACE_W_T("Nose detection failed");
 
@@ -604,6 +658,11 @@ detect_mouth:
         faceParts->mouthFound = true;
         goto detect_finish;
     }
+    else if(nose.size() > 1)
+    {
+        TRACE_W("Found more then 1 mouth. Need to implement additional logic");
+    }
+
     TRACE_T("Failed to find mouth with CASCADE_MOUTH_MSC");
     TRACE_W_T("Mouth detection failed");
 
@@ -620,7 +679,11 @@ FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &
 
     // [TBD] Nikita resized image to image * 5 if width/height < 200. I do not.
 
-    cv::Mat imageFace(processedImage, faceCoords);
+    cv::Mat tmpImageFace(processedImage, faceCoords);
+    cv::Mat imageFace;
+    cv::Size scaledSize = cv::Size((int)(tmpImageFace.cols * aligningScaleFactor), (int)(tmpImageFace.rows * aligningScaleFactor));
+    cv::resize(tmpImageFace, imageFace, scaledSize);
+
     TRACE_T("Detection started");
 
     HumanFace humanFace;
@@ -631,11 +694,6 @@ FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &
         TRACE_F_T("GetHumanFaceParts failed");
         return result;
     }
-
-    //cv::imwrite("/home/zda/le.jpg", cv::Mat(imageFace, humanFace.leftEye));
-    //cv::imwrite("/home/zda/re.jpg", cv::Mat(imageFace, humanFace.rightEye));
-    //cv::imwrite("/home/zda/n.jpg", cv::Mat(imageFace, humanFace.nose));
-    //cv::imwrite("/home/zda/m.jpg", cv::Mat(imageFace, humanFace.mouth));
 
     TRACE_S_T("GetHumanFaceParts succeed");
 
@@ -658,7 +716,7 @@ FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &
             cv::Mat temporaryImageForAlign;
             processedImage.copyTo(temporaryImageForAlign);
 
-            transMat = cv::getRotationMatrix2D(centerImage, aligningAngle, aligningScaleFactor);
+            transMat = cv::getRotationMatrix2D(centerImage, aligningAngle, 1);
             cv::warpAffine(temporaryImageForAlign, temporaryImageForAlign, transMat, cv::Size(temporaryImageForAlign.cols, temporaryImageForAlign.rows));
             alignedFaceImage = cv::Mat(temporaryImageForAlign, faceCoords);
         }
@@ -691,7 +749,7 @@ FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &
             cv::Mat temporaryImageForAlign;
             processedImage.copyTo(temporaryImageForAlign);
 
-            transMat = cv::getRotationMatrix2D(centerImage, aligningAngle, aligningScaleFactor);
+            transMat = cv::getRotationMatrix2D(centerImage, aligningAngle, 1);
             cv::warpAffine(temporaryImageForAlign, temporaryImageForAlign, transMat, cv::Size(temporaryImageForAlign.cols, temporaryImageForAlign.rows));
             alignedFaceImage = cv::Mat(temporaryImageForAlign, faceCoords);
         }

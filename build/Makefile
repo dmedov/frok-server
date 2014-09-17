@@ -32,3 +32,7 @@ help:
 	@echo "[USAGE] Flags examples:"
 	@echo "[USAGE] NO_DAEMON - switch off daemon mode"
 	@echo "[USAGE] FAST_SEARCH_ENABLED - enable fast mode search algorythm"
+	@echo "[USAGE] usage example (debug mode, no daemon mode and FAST_SEARCH_ENABLED enabled):"
+	@echo "[USAGE] make CFG=debug CCFLAG+=-DNO_DAEMON CCFLAG+=-DFAST_SEARCH_ENABLED rebuild"
+	@echo "[NOTE] In release configuration app is logging to /var/log/frok.log"
+	@echo "[NOTE] In daemon mode app is being detached from console session and set it's folder to / so it doesn't depend on called user"

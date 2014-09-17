@@ -86,8 +86,8 @@ private:
     double                              aligningScaleFactor;
     cv::Size                            faceSize;
     cv::Size                            defaultImageSize;
-public:
 
+public:
     FrokFaceDetector();
     ~FrokFaceDetector();
 

@@ -1,6 +1,9 @@
 #include "FrokAPI.h"
-
 #include "json.h"
+
+#include <sys/time.h>
+#include <time.h>
+#include <sys/times.h>
 
 #define MODULE_NAME "FAPI"
 
@@ -211,8 +214,44 @@ FrokResult FrokAPI::ExecuteFunction(std::string functionName, std::string inJson
         TRACE_F("ConvertJsonToFunctionParameters failed");
         return FROK_RESULT_INVALID_PARAMETER;
     }
+
+    bool ts_fail = false;
+    struct timespec start_ts, end_ts;
+
+    memset(&start_ts, 0, sizeof(struct timespec));
+    memset(&end_ts, 0, sizeof(struct timespec));
+
+    if(-1 == clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_ts))
+    {
+        ts_fail = true;
+    }
+
     FrokResult res = function->function(inParams.functionParameters, &outParams.functionParameters,
                                         photo_base_path, targets_folder_path, detector, recognizer);
+
+    if(-1 == clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end_ts))
+    {
+        ts_fail = true;
+    }
+
+    time_t seconds;
+    time_t nanoseconds;
+
+    seconds = end_ts.tv_sec - start_ts.tv_sec;
+
+    if(end_ts.tv_nsec >= start_ts.tv_nsec)
+    {
+        nanoseconds = end_ts.tv_nsec - start_ts.tv_nsec;
+    }
+    else
+    {
+        nanoseconds = 1e9 - (end_ts.tv_nsec - start_ts.tv_nsec);
+        seconds++;
+    }
+
+    if(ts_fail == false)
+        TRACE_R_T("Function %s finished. Time elapsed %li.%0li s", functionName.c_str(), seconds, nanoseconds);
+
     if(!function->ConvertFunctionReturnToJson(&outParams))
     {
         TRACE_F("ConvertFunctionReturnToJson failed");
