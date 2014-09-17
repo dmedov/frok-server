@@ -56,8 +56,7 @@ FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, cons
         try
         {
             jInJson = json::Deserialize(strInJson);
-            jOutJson["reply_sock"] = jInJson["reply_sock"];
-            jOutJson["req_id"] = jInJson["req_id"];
+            jOutJson["reqId"] = jInJson["reqId"];
         }
         catch(...)
         {
@@ -84,13 +83,11 @@ FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, cons
             try
             {
                 jInJson = json::Deserialize(strInJson);
-                jOutJson["reply_sock"] = jInJson["reply_sock"];
-                jOutJson["req_id"] = jInJson["req_id"];
+                jOutJson["reqId"] = jInJson["reqId"];
             }
             catch(...)
             {
-                jOutJson["reply_sock"] = -1;
-                jOutJson["req_id"] = -1;
+                jOutJson["reqid"] = -1;
             }
 
             if(res != FROK_RESULT_SUCCESS)
