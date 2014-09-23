@@ -25,7 +25,7 @@ BOOL frokBecomeADaemon()
 
     TRACE_N("Try to become a daemon");
 
-    TRACE_N("Create faemon process");
+    TRACE_N("Create daemon process");
     pid = fork();
     if(pid == -1)
     {
