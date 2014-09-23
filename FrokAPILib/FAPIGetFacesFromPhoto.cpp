@@ -4,8 +4,8 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-static std::string strInGetFacesFromPhotoParams [] = {"userId", "photoName"};
-static std::string strOutGetFacesFromPhotoParams [] = {"arrObjFaceCoords"};
+static std::string strInGetFacesFromPhotoParams [] = {"userId", "phName"};
+static std::string strOutGetFacesFromPhotoParams [] = {"resFaceCoords"};
 static std::vector<std::string> inGetFacesFromPhotoParams(strInGetFacesFromPhotoParams, strInGetFacesFromPhotoParams + sizeof(strInGetFacesFromPhotoParams) / sizeof(*strInGetFacesFromPhotoParams));
 static std::vector<std::string> outGetFacesFromPhotoParams(strOutGetFacesFromPhotoParams, strOutGetFacesFromPhotoParams + sizeof(strOutGetFacesFromPhotoParams) / sizeof(*strOutGetFacesFromPhotoParams));
 
@@ -75,7 +75,7 @@ bool FAPI_GetFacesFromPhoto_JSON2FUNCP(ConvertParams* psConvertParams)
     StructInGetFacesFromPhotoParams *funcParameters = new StructInGetFacesFromPhotoParams;
 
     funcParameters->userId = jsonParams["userId"].ToString();
-    funcParameters->photoName = jsonParams["photoName"].ToString();
+    funcParameters->photoName = jsonParams["phName"].ToString();
 
     psConvertParams->functionParameters = funcParameters;
 
@@ -108,7 +108,7 @@ bool FAPI_GetFacesFromPhoto_FUNCP2JSON(ConvertParams* psConvertParams)
         jFoundFaces.push_back(jFaceRect);
     }
 
-    jResult["arrObjFaceCoords"] = jFoundFaces;
+    jResult["resFaceCoords"] = jFoundFaces;
 
     try
     {
@@ -183,7 +183,7 @@ FrokResult GetFacesFromPhoto(void *inParams, void **outParams, const char *userB
     if(((StructOutGetFacesFromPhotoParams*)*outParams)->faceRects.empty())
     {
         TRACE_F_T("No faces found");
-        return FROK_RESULT_NOT_A_FACE;
+        return FROK_RESULT_NO_FACES_FOUND;
     }
 
     TRACE_T("Recognition finished");

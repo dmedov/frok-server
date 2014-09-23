@@ -5,7 +5,7 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-static std::string strInAddFaceFromPhotoToModelParams [] = {"userId", "photoName", "faceNumber"};
+static std::string strInAddFaceFromPhotoToModelParams [] = {"userId", "phName", "faceNum"};
 static std::string strOutAddFaceFromPhotoToModelParams [] = {};
 static std::vector<std::string> inAddFaceFromPhotoToModelParams(strInAddFaceFromPhotoToModelParams, strInAddFaceFromPhotoToModelParams + sizeof(strInAddFaceFromPhotoToModelParams) / sizeof(*strInAddFaceFromPhotoToModelParams));
 static std::vector<std::string> outAddFaceFromPhotoToModelParams(strOutAddFaceFromPhotoToModelParams, strOutAddFaceFromPhotoToModelParams + sizeof(strOutAddFaceFromPhotoToModelParams) / sizeof(*strOutAddFaceFromPhotoToModelParams));
@@ -73,8 +73,8 @@ bool FAPI_AddFaceFromPhotoToModel_JSON2FUNCP(ConvertParams* psConvertParams)
 
     StructInAddFaceFromPhotoToModelParams *funcParameters = new StructInAddFaceFromPhotoToModelParams;
     funcParameters->userId = jsonParams["userId"].ToString();
-    funcParameters->photoName = jsonParams["photoName"].ToString();
-    funcParameters->faceNumber = atoi(jsonParams["faceNumber"].ToString().c_str());
+    funcParameters->photoName = jsonParams["phName"].ToString();
+    funcParameters->faceNumber = atoi(jsonParams["faceNum"].ToString().c_str());
 
     psConvertParams->functionParameters = funcParameters;
 

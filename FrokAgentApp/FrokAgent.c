@@ -108,7 +108,7 @@ FrokResult frokAgentInit(unsigned short port, void *detector, void *recognizer, 
     if(context->api == NULL)
     {
         TRACE_F("frokAPIAlloc failed");
-        return FROK_RESULT_UNSPECIFIED_ERROR;
+        return FROK_RESULT_MEMORY_FAULT;
     }
 
     frokAPIInit(context->api);
@@ -663,7 +663,7 @@ FrokResult frokAgentSendData(SOCKET sock, const char* pBuffer, size_t uBufferSiz
     else
     {
         TRACE_F("Invalid socket");
-        return FROK_RESULT_INVALID_PARAMETER;
+        return FROK_RESULT_SOCKET_ERROR;
     }
 
     return FROK_RESULT_SUCCESS;

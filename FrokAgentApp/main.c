@@ -25,6 +25,14 @@ static void sigintHandler(int UNUSED(sig), siginfo_t UNUSED(*si), void UNUSED(*p
     }
 }
 
+// Stdout flushing
+static void sigusr1Handler(int UNUSED(sig), siginfo_t UNUSED(*si), void UNUSED(*p))
+{
+    fflush(stdout);
+    fflush(stderr);
+    fflush(stdin);
+}
+
 void usage()
 {
     TRACE("FrokAgentApp <CPU number> <Agent's port number>\n");
@@ -34,7 +42,7 @@ void usage()
 
 int main(int argc, char *argv[])
 {
-    struct sigaction sigintAction;
+    struct sigaction sigintAction, sigusr1Action;
     FrokResult res;
     short cpu_number;
     unsigned short port_number;
@@ -171,6 +179,19 @@ int main(int argc, char *argv[])
     }
     TRACE_S("sigaction succeed");
 
+    sigusr1Action.sa_flags = SA_SIGINFO;
+    sigemptyset(&sigusr1Action.sa_mask);
+    sigusr1Action.sa_sigaction = sigusr1Handler;
+
+    TRACE_N("Setting custom SIGUSR1 action...");
+    if (-1 == sigaction(SIGUSR1, &sigusr1Action, NULL))
+    {
+        TRACE_F("Failed to set custom action on SIGINT on error %s", strerror(errno));
+        frokLibCommonDeinit();
+        exit(EXIT_FAILURE);
+    }
+    TRACE_S("sigaction succeed");
+
     TRACE_N("Create detector instance");
     void *detector = frokFaceDetectorAlloc();
     if(detector == NULL)
@@ -202,6 +223,9 @@ int main(int argc, char *argv[])
     {
         TRACE_S("Recognize base inited");
     }
+#ifndef NO_RESTART
+agent_restart:
+#endif //NO_RESTART
 
     TRACE_N("Calling frokAgentInit...");
     if(FROK_RESULT_SUCCESS != (res = frokAgentInit(port_number, detector, recognizer, commonContext->photoBasePath, commonContext->targetPhotosPath)))
@@ -220,6 +244,14 @@ int main(int argc, char *argv[])
     {
         TRACE_F("frokAgentStart failed on error %s", FrokResultToString(res));
         frokAgentDeinit();
+#ifndef NO_RESTART
+        if((res == FROK_RESULT_LINUX_ERROR) || (res == FROK_RESULT_INVALID_STATE) || (res == FROK_RESULT_NULL)
+           || (res == FROK_RESULT_MEMORY_FAULT) || (res == FROK_RESULT_SOCKET_ERROR))
+        {
+            TRACE_W("Error is not critical. Restarting frokAgent");
+            goto agent_restart;
+        }
+#endif //NO_RESTART
         frokFaceDetectorDealloc(detector);
         frokFaceRecognizerEigenfacesDealloc(recognizer);
         frokLibCommonDeinit();

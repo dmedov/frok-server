@@ -6,8 +6,8 @@
 #define MODULE_NAME     "FROK_API"
 
 // inout parameters
-static std::string strInRecognizeParameters [] = {"arrUserIds", "photoName"};
-static std::string strOutRecognizeParameters [] = {"arrOfFacesCoordsWithUserIdAndSimilarity"};
+static std::string strInRecognizeParameters [] = {"userIds", "phName"};
+static std::string strOutRecognizeParameters [] = {"resPs"};
 static std::vector<std::string> inRecognizeParameters(strInRecognizeParameters, strInRecognizeParameters + sizeof(strInRecognizeParameters) / sizeof(*strInRecognizeParameters));
 static std::vector<std::string> outRecognizeParameters(strOutRecognizeParameters, strOutRecognizeParameters + sizeof(strOutRecognizeParameters) / sizeof(*strOutRecognizeParameters));
 
@@ -76,13 +76,13 @@ bool FAPI_Recognize_JSON2FUNCP(ConvertParams* psConvertParams)
     }
 
     StructInRecognizeParams *funcParameters = new StructInRecognizeParams;
-    json::Array arrUserIds = jsonParams["arrUserIds"].ToArray();
+    json::Array arrUserIds = jsonParams["userIds"].ToArray();
 
     for (unsigned i = 0; i < arrUserIds.size(); i++)
     {
         funcParameters->ids.push_back(arrUserIds[i].ToString());
     }
-    funcParameters->photoName = jsonParams["photoName"].ToString();
+    funcParameters->photoName = jsonParams["phName"].ToString();
 
     psConvertParams->functionParameters = funcParameters;
 
@@ -129,7 +129,7 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
             jUserAndProbability["userId"] = predictedUserIterator->first;
             std::stringstream doubleToString;
             doubleToString << (double)predictedUserIterator->second;
-            jUserAndProbability["probability"] = doubleToString.str();
+            jUserAndProbability["P"] = doubleToString.str();
             jUsersAndProbabilities.push_back(jUserAndProbability);
             currentFace.erase(predictedUserIterator);
             maxLikelihood = -1;
@@ -141,14 +141,12 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
         jFaceCoordsAndUsersOnPhoto["y1"] = faceCoords.y;
         jFaceCoordsAndUsersOnPhoto["x2"] = faceCoords.x + faceCoords.width;
         jFaceCoordsAndUsersOnPhoto["y2"] = faceCoords.y + faceCoords.height;
-        jFaceCoordsAndUsersOnPhoto["userId"] = jUsersAndProbabilities[0]["userId"];
-        jFaceCoordsAndUsersOnPhoto["probability"] = jUsersAndProbabilities[0]["probability"];;
-        jFaceCoordsAndUsersOnPhoto["userIdsAndProbabilities"] = jUsersAndProbabilities;
+        jFaceCoordsAndUsersOnPhoto["users"] = jUsersAndProbabilities;
 
         jsonArrOfFacesCoordsWithUserIdAndSimilarity.push_back(jFaceCoordsAndUsersOnPhoto);
     }
 
-    resultJson["arrOfFacesCoordsWithUserIdAndSimilarity"] = jsonArrOfFacesCoordsWithUserIdAndSimilarity;
+    resultJson["resPs"] = jsonArrOfFacesCoordsWithUserIdAndSimilarity;
     try
     {
         psConvertParams->jsonParameters = json::Serialize(resultJson);
@@ -259,7 +257,6 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
     if(((StructOutRecognizeParams*)*outParams)->similarities.empty())
     {
         TRACE_F_T("Nothing similar to requested users was found on picture");
-        return FROK_RESULT_UNSPECIFIED_ERROR;
     }
 
     TRACE_T("Recognition finished");
