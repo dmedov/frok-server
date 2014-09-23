@@ -223,6 +223,9 @@ int main(int argc, char *argv[])
     {
         TRACE_S("Recognize base inited");
     }
+#ifndef NO_RESTART
+agent_restart:
+#endif //NO_RESTART
 
     TRACE_N("Calling frokAgentInit...");
     if(FROK_RESULT_SUCCESS != (res = frokAgentInit(port_number, detector, recognizer, commonContext->photoBasePath, commonContext->targetPhotosPath)))
@@ -241,6 +244,14 @@ int main(int argc, char *argv[])
     {
         TRACE_F("frokAgentStart failed on error %s", FrokResultToString(res));
         frokAgentDeinit();
+#ifndef NO_RESTART
+        if((res == FROK_RESULT_LINUX_ERROR) || (res == FROK_RESULT_INVALID_STATE) || (res == FROK_RESULT_NULL)
+           || (res == FROK_RESULT_MEMORY_FAULT) || (res == FROK_RESULT_SOCKET_ERROR))
+        {
+            TRACE_W("Error is not critical. Restarting frokAgent");
+            goto agent_restart;
+        }
+#endif //NO_RESTART
         frokFaceDetectorDealloc(detector);
         frokFaceRecognizerEigenfacesDealloc(recognizer);
         frokLibCommonDeinit();

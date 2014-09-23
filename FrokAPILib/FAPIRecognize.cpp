@@ -257,7 +257,6 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
     if(((StructOutRecognizeParams*)*outParams)->similarities.empty())
     {
         TRACE_F_T("Nothing similar to requested users was found on picture");
-        return FROK_RESULT_UNSPECIFIED_ERROR;
     }
 
     TRACE_T("Recognition finished");

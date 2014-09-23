@@ -183,7 +183,7 @@ FrokResult GetFacesFromPhoto(void *inParams, void **outParams, const char *userB
     if(((StructOutGetFacesFromPhotoParams*)*outParams)->faceRects.empty())
     {
         TRACE_F_T("No faces found");
-        return FROK_RESULT_NOT_A_FACE;
+        return FROK_RESULT_NO_FACES_FOUND;
     }
 
     TRACE_T("Recognition finished");

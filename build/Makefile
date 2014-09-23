@@ -31,6 +31,7 @@ help:
 	@echo "[USAGE] Build with custom flags: make CCFLAG+=-DFLAG_NAME build"
 	@echo "[USAGE] Flags examples:"
 	@echo "[USAGE] NO_DAEMON - switch off daemon mode"
+	@echo "[USAGE] NO_RESTART - disable restart on non-critical error"
 	@echo "[USAGE] FAST_SEARCH_ENABLED - enable fast mode search algorythm"
 	@echo "[USAGE] usage example (debug mode, no daemon mode and FAST_SEARCH_ENABLED enabled):"
 	@echo "[USAGE] make CFG=debug CCFLAG+=-DNO_DAEMON CCFLAG+=-DFAST_SEARCH_ENABLED rebuild"

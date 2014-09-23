@@ -32,7 +32,7 @@ FrokResult FaceModelEigenfaces::GenerateUserModel(const char *grayFacesPath)
     if(FALSE == getFilesFromDir(grayFacesPath, &files, &filesNum))
     {
         TRACE_F_T("Failed to get photos from directory %s", grayFacesPath);
-        return FROK_RESULT_UNSPECIFIED_ERROR;
+        return FROK_RESULT_INVALID_PARAMETER;
     }
 
     for(unsigned i = 0; i < filesNum; i++)
@@ -154,7 +154,7 @@ FrokResult FaceModelEigenfaces::LoadUserModel(const char *userPath)
     if(-1 == access(modelPath.c_str(), R_OK))
     {
         TRACE_W_T("File %s not found or doesn't have read permissions", modelPath.c_str());
-        return FROK_RESULT_UNSPECIFIED_ERROR;
+        return FROK_RESULT_PERM_ERROR;
     }
 
     TRACE_T("Trying to load user model");
@@ -190,7 +190,7 @@ FrokResult FaceModelEigenfaces::SaveUserModel(const char *userPath)
         if(-1 == access(modelPath.c_str(), W_OK))
         {
             TRACE_W_T("File %s exists but doesn't have wright permissions", modelPath.c_str());
-            return FROK_RESULT_UNSPECIFIED_ERROR;
+            return FROK_RESULT_PERM_ERROR;
         }
     }
 

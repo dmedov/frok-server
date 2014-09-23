@@ -71,6 +71,11 @@ FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, cons
         {
             res = ((FrokAPI*)instance)->ExecuteFunction(strFunctionName, strInJson, strOutJson);
         }
+        catch(FrokResult result)
+        {
+            TRACE_F("ExecuteFunction failed. Exception captured");
+            res = result;
+        }
         catch(...)
         {
             TRACE_F("ExecuteFunction failed. Exception captured");
@@ -200,7 +205,7 @@ FrokResult FrokAPI::ExecuteFunction(std::string functionName, std::string inJson
     if(functions.find(functionName) == functions.end())
     {
         TRACE_F("No such function \"%s\"", functionName.c_str());
-        return FROK_RESULT_UNSPECIFIED_ERROR;
+        return FROK_RESULT_INVALID_PARAMETER;
     }
     FrokAPIFunction *function = functions[functionName];
     ConvertParams inParams;
