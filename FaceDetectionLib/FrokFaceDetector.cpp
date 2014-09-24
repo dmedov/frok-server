@@ -168,6 +168,7 @@ FrokResult FrokFaceDetector::SetTargetImage(cv::Mat &image)
 {
     TRACE_T("started");
     image.copyTo(targetImageGray);
+    TRACE_S("Target photo size: %dx%d", targetImageGray.cols, targetImageGray.rows);
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
@@ -212,6 +213,7 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath, bool dontResi
     cascades[CASCADE_FACE].properties.maxObjectSize = cv::Size(targetImageGray.cols, targetImageGray.rows);
 
     //cv::imwrite("/home/zda/target.jpg", targetImageGray);
+    TRACE_S("Target photo size: %dx%d", targetImageGray.cols, targetImageGray.rows);
 
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
