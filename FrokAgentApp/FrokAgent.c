@@ -269,6 +269,10 @@ FrokResult frokAgentSocketListener()
             result = poll(fds, 2, FROK_AGENT_CLIENT_DATA_TIMEOUT_MS);
             if(-1 == result)
             {
+                if(errno == EINTR)
+                {
+                    continue;
+                }
                 TRACE_F("poll failed on error %s", strerror(errno));
                 return FROK_RESULT_LINUX_ERROR;
             }
@@ -592,9 +596,21 @@ FrokResult frokAgentDeinit()
 
     if(context->agentStarted == TRUE)
     {
+        if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
+        {
+            TRACE_F("pthread_mutex_unlock failed on error %s", strerror(error));
+            return FROK_RESULT_LINUX_ERROR;
+        }
+
         if(FROK_RESULT_SUCCESS != (res = frokAgentStop()))
         {
             TRACE_W("frokAgentStop failed on error %s", FrokResultToString(res));
+        }
+
+        if(-1 == (error = pthread_mutex_lock(&frokAgentMutex)))
+        {
+            TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
+            return FROK_RESULT_LINUX_ERROR;
         }
     }
 
