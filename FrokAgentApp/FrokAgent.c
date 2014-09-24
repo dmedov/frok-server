@@ -445,12 +445,15 @@ FrokResult frokAgentSocketListener()
 
 void frokAgentProcessJson(SOCKET outSock, const char *json, size_t UNUSED(jsonLength))
 {
-    char *functionName, *outJson;
+    char *functionName, *outJson, *inJson;
     FrokResult res;
 
-    TRACE_N("Processing json %s", json);
+    inJson = calloc(jsonLength + 1, 1);
+    memcpy(inJson, json, jsonLength);
+
+    TRACE_N("Processing json %s", inJson);
     TRACE_N("Calling getFunctionFromJson");
-    functionName = getFunctionFromJson(json);
+    functionName = getFunctionFromJson(inJson);
     if(functionName == NULL)
     {
         TRACE_F("getFunctionFromJson failed");
@@ -458,7 +461,7 @@ void frokAgentProcessJson(SOCKET outSock, const char *json, size_t UNUSED(jsonLe
     }
 
     TRACE_N("Calling frokAPIExecuteFunction, functionName = %s", functionName);
-    res = frokAPIExecuteFunction(context->api, functionName, json, &outJson);
+    res = frokAPIExecuteFunction(context->api, functionName, inJson, &outJson);
 
     TRACE_N("Send response json %s to remote peer %d", outJson, outSock);
 
