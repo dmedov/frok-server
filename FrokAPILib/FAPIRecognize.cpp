@@ -242,12 +242,14 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
         if(FROK_RESULT_SUCCESS != (res = recognizer->SetTargetImage(currentFace)))
         {
             TRACE_F_T("Failed to SetTargetImage on result %s", FrokResultToString(res));
+            i++;
             continue;
         }
 
         if(FROK_RESULT_SUCCESS != (res = recognizer->GetSimilarityOfFaceWithModels(currenFaceSimilarities)))
         {
             TRACE_F_T("Failed to GetSimilarityOfFaceWithModels on result %s", FrokResultToString(res));
+            i++;
             continue;
         }
         ((StructOutRecognizeParams*)*outParams)->coords.push_back(faces.at(i++));
