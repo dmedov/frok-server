@@ -79,16 +79,30 @@ Build steps:        [TBD] more info + QtCreator info
     etc
 
 Run steps:
-FrokAgentApp needs some root capabilities so it should be run via sudo
+FrokAgentApp needs some root capabilities so it should be run with sudo
 run './FrokAgentApp' for FrokAgentApp parameters usage
 First parameter is #CPU that agent will obtain (-1 to run on all available CPUs)
 Second is port number (agent can be accessed via any ipV4 address on local machine on spicified port)
 example: "sudo ./FrokAgentApp 3 27015" This will start FrokAgentApp that will obtain CPU number 3 and port number 27015
 example: "sudo ./FrokAgentApp -1 3000" This will start 'N' FrokAgentApps where N is number of available CPUs. First agent will obtain #CPU1 and port 3000, second #CPU2 and port 3001 etc
+Running FrokAgentApp in release with sudo will create /etc/frok/frok.conf with some default parameters (they have to be changed with your system configs) and /var/log/frok.log
 
+Configuration:
+1. Create file /etc/frok/frok.conf and add config parameters (see example below)
 
+ 	sudo touch /etc/frok/frok.conf
+	sudo chmod 664 /var/log/frok.log
+	sudo vi /etc/frok/frok.conf
+	
+Example of frok.conf (user = zda):
 
+OUTPUT_FILE = /var/log/frok.log
+PHOTO_BASE_PATH = /home/zda/faces/
+TARGET_PHOTOS_PATH = /home/zda/faces/
 
+3. Create log file:
+	sudo touch /var/log/frok.log
+	sudo chmod 666 /var/log/frok.log
 
 
 How to install in Windows:
