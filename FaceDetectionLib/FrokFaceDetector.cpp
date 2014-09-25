@@ -343,6 +343,8 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
     std::vector < cv::Rect > mouth;
 
     std::vector <cv::Rect> eyesCandidates;
+    std::vector<cv::Rect> leftEyeCandidated;
+    std::vector<cv::Rect> rightEyeCandidated;
 
     TRACE_T("Detecting eyes with CASCADE_EYE...");
     cascades[CASCADE_EYE].cascade.detectMultiScale(image, eyes,
@@ -605,6 +607,153 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
     else
     {
         TRACE_S_T("Eyes detection succeed");
+    }
+
+//Multiple objects found
+    TRACE_W_T("There are more than 2 eyes on photo. Trying to search for 2 eyes from eyes set");
+
+    for(std::vector<cv::Rect>::iterator it = eyesCandidates.begin(); it != eyesCandidates.end(); ++it)
+    {
+        // To now I think that left eye is on the left side of photo and right is on the right one
+        cv::Rect curr = (cv::Rect)*it;
+        if(curr.x + curr.width < image.cols / 2)
+        {
+            // Right eye
+            rightEyeCandidated.push_back(curr);
+        }
+        else if (curr.x > image.cols / 2)
+        {
+            // Left eye
+            leftEyeCandidated.push_back(curr);
+        }
+    }
+
+    TRACE_S_T("Found %zu left eye candidates and %zu right eye candidated", leftEyeCandidated.size(), rightEyeCandidated.size());
+    if((leftEyeCandidated.size() != 0) && (faceParts->leftEyeFound != true))
+    {
+        TRACE_S_T("Searching for left eye with multiple eyes search algorythm");
+        // OK now lets filtrate all noises
+        int x_mean = 0, y_mean = 0;
+        for(std::vector<cv::Rect>::iterator it = leftEyeCandidated.begin(); it != leftEyeCandidated.end(); ++it)
+        {
+            cv::Rect curr = (cv::Rect)*it;
+            x_mean += (curr.x + curr.width / 2);
+            y_mean += (curr.y + curr.height / 2);
+        }
+        x_mean /= leftEyeCandidated.size();
+        y_mean /= leftEyeCandidated.size();
+
+        for(std::vector<cv::Rect>::iterator it = leftEyeCandidated.begin(); it != leftEyeCandidated.end();)
+        {
+            cv::Rect curr = *it;
+            int x_r = abs(curr.x + curr.width / 2 - x_mean);
+            int y_r = abs(curr.y + curr.height / 2 - y_mean);
+            if((x_r > cascades[CASCADE_EYE].properties.maxObjectSize.width) || (y_r > cascades[CASCADE_EYE].properties.maxObjectSize.height))
+            {
+                leftEyeCandidated.erase(it);
+                continue;
+            }
+            ++it;
+        }
+
+        if(!leftEyeCandidated.empty())
+        {
+            //OK now left eye is completely ready
+            x_mean = 0;
+            y_mean = 0;
+            for(std::vector<cv::Rect>::iterator it = leftEyeCandidated.begin(); it != leftEyeCandidated.end(); ++it)
+            {
+                cv::Rect curr = (cv::Rect)*it;
+                x_mean += (curr.x + curr.width / 2);
+                y_mean += (curr.y + curr.height / 2);
+            }
+            x_mean /= leftEyeCandidated.size();
+            y_mean /= leftEyeCandidated.size();
+
+            faceParts->leftEye.x = x_mean;
+            faceParts->leftEye.y = y_mean;
+            faceParts->leftEye.width = 0;
+            faceParts->leftEye.height = 0;
+            faceParts->leftEyeFound = true;
+            // Left eye searching succeed. Right eye now
+        }
+    }
+
+    if(faceParts->leftEyeFound == true)
+    {
+        TRACE_S_T("Left eye was successfully found with multiple eyes search algorythm");
+    }
+    else
+    {
+        TRACE_F_T("Failed to found left eye with multiple eyes search algorythm");
+#ifdef FAST_SEARCH_ENABLED
+        TRACE_F_T("One or less eyes found. Eye detection stopped due to FAST_SEARCH_ENABLED algorythm");
+        goto detect_nose;
+#endif // FAST_SEARCH_ENABLED
+    }
+
+    if((rightEyeCandidated.size() != 0) && (faceParts->rightEyeFound != true))
+    {
+        TRACE_S_T("Searching for left eye with multiple eyes search algorythm");
+        // OK now lets filtrate all noises
+        int x_mean = 0, y_mean = 0;
+        for(std::vector<cv::Rect>::iterator it = rightEyeCandidated.begin(); it != rightEyeCandidated.end(); ++it)
+        {
+            cv::Rect curr = (cv::Rect)*it;
+            x_mean += (curr.x + curr.width / 2);
+            y_mean += (curr.y + curr.height / 2);
+        }
+
+        x_mean /= rightEyeCandidated.size();
+        y_mean /= rightEyeCandidated.size();
+
+        for(std::vector<cv::Rect>::iterator it = rightEyeCandidated.begin(); it != rightEyeCandidated.end();)
+        {
+            cv::Rect curr = *it;
+            int x_r = abs(curr.x + curr.width / 2 - x_mean);
+            int y_r = abs(curr.y + curr.height / 2 - y_mean);
+            if((x_r > cascades[CASCADE_EYE].properties.maxObjectSize.width) || (y_r > cascades[CASCADE_EYE].properties.maxObjectSize.height))
+            {
+                rightEyeCandidated.erase(it);
+                continue;
+            }
+            ++it;
+        }
+
+        if(!rightEyeCandidated.empty())
+        {
+            //OK now left eye is completely ready
+            x_mean = 0;
+            y_mean = 0;
+            for(std::vector<cv::Rect>::iterator it = rightEyeCandidated.begin(); it != rightEyeCandidated.end(); ++it)
+            {
+                cv::Rect curr = (cv::Rect)*it;
+                x_mean += (curr.x + curr.width / 2);
+                y_mean += (curr.y + curr.height / 2);
+            }
+            x_mean /= rightEyeCandidated.size();
+            y_mean /= rightEyeCandidated.size();
+
+            faceParts->rightEye.x = x_mean;
+            faceParts->rightEye.y = y_mean;
+            faceParts->rightEye.width = 0;
+            faceParts->rightEye.height = 0;
+            faceParts->rightEyeFound = true;
+            // Left eye searching succeed. Right eye now
+        }
+    }
+
+    if(faceParts->rightEyeFound == true)
+    {
+        TRACE_S_T("Right eye was successfully found with multiple eyes search algorythm");
+    }
+    else
+    {
+        TRACE_F_T("Failed to found right eye with multiple eyes search algorythm");
+#ifdef FAST_SEARCH_ENABLED
+        TRACE_F_T("One or less eyes found. Eye detection stopped due to FAST_SEARCH_ENABLED algorythm");
+        goto detect_nose;
+#endif // FAST_SEARCH_ENABLED
     }
 
 #ifdef FAST_SEARCH_ENABLED
