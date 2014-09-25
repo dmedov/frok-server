@@ -171,7 +171,7 @@ FrokResult frokAgentStart()
         TRACE_F("bind failed on error %s", strerror(errno));
         context->agentStarted = FALSE;
         pthread_mutex_unlock(&frokAgentMutex);
-        return FROK_RESULT_SOCKET_ERROR;
+        return FROK_RESULT_INVALID_PARAMETER;
     }
 
     TRACE_N("Listen to socket %d. Max pending connections is %d", context->localSock, SOMAXCONN);
@@ -181,7 +181,7 @@ FrokResult frokAgentStart()
         shutdown(context->localSock, 2);
         context->agentStarted = FALSE;
         pthread_mutex_unlock(&frokAgentMutex);
-        return FROK_RESULT_SOCKET_ERROR;
+        return FROK_RESULT_INVALID_PARAMETER;
     }
 
     TRACE_N("unlock frokAgentMutex");
