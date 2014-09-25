@@ -114,7 +114,7 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
         std::map<std::string, double>::iterator predictedUserIterator;
         double maxLikelihood = -1;
         json::Array jUsersAndProbabilities;
-        for(int n = 0; n < currentFace.size(); n++)
+        while(!currentFace.empty())
         {
             for (std::map<std::string, double>::iterator userIterator = currentFace.begin();
                  userIterator != currentFace.end(); ++userIterator)
