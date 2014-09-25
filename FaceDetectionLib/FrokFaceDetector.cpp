@@ -81,7 +81,7 @@ FrokFaceDetector::FrokFaceDetector()
     catch(...)
     {
         TRACE_F("Failed to load some of cascades");
-        throw FROK_RESULT_CASCADE_ERROR;
+        throw FROK_RESULT_OPENCV_ERROR;
     }
 
     try
@@ -168,6 +168,7 @@ FrokResult FrokFaceDetector::SetTargetImage(cv::Mat &image)
 {
     TRACE_T("started");
     image.copyTo(targetImageGray);
+    TRACE_S("Target photo size: %dx%d", targetImageGray.cols, targetImageGray.rows);
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
@@ -212,6 +213,7 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath, bool dontResi
     cascades[CASCADE_FACE].properties.maxObjectSize = cv::Size(targetImageGray.cols, targetImageGray.rows);
 
     //cv::imwrite("/home/zda/target.jpg", targetImageGray);
+    TRACE_S("Target photo size: %dx%d", targetImageGray.cols, targetImageGray.rows);
 
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
@@ -231,7 +233,7 @@ FrokResult FrokFaceDetector::GetFacesFromPhoto(std::vector< cv::Rect > &faces)
     catch(...)
     {
         TRACE_F_T("detectMultiScale Failed");
-        return FROK_RESULT_NOT_A_FACE;
+        return FROK_RESULT_NO_FACES_FOUND;
     }
 
     TRACE_S_T("Found %u faces", (unsigned)faces.size());
@@ -277,13 +279,14 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
     normalizerClahe->apply(targetImageCopy, targetImageCopy);
     cv::normalize(targetImageCopy, targetImageCopy, 10, 250, cv::NORM_MINMAX);
 
-    for(std::vector<cv::Rect>::iterator it = coords.begin(); it != coords.end(); ++it)
+    for(std::vector<cv::Rect>::iterator it = coords.begin(); it != coords.end();)
     {
         cv::Mat faceImage;
 
         if(FROK_RESULT_SUCCESS != (res = AlignFaceImage(*it, targetImageCopy, faceImage)))
         {
-            TRACE_F_T("AlignFaceImage failed on result %s", FrokResultToString(res));
+            TRACE_F_T("AlignFaceImage failed on result %s. Removing it from faces vector", FrokResultToString(res));
+            coords.erase(it);
             continue;
         }
 
@@ -297,12 +300,13 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
         cv::resize(faceImage, faceImage, faceSize);
 
         faceImages.push_back(faceImage);
+        ++it;
     }
 
     if(imagesBefore == faceImages.size())
     {
         TRACE_F_T("All faces are rejected");
-        return FROK_RESULT_NOT_A_FACE;
+        return FROK_RESULT_NO_FACES_FOUND;
     }
 
     TRACE_T("finished");
@@ -327,7 +331,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
             if(FROK_RESULT_SUCCESS != SetDefaultCascadeParameters((EnumCascades)i, image))
             {
                 TRACE_F_T("Setting defaults to cascade 0x%x failed", i);
-                return FROK_RESULT_CASCADE_ERROR;
+                return FROK_RESULT_OPENCV_ERROR;
             }
         }
     }
@@ -739,7 +743,7 @@ FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &
         if (aligningAngle > 30.0)
         {
             TRACE_F_T("Invalid aligningAngle detected. Rejecting image");
-            return FROK_RESULT_NOT_A_FACE;
+            return FROK_RESULT_NO_FACES_FOUND;
         }
         if (aligningAngle > 0)          aligningAngle -= 90;
         else if (aligningAngle <= 0)     aligningAngle += 90;
@@ -762,7 +766,7 @@ FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &
     else
     {
         TRACE_F_T("Not enaugh information for aligning");
-        return FROK_RESULT_NOT_A_FACE;
+        return FROK_RESULT_NO_FACES_FOUND;
     }
 
     TRACE_S_T("Aligning succeed");

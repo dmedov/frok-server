@@ -56,8 +56,7 @@ FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, cons
         try
         {
             jInJson = json::Deserialize(strInJson);
-            jOutJson["reply_sock"] = jInJson["reply_sock"];
-            jOutJson["req_id"] = jInJson["req_id"];
+            jOutJson["reqId"] = jInJson["reqId"];
         }
         catch(...)
         {
@@ -72,10 +71,15 @@ FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, cons
         {
             res = ((FrokAPI*)instance)->ExecuteFunction(strFunctionName, strInJson, strOutJson);
         }
+        catch(FrokResult result)
+        {
+            TRACE_F("ExecuteFunction failed. Exception captured");
+            res = result;
+        }
         catch(...)
         {
             TRACE_F("ExecuteFunction failed. Exception captured");
-            return FROK_RESULT_UNSPECIFIED_ERROR;
+            res = FROK_RESULT_UNSPECIFIED_ERROR;
         }
 
         try
@@ -84,13 +88,11 @@ FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, cons
             try
             {
                 jInJson = json::Deserialize(strInJson);
-                jOutJson["reply_sock"] = jInJson["reply_sock"];
-                jOutJson["req_id"] = jInJson["req_id"];
+                jOutJson["reqId"] = jInJson["reqId"];
             }
             catch(...)
             {
-                jOutJson["reply_sock"] = -1;
-                jOutJson["req_id"] = -1;
+                jOutJson["reqid"] = -1;
             }
 
             if(res != FROK_RESULT_SUCCESS)
@@ -203,7 +205,7 @@ FrokResult FrokAPI::ExecuteFunction(std::string functionName, std::string inJson
     if(functions.find(functionName) == functions.end())
     {
         TRACE_F("No such function \"%s\"", functionName.c_str());
-        return FROK_RESULT_UNSPECIFIED_ERROR;
+        return FROK_RESULT_INVALID_PARAMETER;
     }
     FrokAPIFunction *function = functions[functionName];
     ConvertParams inParams;
