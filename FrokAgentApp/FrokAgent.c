@@ -171,7 +171,7 @@ FrokResult frokAgentStart()
         TRACE_F("bind failed on error %s", strerror(errno));
         context->agentStarted = FALSE;
         pthread_mutex_unlock(&frokAgentMutex);
-        return FROK_RESULT_SOCKET_ERROR;
+        return FROK_RESULT_INVALID_PARAMETER;
     }
 
     TRACE_N("Listen to socket %d. Max pending connections is %d", context->localSock, SOMAXCONN);
@@ -181,7 +181,7 @@ FrokResult frokAgentStart()
         shutdown(context->localSock, 2);
         context->agentStarted = FALSE;
         pthread_mutex_unlock(&frokAgentMutex);
-        return FROK_RESULT_SOCKET_ERROR;
+        return FROK_RESULT_INVALID_PARAMETER;
     }
 
     TRACE_N("unlock frokAgentMutex");
@@ -269,6 +269,10 @@ FrokResult frokAgentSocketListener()
             result = poll(fds, 2, FROK_AGENT_CLIENT_DATA_TIMEOUT_MS);
             if(-1 == result)
             {
+                if(errno == EINTR)
+                {
+                    continue;
+                }
                 TRACE_F("poll failed on error %s", strerror(errno));
                 return FROK_RESULT_LINUX_ERROR;
             }
@@ -441,12 +445,15 @@ FrokResult frokAgentSocketListener()
 
 void frokAgentProcessJson(SOCKET outSock, const char *json, size_t UNUSED(jsonLength))
 {
-    char *functionName, *outJson;
+    char *functionName, *outJson, *inJson;
     FrokResult res;
 
-    TRACE_N("Processing json %s", json);
+    inJson = calloc(jsonLength + 1, 1);
+    memcpy(inJson, json, jsonLength);
+
+    TRACE_N("Processing json %s", inJson);
     TRACE_N("Calling getFunctionFromJson");
-    functionName = getFunctionFromJson(json);
+    functionName = getFunctionFromJson(inJson);
     if(functionName == NULL)
     {
         TRACE_F("getFunctionFromJson failed");
@@ -454,7 +461,7 @@ void frokAgentProcessJson(SOCKET outSock, const char *json, size_t UNUSED(jsonLe
     }
 
     TRACE_N("Calling frokAPIExecuteFunction, functionName = %s", functionName);
-    res = frokAPIExecuteFunction(context->api, functionName, json, &outJson);
+    res = frokAPIExecuteFunction(context->api, functionName, inJson, &outJson);
 
     TRACE_N("Send response json %s to remote peer %d", outJson, outSock);
 
@@ -592,9 +599,21 @@ FrokResult frokAgentDeinit()
 
     if(context->agentStarted == TRUE)
     {
+        if(-1 == (error = pthread_mutex_unlock(&frokAgentMutex)))
+        {
+            TRACE_F("pthread_mutex_unlock failed on error %s", strerror(error));
+            return FROK_RESULT_LINUX_ERROR;
+        }
+
         if(FROK_RESULT_SUCCESS != (res = frokAgentStop()))
         {
             TRACE_W("frokAgentStop failed on error %s", FrokResultToString(res));
+        }
+
+        if(-1 == (error = pthread_mutex_lock(&frokAgentMutex)))
+        {
+            TRACE_F("pthread_mutex_lock failed on error %s", strerror(error));
+            return FROK_RESULT_LINUX_ERROR;
         }
     }
 

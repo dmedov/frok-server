@@ -114,7 +114,7 @@ bool FAPI_Recognize_FUNCP2JSON(ConvertParams* psConvertParams)
         std::map<std::string, double>::iterator predictedUserIterator;
         double maxLikelihood = -1;
         json::Array jUsersAndProbabilities;
-        for(int n = 0; n < currentFace.size(); n++)
+        while(!currentFace.empty())
         {
             for (std::map<std::string, double>::iterator userIterator = currentFace.begin();
                  userIterator != currentFace.end(); ++userIterator)
@@ -242,12 +242,14 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
         if(FROK_RESULT_SUCCESS != (res = recognizer->SetTargetImage(currentFace)))
         {
             TRACE_F_T("Failed to SetTargetImage on result %s", FrokResultToString(res));
+            i++;
             continue;
         }
 
         if(FROK_RESULT_SUCCESS != (res = recognizer->GetSimilarityOfFaceWithModels(currenFaceSimilarities)))
         {
             TRACE_F_T("Failed to GetSimilarityOfFaceWithModels on result %s", FrokResultToString(res));
+            i++;
             continue;
         }
         ((StructOutRecognizeParams*)*outParams)->coords.push_back(faces.at(i++));

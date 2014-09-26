@@ -254,6 +254,8 @@ FrokResult FaceRecognizerEigenfaces::SetTargetImage(cv::Mat &targetFace)
         TRACE_F_T("Opencv failed to copy tagetFace");
         return FROK_RESULT_OPENCV_ERROR;
     }
+
+    TRACE_S("Target photo size: %dx%d", this->targetFace.cols, this->targetFace.rows);
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }

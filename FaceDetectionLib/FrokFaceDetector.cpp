@@ -168,6 +168,7 @@ FrokResult FrokFaceDetector::SetTargetImage(cv::Mat &image)
 {
     TRACE_T("started");
     image.copyTo(targetImageGray);
+    TRACE_S("Target photo size: %dx%d", targetImageGray.cols, targetImageGray.rows);
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
@@ -212,6 +213,7 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath, bool dontResi
     cascades[CASCADE_FACE].properties.maxObjectSize = cv::Size(targetImageGray.cols, targetImageGray.rows);
 
     //cv::imwrite("/home/zda/target.jpg", targetImageGray);
+    TRACE_S("Target photo size: %dx%d", targetImageGray.cols, targetImageGray.rows);
 
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
@@ -277,13 +279,14 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
     normalizerClahe->apply(targetImageCopy, targetImageCopy);
     cv::normalize(targetImageCopy, targetImageCopy, 10, 250, cv::NORM_MINMAX);
 
-    for(std::vector<cv::Rect>::iterator it = coords.begin(); it != coords.end(); ++it)
+    for(std::vector<cv::Rect>::iterator it = coords.begin(); it != coords.end();)
     {
         cv::Mat faceImage;
 
         if(FROK_RESULT_SUCCESS != (res = AlignFaceImage(*it, targetImageCopy, faceImage)))
         {
-            TRACE_F_T("AlignFaceImage failed on result %s", FrokResultToString(res));
+            TRACE_F_T("AlignFaceImage failed on result %s. Removing it from faces vector", FrokResultToString(res));
+            coords.erase(it);
             continue;
         }
 
@@ -297,6 +300,7 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
         cv::resize(faceImage, faceImage, faceSize);
 
         faceImages.push_back(faceImage);
+        ++it;
     }
 
     if(imagesBefore == faceImages.size())
