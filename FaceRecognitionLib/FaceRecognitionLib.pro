@@ -17,9 +17,9 @@ QMAKE_CFLAGS_DEBUG +=     -Werror -Wall -Wno-unused-function -Wno-write-strings 
 
 DEPENDPATH += ../FrokLibCommon/
 
-INCLUDEPATH += /opt/opencv-2.4.9/install/include/opencv/
-INCLUDEPATH += /opt/opencv-2.4.9/install/include/opencv2/
-INCLUDEPATH += /opt/opencv-2.4.9/install/include
+INCLUDEPATH += /opt/opencv-2.4.9/static/include/opencv/
+INCLUDEPATH += /opt/opencv-2.4.9/static/include/opencv2/
+INCLUDEPATH += /opt/opencv-2.4.9/static/include
 INCLUDEPATH += ../FrokLibCommon/
 
 HEADERS +=                  \

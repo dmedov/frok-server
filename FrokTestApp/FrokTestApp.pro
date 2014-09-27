@@ -14,9 +14,9 @@ DEFINES +=
 DEPENDPATH += ../FrokLibCommon/
 DEPENDPATH += ../FrokAPILib/
 
-INCLUDEPATH += /opt/opencv-2.4.9/install/include/opencv/
-INCLUDEPATH += /opt/opencv-2.4.9/install/include/opencv2/
-INCLUDEPATH += /opt/opencv-2.4.9/install/include
+INCLUDEPATH += /opt/opencv-2.4.9/static/include/opencv/
+INCLUDEPATH += /opt/opencv-2.4.9/static/include/opencv2/
+INCLUDEPATH += /opt/opencv-2.4.9/static/include
 INCLUDEPATH += ../FrokLibCommon/
 INCLUDEPATH += ../FaceDetectionLib/
 INCLUDEPATH += ../FaceRecognitionLib/
