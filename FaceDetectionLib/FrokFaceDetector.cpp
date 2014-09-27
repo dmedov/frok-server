@@ -543,7 +543,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
 #ifdef FAST_SEARCH_ENABLED
     if((faceParts->leftEyeFound == false) && (eyesCandidates.empty()))
     {
-        TRACE_F_T("One or less eyes found. Eye detection stopped due to FAST_SEARCH_ENABLED algorythm");
+        TRACE_F_T("One or less eyes found. Eye detection stopped due to FAST_SEARCH_ENABLED algorithm");
         goto detect_nose;
     }
 #endif // FAST_SEARCH_ENABLED
@@ -610,7 +610,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
     }
 
 //Multiple objects found
-    // If it is = 2, than our standart algorythm should have set eyes, else it is not eyes
+    // If it is = 2, than our standart algorithm should have set eyes, else it is not eyes
     if(eyesCandidates.size() > 2)
     {
         TRACE_W_T("There are more than 2 eyes on photo. Trying to search for 2 eyes from eyes set");
@@ -634,7 +634,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
         TRACE_S_T("Found %zu left eye candidates and %zu right eye candidated", leftEyeCandidated.size(), rightEyeCandidated.size());
         if((leftEyeCandidated.size() != 0) && (faceParts->leftEyeFound != true))
         {
-            TRACE_S_T("Searching for left eye with multiple eyes search algorythm");
+            TRACE_S_T("Searching for left eye with multiple eyes search algorithm");
             // OK now lets filtrate all noises
             int x_mean = 0, y_mean = 0;
             for(std::vector<cv::Rect>::iterator it = leftEyeCandidated.begin(); it != leftEyeCandidated.end(); ++it)
@@ -684,20 +684,20 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
 
         if(faceParts->leftEyeFound == true)
         {
-            TRACE_S_T("Left eye was successfully found with multiple eyes search algorythm");
+            TRACE_S_T("Left eye was successfully found with multiple eyes search algorithm");
         }
         else
         {
-            TRACE_F_T("Failed to found left eye with multiple eyes search algorythm");
+            TRACE_F_T("Failed to found left eye with multiple eyes search algorithm");
     #ifdef FAST_SEARCH_ENABLED
-            TRACE_F_T("One or less eyes found. Eye detection stopped due to FAST_SEARCH_ENABLED algorythm");
+            TRACE_F_T("One or less eyes found. Eye detection stopped due to FAST_SEARCH_ENABLED algorithm");
             goto detect_nose;
     #endif // FAST_SEARCH_ENABLED
         }
 
         if((rightEyeCandidated.size() != 0) && (faceParts->rightEyeFound != true))
         {
-            TRACE_S_T("Searching for left eye with multiple eyes search algorythm");
+            TRACE_S_T("Searching for left eye with multiple eyes search algorithm");
             // OK now lets filtrate all noises
             int x_mean = 0, y_mean = 0;
             for(std::vector<cv::Rect>::iterator it = rightEyeCandidated.begin(); it != rightEyeCandidated.end(); ++it)
@@ -748,13 +748,13 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
 
         if(faceParts->rightEyeFound == true)
         {
-            TRACE_S_T("Right eye was successfully found with multiple eyes search algorythm");
+            TRACE_S_T("Right eye was successfully found with multiple eyes search algorithm");
         }
         else
         {
-            TRACE_F_T("Failed to found right eye with multiple eyes search algorythm");
+            TRACE_F_T("Failed to found right eye with multiple eyes search algorithm");
     #ifdef FAST_SEARCH_ENABLED
-            TRACE_F_T("One or less eyes found. Eye detection stopped due to FAST_SEARCH_ENABLED algorythm");
+            TRACE_F_T("One or less eyes found. Eye detection stopped due to FAST_SEARCH_ENABLED algorithm");
             goto detect_nose;
     #endif // FAST_SEARCH_ENABLED
         }
@@ -763,7 +763,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
 #ifdef FAST_SEARCH_ENABLED
     if(faceParts->rightEyeFound == true && faceParts->leftEyeFound == true)
     {
-        TRACE_W_T("Both eyes were found. Mouth and nose detection are being skipped due to FAST_SEARCH_ENABLED algorythm");
+        TRACE_W_T("Both eyes were found. Mouth and nose detection are being skipped due to FAST_SEARCH_ENABLED algorithm");
         goto detect_finish;
     }
 #endif // FAST_SEARCH_ENABLED
@@ -793,7 +793,7 @@ detect_nose:
 #ifdef FAST_SEARCH_ENABLED
     if(faceParts->noseFound == false)
     {
-        TRACE_F_T("Nose was not found. Mouth detection is being skipped due to FAST_SEARCH_ENABLED algorythm");
+        TRACE_F_T("Nose was not found. Mouth detection is being skipped due to FAST_SEARCH_ENABLED algorithm");
         goto detect_finish;
     }
 #endif // FAST_SEARCH_ENABLED
@@ -918,7 +918,7 @@ FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &
     }
     else
     {
-        TRACE_F_T("Not enaugh information for aligning");
+        TRACE_F_T("Not enough information for aligning");
         return FROK_RESULT_NO_FACES_FOUND;
     }
 
