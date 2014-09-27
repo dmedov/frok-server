@@ -224,6 +224,11 @@ FrokResult Recognize(void *inParams, void **outParams, const char *userBasePath,
         return res;
     }
 
+    if(faces.empty())
+    {
+        TRACE_F_T("No faces found on photo");
+        return FROK_RESULT_NO_FACES_FOUND;
+    }
     std::vector<cv::Mat> faceImages;
 
     if(FROK_RESULT_SUCCESS != (res = detector->GetNormalizedFaceImages(faces, faceImages)))
