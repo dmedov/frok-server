@@ -378,7 +378,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
     else if(eyes.size() > 2)
     {
         eyesCandidates = eyes;
-        TRACE_W("Found more then 2 eyes. Need to implement additional logic");
+        TRACE_W_T("Found more then 2 eyes. Continue...");
     }
     TRACE_T("Failed to find 2 eyes with CASCADE_EYE");
     TRACE_T("Now trying to detect eyes in glasses");
@@ -416,7 +416,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
         {
             eyesCandidates.push_back(*it);
         }
-        TRACE_W("Found more then 2 eyes. Need to implement additional logic");
+        TRACE_W_T("Found more then 2 eyes. Continue...");
     }
 
     TRACE_T("Failed to find 2 eyes with CASCADE_EYE_WITH_GLASSES");
@@ -443,7 +443,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
         {
             eyesCandidates.push_back(*it);
         }
-        TRACE_W("Found more then 1 eye. Need to implement additional logic");
+        TRACE_W_T("Found more then 1 eye. Continue...");
     }
 
     eyes.clear();
@@ -491,7 +491,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
         {
             eyesCandidates.push_back(*it);
         }
-        TRACE_W("Found more then 1 eye. Need to implement additional logic");
+        TRACE_W_T("Found more then 1 eye. Continue...");
     }
 
     if(faceParts->leftEyeFound == false)
@@ -540,7 +540,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
             {
                 eyesCandidates.push_back(*it);
             }
-            TRACE_W("Found more then 1 eye. Need to implement additional logic");
+            TRACE_W_T("Found more then 1 eye. Continue...");
         }
     }
 #ifdef FAST_SEARCH_ENABLED
@@ -595,7 +595,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
             {
                 eyesCandidates.push_back(*it);
             }
-            TRACE_W("Found more then 1 eye. Need to implement additional logic");
+            TRACE_W_T("Found more then 1 eye. Continue...");
         }
     }
 
@@ -614,7 +614,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
 
 //Multiple objects found
     // If it is = 2, than our standart algorithm should have set eyes, else it is not eyes
-    if(eyesCandidates.size() > 2)
+    if((eyesCandidates.size() > 2) && (!(faceParts->rightEyeFound == true && faceParts->leftEyeFound == true)))
     {
         TRACE_W_T("There are more than 2 eyes on photo. Trying to search for 2 eyes from eyes set");
 
@@ -635,6 +635,15 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
         }
 
         TRACE_S_T("Found %zu left eye candidates and %zu right eye candidated", leftEyeCandidated.size(), rightEyeCandidated.size());
+        if(leftEyeCandidated.empty() || rightEyeCandidated.empty())
+        {
+            TRACE_F_T("Failed to find two eyes");
+    #ifdef FAST_SEARCH_ENABLED
+            TRACE_F_T("Failed to find two eyes. Eye detection stopped due to FAST_SEARCH_ENABLED algorithm");
+            goto detect_nose;
+    #endif // FAST_SEARCH_ENABLED
+        }
+
         if((leftEyeCandidated.size() != 0) && (faceParts->leftEyeFound != true))
         {
             TRACE_S_T("Searching for left eye with multiple eyes search algorithm");
@@ -771,7 +780,7 @@ FrokResult FrokFaceDetector::GetHumanFaceParts(cv::Mat &image, HumanFace *facePa
     }
 #endif // FAST_SEARCH_ENABLED
 detect_nose:
-    TRACE_T("Detecting eyes with CASCADE_NOSE_MSC...");
+    TRACE_T("Detecting nose with CASCADE_NOSE_MSC...");
     cascades[CASCADE_NOSE_MSC].cascade.detectMultiScale(image, nose,
                                                     cascades[CASCADE_NOSE_MSC].properties.scaleFactor,
                                                     cascades[CASCADE_NOSE_MSC].properties.minNeighbors,
