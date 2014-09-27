@@ -281,9 +281,10 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
 
     for(std::vector<cv::Rect>::iterator it = coords.begin(); it != coords.end();)
     {
+        cv::Rect curr = *it;
         cv::Mat faceImage;
 
-        if(FROK_RESULT_SUCCESS != (res = AlignFaceImage(*it, targetImageCopy, faceImage)))
+        if(FROK_RESULT_SUCCESS != (res = AlignFaceImage(curr, targetImageCopy, faceImage)))
         {
             TRACE_F_T("AlignFaceImage failed on result %s. Removing it from faces vector", FrokResultToString(res));
             coords.erase(it);
@@ -296,6 +297,8 @@ FrokResult FrokFaceDetector::GetNormalizedFaceImages(std::vector< cv::Rect > &co
             return res;
         }
 
+        // Remove found face from targetImageCopy
+        cv::rectangle(targetImageCopy, cv::Point(curr.x + curr.width / 5, curr.y), cv::Point(curr.x + curr.width - curr.width / 5, curr.y + curr.height), cv::Scalar(0, 0, 0), CV_FILLED);
         // Restore target image to initial size
         cv::resize(faceImage, faceImage, faceSize);
 
