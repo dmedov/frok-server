@@ -52,7 +52,7 @@ int main(void)
     else
     {
         TRACE_S("Recognize base inited");
-    }
+    }asdasdasd
 
 
     void *fapi = frokAPIAlloc(commonContext->photoBasePath, commonContext->targetPhotosPath, detector, recognizer);
