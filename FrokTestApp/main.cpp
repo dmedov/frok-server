@@ -22,6 +22,22 @@ int main(void)
         return -1;
     }
 
+    /*FaceDetectorAbstract *detector = new FrokFaceDetector;
+
+    detector->SetTargetImage("/home/zda/1.jpg");
+    std::vector< cv::Rect > faces;
+    detector->GetFacesFromPhoto(faces);
+    std::vector< cv::Mat > faceImages;
+    detector->GetNormalizedFaceImages(faces, faceImages);
+
+    int i = 0;
+    for(std::vector< cv::Mat >::iterator it = faceImages.begin(); it != faceImages.end(); ++it)
+    {
+        std::stringstream str;
+        str <<"/home/zda/" << i++ << ".jpg";
+        cv::imwrite(str.str.c_str(), *it);
+    }*/
+
     TRACE_N("Create detector instance");
     void *detector = frokFaceDetectorAlloc();
     if(detector == NULL)
@@ -52,13 +68,13 @@ int main(void)
     else
     {
         TRACE_S("Recognize base inited");
-    }asdasdasd
+    }
 
 
     void *fapi = frokAPIAlloc(commonContext->photoBasePath, commonContext->targetPhotosPath, detector, recognizer);
     frokAPIInit(fapi);
 
-    std::string inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"1\"], \"phName\":\"1.jpg\"}";
+    std::string inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"1\"], \"phName\":\"here.jpg\"}";
 
     char *outJson = NULL;
 

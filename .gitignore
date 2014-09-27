@@ -1,5 +1,5 @@
 #Test app is due to users
-./FrokTestApp/*
+FrokTestApp/
 #binary files etc..
 build_*
 bin
@@ -9,4 +9,3 @@ obj
 *.*~
 *~
 *.bak
-
