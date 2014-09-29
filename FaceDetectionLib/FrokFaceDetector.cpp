@@ -201,7 +201,7 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath, bool dontResi
                 newImageSize.width, newImageSize.height);
         try
         {
-            cv::resize(targetImageGray, targetImageGray, newImageSize);
+            cv::resize(targetImageGray, targetImageGray, newImageSize, cv::INTER_AREA);
         }
         catch(...)
         {
