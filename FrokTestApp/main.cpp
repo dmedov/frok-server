@@ -53,17 +53,76 @@ int main(void)
     {
         TRACE_S("Recognize base inited");
     }
-
     void *fapi = frokAPIAlloc(commonContext->photoBasePath, commonContext->targetPhotosPath, detector, recognizer);
     frokAPIInit(fapi);
 
-    std::string inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"1\"], \"phName\":\"1.jpg\"}";
-
+    std::string inJson;
     char *outJson = NULL;
-
+    inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"Nikita\", \"Den\", \"Roman\", \"Dorofey\", \"Feygenzon\", \"Zotov\"], \"phName\":\"Den.jpg\"}";
     frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson.c_str()), inJson.c_str(), &outJson);
+    TRACE("result: %s (Den)\n", outJson);
+    delete []outJson;
+    outJson = NULL;
 
-    TRACE_N("result: %s", outJson);
+    inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"Nikita\", \"Den\", \"Roman\", \"Dorofey\", \"Feygenzon\", \"Zotov\"], \"phName\":\"Den_2.jpg\"}";
+    frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson.c_str()), inJson.c_str(), &outJson);
+    TRACE("result: %s (den)\n", outJson);
+    delete []outJson;
+    outJson = NULL;
+
+    inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"Nikita\", \"Den\", \"Roman\", \"Dorofey\", \"Feygenzon\", \"Zotov\"], \"phName\":\"Den_rom.jpg\"}";
+    frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson.c_str()), inJson.c_str(), &outJson);
+    TRACE("result: %s (den, rom)\n", outJson);
+    delete []outJson;
+    outJson = NULL;
+
+    inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"Nikita\", \"Den\", \"Roman\", \"Dorofey\", \"Feygenzon\", \"Zotov\"], \"phName\":\"Den_Zot.jpg\"}";
+    frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson.c_str()), inJson.c_str(), &outJson);
+    TRACE("result: %s (den, zot)\n", outJson);
+    delete []outJson;
+    outJson = NULL;
+
+    inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"Nikita\", \"Den\", \"Roman\", \"Dorofey\", \"Feygenzon\", \"Zotov\"], \"phName\":\"Den_zot_2.jpg\"}";
+    frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson.c_str()), inJson.c_str(), &outJson);
+    TRACE("result: %s (den, zot)\n", outJson);
+    delete []outJson;
+    outJson = NULL;
+
+    inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"Nikita\", \"Den\", \"Roman\", \"Dorofey\", \"Feygenzon\", \"Zotov\"], \"phName\":\"Rom_zot.jpg\"}";
+    frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson.c_str()), inJson.c_str(), &outJson);
+    TRACE("result: %s (rom, zot)\n", outJson);
+    delete []outJson;
+    outJson = NULL;
+
+    inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"Nikita\", \"Den\", \"Roman\", \"Dorofey\", \"Feygenzon\", \"Zotov\"], \"phName\":\"Roman_1.jpg\"}";
+    frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson.c_str()), inJson.c_str(), &outJson);
+    TRACE("result: %s (rom)\n", outJson);
+    delete []outJson;
+    outJson = NULL;
+
+    inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"Nikita\", \"Den\", \"Roman\", \"Dorofey\", \"Feygenzon\", \"Zotov\"], \"phName\":\"Roman_2.jpg\"}";
+    frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson.c_str()), inJson.c_str(), &outJson);
+    TRACE("result: %s (rom)\n", outJson);
+    delete []outJson;
+    outJson = NULL;
+
+    inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"Nikita\", \"Den\", \"Roman\", \"Dorofey\", \"Feygenzon\", \"Zotov\"], \"phName\":\"Roman_3.jpg\"}";
+    frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson.c_str()), inJson.c_str(), &outJson);
+    TRACE("result: %s (rom)\n", outJson);
+    delete []outJson;
+    outJson = NULL;
+
+    inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"Nikita\", \"Den\", \"Roman\", \"Dorofey\", \"Feygenzon\", \"Zotov\"], \"phName\":\"Roman_4.jpg\"}";
+    frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson.c_str()), inJson.c_str(), &outJson);
+    TRACE("result: %s (rom)\n", outJson);
+    delete []outJson;
+    outJson = NULL;
+
+    inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"Nikita\", \"Den\", \"Roman\", \"Dorofey\", \"Feygenzon\", \"Zotov\"], \"phName\":\"Roman_Dorof.jpg\"}";
+    frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson.c_str()), inJson.c_str(), &outJson);
+    TRACE("result: %s (rom, dor)\n", outJson);
+    delete []outJson;
+    outJson = NULL;
 
     return 0;
 }

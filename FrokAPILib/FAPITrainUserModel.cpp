@@ -109,6 +109,7 @@ FrokResult TrainUserModel(void *inParams, void **outParams, const char *userBase
     *outParams = NULL;
 
     std::vector<std::string> ids = in->ids;
+    FrokResult returnCode;
     bool isSuccess = true;
     TRACE_T("Training started");
     if(ids.empty())
@@ -131,9 +132,11 @@ FrokResult TrainUserModel(void *inParams, void **outParams, const char *userBase
         currentUserFolder.append(*it).append("/");
 
         std::vector<std::string> userPhotos;
-
+        std::vector<cv::Mat> faceImages;
         std::string photosPath = currentUserFolder;
         photosPath.append("photos/");
+        std::string facesPath = currentUserFolder;
+        facesPath.append("faces/");
         char **files;
         unsigned filesNum = 0;
         if(FALSE == getFilesFromDir(photosPath.c_str(), &files, &filesNum))
@@ -145,14 +148,39 @@ FrokResult TrainUserModel(void *inParams, void **outParams, const char *userBase
         for(unsigned i = 0; i < filesNum; i++)
         {
             userPhotos.push_back(files[i]);
+            delete []files[i];
         }
 
-        TRACE_T("Found %u photos for user %s", (unsigned)userPhotos.size(), ((std::string)*it).c_str());
+        delete []files;
+
+        filesNum = 0;
+        if(FALSE != getFilesFromDir(facesPath.c_str(), &files, &filesNum))
+        {
+            for(unsigned i = 0; i < filesNum; i++)
+            {
+                try
+                {
+                    std::string fileName = facesPath;
+                    fileName.append(files[i]);
+                    if(fileName.find(".jpg") >= fileName.size())
+                    {
+                        continue;
+                    }
+                    cv::Mat faceImage = cv::imread(fileName);
+                    faceImages.push_back(faceImage);
+                    delete []files[i];
+                }
+                catch(...) {}
+            }
+            delete[]files;
+        }
+
+
+
+        TRACE_T("Found %zu new photos and %zu old photos for user %s", userPhotos.size(), faceImages.size(),((std::string)*it).c_str());
 
         if(!userPhotos.empty())
         {
-            std::vector<cv::Mat> faceImages;
-
             for(std::vector<std::string>::iterator iterImage = userPhotos.begin(); iterImage != userPhotos.end(); ++iterImage)
             {
                 TRACE_S_T("Processing image %s", ((std::string)*iterImage).c_str());
@@ -200,56 +228,57 @@ FrokResult TrainUserModel(void *inParams, void **outParams, const char *userBase
                     continue;
                 }
             }
+        }
 
-            if(!faceImages.empty())
+        if(!faceImages.empty())
+        {
+            TRACE_T("Found %u images for user %s. Generating user model", (unsigned)faceImages.size(), ((std::string)*it).c_str());
+            FaceModelAbstract *model;
+            try
             {
-                TRACE_T("Found %u images for user %s. Generating user model", (unsigned)faceImages.size(), ((std::string)*it).c_str());
-                FaceModelAbstract *model;
-                try
-                {
-                    model = new FaceModelEigenfaces((std::string)*it);
-                }
-                catch(FrokResult error)
-                {
-                    TRACE_F_T("Failed to create FaceUserModel on error %s", FrokResultToString(error));
-                    continue;
-                }
-                catch(...)
-                {
-                    TRACE_F_T("Unknown error on FaceUserModel creation.");
-                    continue;
-                }
-
-                if(FROK_RESULT_SUCCESS != (res = model->GenerateUserModel(faceImages)))
-                {
-                    TRACE_F_T("Failed to GenerateUserModel on result %s", FrokResultToString(res));
-                    continue;
-                }
-
-                if(FROK_RESULT_SUCCESS != (res = model->SaveUserModel(currentUserFolder.c_str())))
-                {
-                    TRACE_F_T("Failed to SaveUserModel on result %s", FrokResultToString(res));
-                    continue;
-                }
-
-                if(FROK_RESULT_SUCCESS != (res = recognizer->AddFaceUserModel(((std::string)*it), model)))
-                {
-                    TRACE_F_T("Failed to AddFaceUserModel on result %s", FrokResultToString(res));
-                    continue;
-                }
+                model = new FaceModelEigenfaces((std::string)*it);
             }
-            else
+            catch(FrokResult error)
             {
-                TRACE_F_T("No faces found for user %s", ((std::string)*it).c_str());
-                isSuccess = false;
+                TRACE_F_T("Failed to create FaceUserModel on error %s", FrokResultToString(error));
+                continue;
             }
+            catch(...)
+            {
+                TRACE_F_T("Unknown error on FaceUserModel creation.");
+                continue;
+            }
+
+            if(FROK_RESULT_SUCCESS != (res = model->GenerateUserModel(faceImages)))
+            {
+                TRACE_F_T("Failed to GenerateUserModel on result %s", FrokResultToString(res));
+                continue;
+            }
+
+            if(FROK_RESULT_SUCCESS != (res = model->SaveUserModel(currentUserFolder.c_str())))
+            {
+                TRACE_F_T("Failed to SaveUserModel on result %s", FrokResultToString(res));
+                continue;
+            }
+
+            if(FROK_RESULT_SUCCESS != (res = recognizer->AddFaceUserModel(((std::string)*it), model)))
+            {
+                TRACE_F_T("Failed to AddFaceUserModel on result %s", FrokResultToString(res));
+                continue;
+            }
+        }
+        else
+        {
+            TRACE_F_T("No faces found for user %s", ((std::string)*it).c_str());
+            returnCode = FROK_RESULT_NO_FACES_FOUND;
+            isSuccess = false;
         }
     }
 
     if(isSuccess == false)
     {
         TRACE_F_T("Training failed for one or more user - return failure");
-        return FROK_RESULT_UNSPECIFIED_ERROR;
+        return returnCode;
     }
 
     TRACE_T("Training finished");

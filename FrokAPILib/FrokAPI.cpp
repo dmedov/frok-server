@@ -128,17 +128,19 @@ char *getFunctionFromJson(const char *inJson)
         return NULL;
     }
     std::string strJson = inJson;
+    std::string cmd;
     json::Object jObject;
     try
     {
          jObject = json::Deserialize(strJson);
+         cmd = jObject["cmd"].ToString();
     }
     catch(...)
     {
         TRACE_F_T("Invalid parameter. String %s is not a json", inJson);
         return NULL;
     }
-    std::string cmd = jObject["cmd"].ToString();
+
     char *result = new char [cmd.size() + 1];
     strcpy(result, cmd.c_str());
     return result;
