@@ -702,7 +702,7 @@ double CalculateIncompleteGamma(double S, double Z)
 
     if(Z < 0.0)
     {
-        TRACE_F("Invalid parameter: Z = %lf", Z);
+        TRACE_F_T("Invalid parameter: Z = %lf", Z);
         return -1;
     }
 
@@ -724,7 +724,7 @@ double GetPercantByChiSqruare(int Dof, double Cv)
 {
     if(Cv < 0 || Dof < 1)
     {
-        TRACE_F("Invalid parameter: Dof = %i, Cv = %lf", Dof, Cv);
+        TRACE_F_T("Invalid parameter: Dof = %i, Cv = %lf", Dof, Cv);
         return -1;
     }
 
@@ -739,7 +739,7 @@ double GetPercantByChiSqruare(int Dof, double Cv)
     double PValue = CalculateIncompleteGamma(K, X);
     if(PValue < 0)
     {
-        TRACE_F("CalculateIncompleteGamma failed");
+        TRACE_F_T("CalculateIncompleteGamma failed");
         return -1;
     }
     if(isnan(PValue) || isinf(PValue) || PValue <= 1e-8)

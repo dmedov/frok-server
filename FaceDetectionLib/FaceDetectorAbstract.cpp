@@ -5,10 +5,10 @@
 
 FaceDetectorAbstract::FaceDetectorAbstract()
 {
-    TRACE_N("new FaceDetectorAbstract");
+    TRACE_T("new FaceDetectorAbstract");
 }
 
 FaceDetectorAbstract::~FaceDetectorAbstract()
 {
-    TRACE_N("~FaceDetectorAbstract");
+    TRACE_T("~FaceDetectorAbstract");
 }

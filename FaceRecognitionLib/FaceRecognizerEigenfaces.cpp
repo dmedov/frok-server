@@ -15,7 +15,7 @@ void *frokFaceRecognizerEigenfacesAlloc()
     }
     catch(...)
     {
-        TRACE_F("FaceRecognizerEigenfaces constructor failed");
+        TRACE_F_T("FaceRecognizerEigenfaces constructor failed");
         return NULL;
     }
     return instance;
@@ -37,13 +37,13 @@ BOOL frokFaceRecognizerEigenfacesInit(void *instance, const char *photoBasePath)
 
     if(instance == NULL || photoBasePath == NULL)
     {
-        TRACE_F("Invalid parameter: instance = %p, photoBasePath = %p", instance, photoBasePath);
+        TRACE_F_T("Invalid parameter: instance = %p, photoBasePath = %p", instance, photoBasePath);
         return FALSE;
     }
 
     if(FALSE == getSubdirsFromDir(photoBasePath, &users, &usersNum))
     {
-        TRACE_F("getSubdirsFromDir failed");
+        TRACE_F_T("getSubdirsFromDir failed");
         return FALSE;
     }
 
@@ -58,19 +58,19 @@ BOOL frokFaceRecognizerEigenfacesInit(void *instance, const char *photoBasePath)
             model = new FaceModelEigenfaces(user);
             if(FROK_RESULT_SUCCESS != (res = model->LoadUserModel(userPath.c_str())))
             {
-                TRACE_F("LoadUserModel for user %s failed on error %s, continue...", user.c_str(), FrokResultToString(res));
+                TRACE_F_T("LoadUserModel for user %s failed on error %s, continue...", user.c_str(), FrokResultToString(res));
                 continue;
             }
         }
         catch(...)
         {
-            TRACE_F("Failed to create model. Continue...");
+            TRACE_F_T("Failed to create model. Continue...");
             continue;
         }
 
         if(FROK_RESULT_SUCCESS != (res = ((FaceRecognizerEigenfaces*) instance)->AddFaceUserModel(user, model)))
         {
-            TRACE_F("Failed to add user model for user %s on error %s, continue...", user.c_str(), FrokResultToString(res));
+            TRACE_F_T("Failed to add user model for user %s on error %s, continue...", user.c_str(), FrokResultToString(res));
             continue;
         }
     }
@@ -83,12 +83,12 @@ FaceRecognizerEigenfaces::FaceRecognizerEigenfaces()
 {
     // Set defaults
     maxHammingDistance = 18;
-    TRACE_N("new FaceRecognizerEigenfaces");
+    TRACE_T("new FaceRecognizerEigenfaces");
 }
 
 FaceRecognizerEigenfaces::~FaceRecognizerEigenfaces()
 {
-    TRACE_N("~FaceRecognizerEigenfaces");
+    TRACE_T("~FaceRecognizerEigenfaces");
 }
 
 FrokResult FaceRecognizerEigenfaces::AddFaceUserModel(std::string userId, FaceModelAbstract *model)
@@ -120,7 +120,7 @@ double FaceRecognizerEigenfaces::GetSimilarity_FirstMethod(const cv::Mat firstIm
     //TRACE_T("Calculated error = %lf", err);
     if(err < 0) err = -err;
     err /= (255 * diffMat.rows * diffMat.cols);
-    TRACE_R("GetSimilarity_FirstMethod result = %lf", (1 - err));
+    TRACE_R_T("GetSimilarity_FirstMethod result = %lf", (1 - err));
     TRACE_T("finished");
     return 1 - err;
 }
@@ -153,7 +153,7 @@ double FaceRecognizerEigenfaces::GetSimilarity_SecondMethod(const cv::Mat firstI
     //TRACE_T("Calculated error = %lf", err);
     if(err < 0) err = -err;
     err /= (255 * diffMat.rows * diffMat.cols);
-    TRACE_R("GetSimilarity_SecondMethod result = %lf", (1 - err));
+    TRACE_R_T("GetSimilarity_SecondMethod result = %lf", (1 - err));
     TRACE_T("finished");
     return 1 - err;
 }
@@ -166,7 +166,7 @@ double FaceRecognizerEigenfaces::GetSimilarity_ThirdMethod(const cv::Mat &firstI
     // Convert to a reasonable scale, since L2 error is summed across all pixels of the image.
     //TRACE_T("Calculated error = %lf", err);
     err /= (firstImage.rows * firstImage.cols);
-    TRACE_R("GetSimilarity_ThirdMethod result = %lf", (1 - err));
+    TRACE_R_T("GetSimilarity_ThirdMethod result = %lf", (1 - err));
     TRACE_T("finished");
     return 1 - err;
 }
@@ -210,7 +210,7 @@ double FaceRecognizerEigenfaces::GetSimilarity_ChiSquare(const cv::Mat &firstIma
     }
 
     resPercent = GetPercantByChiSqruare(2, chiSquare);
-    TRACE_R("GetSimilarity_ChiSquare result = %lf", resPercent);
+    TRACE_R_T("GetSimilarity_ChiSquare result = %lf", resPercent);
     TRACE_T("finished");
     return resPercent;
 }

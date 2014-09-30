@@ -10,12 +10,12 @@ FaceModelEigenfaces::FaceModelEigenfaces()
 }
 FaceModelEigenfaces::~FaceModelEigenfaces()
 {
-    TRACE_N("~FaceModelEigenfaces");
+    TRACE_T("~FaceModelEigenfaces");
 }
 FaceModelEigenfaces::FaceModelEigenfaces(std::string userId) : FaceModelAbstract(userId)
 {
     model = cv::createEigenFaceRecognizer();
-    TRACE_N("new FaceModelEigenfaces");
+    TRACE_T("new FaceModelEigenfaces");
 }
 
 FrokResult FaceModelEigenfaces::GenerateUserModel(const char *grayFacesPath)
