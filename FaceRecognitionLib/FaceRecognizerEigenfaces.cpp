@@ -102,16 +102,7 @@ FrokResult FaceRecognizerEigenfaces::AddFaceUserModel(std::string userId, FaceMo
 double FaceRecognizerEigenfaces::GetSimilarity_FirstMethod(const cv::Mat firstImage, const cv::Mat secondImage)
 {
     TRACE_T("started");
-
-    cv::Mat firstImageCopy;
-    cv::Mat secondImageCopy;
-    firstImage.copyTo(firstImageCopy);
-    secondImage.copyTo(secondImageCopy);
-    cv::erode(firstImageCopy, firstImageCopy, firstImageCopy);
-    cv::erode(secondImageCopy, secondImageCopy, secondImageCopy);
-    cv::Mat diffMat = firstImageCopy - secondImageCopy;
-
-
+    cv::Mat diffMat = firstImage - secondImage;
 
     double err = 0;
     for(int row = 0; row < diffMat.rows; row++)
@@ -296,127 +287,31 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
 
         if (hammingDistance <= maxHammingDistance)
         {
-            /*double prob1 = GetSimilarity_FirstMethod(targetFace, predictedFace);  // method is deprecated
-            double prob2 = GetSimilarity_SecondMethod(targetFace, predictedFace);
-            double prob3 = GetSimilarity_ThirdMethod(targetFace, predictedFace);
-            double prob4 = GetSimilarity_ChiSquare(targetFace, predictedFace);*/
+            //double prob1 = GetSimilarity_FirstMethod(targetFace, predictedFace);  // method is deprecated
+            double prob1 = GetSimilarity_SecondMethod(targetFace, predictedFace);
+            double prob2 = GetSimilarity_ThirdMethod(targetFace, predictedFace);
+            double prob3 = GetSimilarity_ChiSquare(targetFace, predictedFace);
 
-            double prob1_o = GetSimilarity_FirstMethod_old(targetFace, predictedFace);
-            double prob2_o = GetSimilarity_SecondMethod_old(targetFace, predictedFace);
-            double prob3_o = GetSimilarity_ThirdMethod_old(targetFace, predictedFace);
-            /*if((prob1 < 0) || (prob2 < 0) || (prob3 < 0))
+            if((prob1 < 0) || (prob2 < 0) || (prob3 < 0))
             {
                 TRACE_F_T("Some of GetSimilarities failed");
                 continue;
-            }*/
+            }
 
-            /*double geometricMean = pow(prob1 * prob2 * prob3, 1. / 3);
-            double arithmeticMean = (prob1 + prob2 + prob3) / 3;*/
+            double geometricMean = pow(prob1 * prob2, 1. / 2);
+            double arithmeticMean = (prob1 + prob2) / 2;
 
-            double geometricMean_o = pow(prob1_o * prob2_o * prob3_o, 1. / 3);
-            double arithmeticMean_o = (prob1_o + prob2_o + prob3_o) / 3;
-
-            //double weightMean = 0.90 * geometricMean_o + 0.10 * prob4;
-            //double weightMean_both = 2.5* geometricMean_o + 0.5 * weightMean;
+            double weightMean = 0.25 * geometricMean + 0.75 * prob3;
 
             TRACE_S_T("User %s results:", userId.c_str());
-            /*TRACE_S_T("geometric mean probability = %lf", geometricMean);
+            TRACE_S_T("geometric mean probability = %lf", geometricMean);
             TRACE_S_T("arithmetic mean probability = %lf", arithmeticMean);
-            TRACE_S_T("weightMean mean probability = %lf", weightMean);*/
-
-            TRACE_S_T("geometric mean probability = %lf", geometricMean_o);
-            TRACE_S_T("arithmetic mean probability = %lf", arithmeticMean_o);
-            //similarities[userId] = weightMean;
-            similarities[userId] = geometricMean_o;
+            TRACE_S_T("weightMean mean probability = %lf", weightMean);
+            similarities[userId] = weightMean;
         }
     }
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
-}
-
-double FaceRecognizerEigenfaces::GetSimilarity_FirstMethod_old(const cv::Mat &firstImage, const cv::Mat &secondImage)
-{
-    cv::Mat blr_img;
-    firstImage.copyTo(blr_img);
-
-    cv::Mat blr_rec;
-    secondImage.copyTo(blr_rec);
-
-    cv::erode(blr_img, blr_img, blr_img);
-    cv::erode(blr_rec, blr_rec, blr_rec);
-
-
-    cv::Mat dif = abs(cv::Mat(blr_img) - cv::Mat(blr_rec));
-
-    int koef = 0;
-    double err = 0;
-    for (int y(0); y < dif.rows; ++y){
-        for (int x(0); x < dif.cols; ++x){
-            int d = dif.at<unsigned char>(y, x);
-            if (d >= 40)
-                koef += d;
-        }
-    }
-
-    err = (double)koef / ((double)dif.cols * (double)dif.rows * 40);
-
-    double prob = (1 - err);
-
-    if (prob > 1) prob = 0.99;
-    if (prob < 0) prob = 0.01;
-
-    return prob;
-}
-
-// Compare two images by getting the L2 error (square-root of sum of squared error).
-double FaceRecognizerEigenfaces::GetSimilarity_SecondMethod_old(const cv::Mat &firstImage, const cv::Mat &secondImage)
-{
-    if ((firstImage.rows > 0) && (firstImage.rows == secondImage.rows ) &&
-        (firstImage.cols > 0) && (firstImage.cols == secondImage.cols)) {
-        // Calculate the L2 relative error between the 2 images.
-        double errorL2 = norm(firstImage, secondImage, CV_L2);
-        // Convert to a reasonable scale, since L2 error is summed across all pixels of the image.
-        return errorL2 / (double)(firstImage.rows * firstImage.cols);;
-    }
-    else {
-        //cout << "WARNING: Images have a different size in 'getSimilarity()'." << endl;
-        return 100000000.0;  // Return a bad value			[TBD] this is not invalid value. Value must be really invalid
-    }
-}
-
-double FaceRecognizerEigenfaces::GetSimilarity_ThirdMethod_old(const cv::Mat &firstImage, const cv::Mat &secondImage)
-{
-    cv::Mat temporary1, temporary2;
-    try
-    {
-        cv::cornerMinEigenVal(firstImage, temporary1, 20, 7);
-        cv::cornerMinEigenVal(secondImage, temporary2, 20, 7);
-    }
-    catch(...)
-    {
-        TRACE_F_T("Opencv failed to process cornerMinEigenVal function");
-        return -1;
-    }
-    cv::Mat diffMat = temporary1 - temporary2;
-
-    double err = 0;
-    for(int row = 0; row < diffMat.rows; row++)
-    {
-        unsigned char* points  = diffMat.ptr<unsigned char>(row);
-        for (int col = 0; col < diffMat.cols; col++)
-        {
-            err += *points++;
-        }
-    }
-
-    err /= ((double)diffMat.rows * (double)diffMat.cols);
-
-    err *= 2.5;
-    double prob = (1 - err);
-    if (prob > 1) prob = 0.99;
-    if (prob < 0) prob = 0.01;
-
-    return prob;
 }
 
 // [TBD] Get any prove of this code frok Nikita!
