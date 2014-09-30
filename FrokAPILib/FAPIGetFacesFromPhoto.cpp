@@ -44,7 +44,7 @@ bool FAPI_GetFacesFromPhoto_JSON2FUNCP(ConvertParams* psConvertParams)
 {
     if(!psConvertParams)
     {
-        TRACE_F_T("Invalid parameter: converterParams = %p", psConvertParams);
+        TRACE_F("Invalid parameter: converterParams = %p", psConvertParams);
         return false;
     }
 
@@ -55,20 +55,20 @@ bool FAPI_GetFacesFromPhoto_JSON2FUNCP(ConvertParams* psConvertParams)
     }
     catch(...)
     {
-        TRACE_F_T("Failed to deserialize input json %s", psConvertParams->jsonParameters.c_str());
+        TRACE_F("Failed to deserialize input json %s", psConvertParams->jsonParameters.c_str());
         return false;
     }
 
     if(!jsonParams.HasKeys(inGetFacesFromPhotoParams))
     {
-        TRACE_F_T("Invalid parameter: input json doesn't have all mandatory keys.");
-        TRACE_T("Mandatory parameter:");
+        TRACE_F("Invalid parameter: input json doesn't have all mandatory keys.");
+        TRACE_N("Mandatory parameter:");
         for(std::vector<std::string>::const_iterator it = inGetFacesFromPhotoParams.begin(); it != inGetFacesFromPhotoParams.end(); ++it)
         {
-            TRACE_T("\t%s", ((std::string)*it).c_str());
+            TRACE_N("\t%s", ((std::string)*it).c_str());
         }
 
-        TRACE_T("Input json: %s", psConvertParams->jsonParameters.c_str());
+        TRACE_N("Input json: %s", psConvertParams->jsonParameters.c_str());
         return false;
     }
 
@@ -116,7 +116,7 @@ bool FAPI_GetFacesFromPhoto_FUNCP2JSON(ConvertParams* psConvertParams)
     }
     catch(...)
     {
-        TRACE_F_T("Failed to serialize result json");
+        TRACE_F("Failed to serialize result json");
         return false;
     }
 
@@ -133,7 +133,7 @@ FrokResult GetFacesFromPhoto(void *inParams, void **outParams, const char *userB
     if(inParams == NULL || outParams == NULL || userBasePath == NULL || targetPhotosPath == NULL ||
             detector == NULL || recognizer == NULL)
     {
-        TRACE_F_T("Invalid parameters. inParams = %p, outParams = %p, userBasePath = %p,\
+        TRACE_F("Invalid parameters. inParams = %p, outParams = %p, userBasePath = %p,\
                 targetPhotosPath = %p, detector = %p, recognizer = %p",
                 inParams, outParams, userBasePath, targetPhotosPath, detector, recognizer);
         return FROK_RESULT_INVALID_PARAMETER;
@@ -173,7 +173,7 @@ FrokResult GetFacesFromPhoto(void *inParams, void **outParams, const char *userB
         }
 
         // Yeah it is face for real. Kappa.
-        TRACE_S_T("Face found: x1 = %d, y1 = %d, x2 = %d. y2 = %d", ((cv::Rect)face[0]).x, ((cv::Rect)face[0]).y, ((cv::Rect)face[0]).x + ((cv::Rect)face[0]).width, ((cv::Rect)face[0]).y + ((cv::Rect)face[0]).height);
+        TRACE_S("Face found: x1 = %d, y1 = %d, x2 = %d. y2 = %d", ((cv::Rect)face[0]).x, ((cv::Rect)face[0]).y, ((cv::Rect)face[0]).x + ((cv::Rect)face[0]).width, ((cv::Rect)face[0]).y + ((cv::Rect)face[0]).height);
         ((StructOutGetFacesFromPhotoParams*)*outParams)->faceRects.push_back(face[0]);
 
         face.clear();

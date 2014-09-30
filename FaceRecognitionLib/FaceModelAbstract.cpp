@@ -5,16 +5,16 @@
 
 FaceModelAbstract::FaceModelAbstract()
 {
-    TRACE_F_T("This constructor must not be called");
+    TRACE_F("This constructor must not be called");
 }
 
 FaceModelAbstract::FaceModelAbstract(std::string userId)
 {
-    TRACE_T("new FaceModelAbstract");
+    TRACE_N("new FaceModelAbstract");
     this->userId = userId;
 }
 
 FaceModelAbstract::~FaceModelAbstract()
 {
-    TRACE_T("~FaceModelAbstract");
+    TRACE_N("~FaceModelAbstract");
 }

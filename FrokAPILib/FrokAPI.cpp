@@ -14,7 +14,7 @@ void *frokAPIAlloc(const char *photo_base_path, const char *targets_folder_path,
 {
     if((photo_base_path == NULL) || (targets_folder_path == NULL))
     {
-        TRACE_F_T("Invalid parameter: photo_base_path = %p, targets_folder_path = %p", photo_base_path, targets_folder_path);
+        TRACE_F("Invalid parameter: photo_base_path = %p, targets_folder_path = %p", photo_base_path, targets_folder_path);
         return NULL;
     }
 
@@ -25,7 +25,7 @@ void *frokAPIAlloc(const char *photo_base_path, const char *targets_folder_path,
     }
     catch(FrokResult error)
     {
-        TRACE_F_T("Failed to create FrokAPI instance on result %s", FrokResultToString(error));
+        TRACE_F("Failed to create FrokAPI instance on result %s", FrokResultToString(error));
         return NULL;
     }
     return instance;
@@ -50,7 +50,7 @@ FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, cons
     FrokResult res;
     if((instance == NULL) || (functionName = NULL) || (inJson == NULL) || (outJson == NULL))
     {
-        TRACE_F_T("Invalid parameters: instance = %p, function name = %p, inJson = %p, outJson = %p", instance, functionName, inJson, outJson);
+        TRACE_F("Invalid parameters: instance = %p, function name = %p, inJson = %p, outJson = %p", instance, functionName, inJson, outJson);
         jOutJson["result"] = "fail";
         jOutJson["reason"] = "internal error";
         try
@@ -73,12 +73,12 @@ FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, cons
         }
         catch(FrokResult result)
         {
-            TRACE_F_T("ExecuteFunction failed. Exception captured");
+            TRACE_F("ExecuteFunction failed. Exception captured");
             res = result;
         }
         catch(...)
         {
-            TRACE_F_T("ExecuteFunction failed. Exception captured");
+            TRACE_F("ExecuteFunction failed. Exception captured");
             res = FROK_RESULT_UNSPECIFIED_ERROR;
         }
 
@@ -124,21 +124,23 @@ char *getFunctionFromJson(const char *inJson)
 {
     if(inJson == NULL)
     {
-        TRACE_F_T("Invalid parameter: inJson = %p", inJson);
+        TRACE_F("Invalid parameter: inJson = %p", inJson);
         return NULL;
     }
     std::string strJson = inJson;
+    std::string cmd;
     json::Object jObject;
     try
     {
          jObject = json::Deserialize(strJson);
+         cmd = jObject["cmd"].ToString();
     }
     catch(...)
     {
-        TRACE_F_T("Invalid parameter. String %s is not a json", inJson);
+        TRACE_F("Invalid parameter. String %s is not a json", inJson);
         return NULL;
     }
-    std::string cmd = jObject["cmd"].ToString();
+
     char *result = new char [cmd.size() + 1];
     strcpy(result, cmd.c_str());
     return result;
@@ -148,7 +150,7 @@ void frokAPIInit(void *instance)
 {
     if(instance == NULL)
     {
-        TRACE_F_T("Invalid parameter: instance = %p", instance);
+        TRACE_F("Invalid parameter: instance = %p", instance);
         return;
     }
     ((FrokAPI*)instance)->AddAPIFunction("addFace", &FAPI_AddFaceFromPhotoToModel);
@@ -167,7 +169,7 @@ FrokAPI::FrokAPI(const char *photo_base_path, const char *targets_folder_path, F
 {
     if((photo_base_path == NULL) || (targets_folder_path == NULL))
     {
-        TRACE_F_T("Invalid parameter: photo_base_path = %p, targets_folder_path = %p", photo_base_path, targets_folder_path);
+        TRACE_F("Invalid parameter: photo_base_path = %p, targets_folder_path = %p", photo_base_path, targets_folder_path);
         throw FROK_RESULT_INVALID_PARAMETER;
     }
     this->photo_base_path = new char [strlen(photo_base_path) + 1];
@@ -204,7 +206,7 @@ FrokResult FrokAPI::ExecuteFunction(std::string functionName, std::string inJson
 {
     if(functions.find(functionName) == functions.end())
     {
-        TRACE_F_T("No such function \"%s\"", functionName.c_str());
+        TRACE_F("No such function \"%s\"", functionName.c_str());
         return FROK_RESULT_INVALID_PARAMETER;
     }
     FrokAPIFunction *function = functions[functionName];
@@ -213,7 +215,7 @@ FrokResult FrokAPI::ExecuteFunction(std::string functionName, std::string inJson
     inParams.jsonParameters = inJson;
     if(!function->ConvertJsonToFunctionParameters(&inParams))
     {
-        TRACE_F_T("ConvertJsonToFunctionParameters failed");
+        TRACE_F("ConvertJsonToFunctionParameters failed");
         return FROK_RESULT_INVALID_PARAMETER;
     }
 
@@ -256,7 +258,7 @@ FrokResult FrokAPI::ExecuteFunction(std::string functionName, std::string inJson
 
     if(!function->ConvertFunctionReturnToJson(&outParams))
     {
-        TRACE_F_T("ConvertFunctionReturnToJson failed");
+        TRACE_F("ConvertFunctionReturnToJson failed");
         return FROK_RESULT_UNSPECIFIED_ERROR;
     }
     outJson = outParams.jsonParameters;

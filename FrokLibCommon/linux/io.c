@@ -1,5 +1,4 @@
 #include "io.h"
-#include "frokLibCommon.h"
 
 #include <dirent.h>
 #include <errno.h>
@@ -27,13 +26,13 @@ BOOL getFilesFromDir(const char *dir, char ***files, unsigned *filesNum)
     char          **tmp_reallocPointer;
     if((dir == NULL) || (files == NULL) || (filesNum == NULL))
     {
-        TRACE_F_T("Invalid parameters: dir = %p, files = %p, filesNum = %p\n", dir, files, filesNum);
+        TRACE_F("Invalid parameters: dir = %p, files = %p, filesNum = %p\n", dir, files, filesNum);
         return FALSE;
     }
 
     if(NULL == (dirStream = opendir(dir)))
     {
-        TRACE_F_T("failed to load dir %s stream on error %s\n", dir, strerror(errno));
+        TRACE_F("failed to load dir %s stream on error %s\n", dir, strerror(errno));
         return FALSE;
     }
 
@@ -45,7 +44,7 @@ BOOL getFilesFromDir(const char *dir, char ***files, unsigned *filesNum)
         fullname = calloc(dirNameSize + fileNameSize + 1, 1);
         if(fullname == NULL)
         {
-            TRACE_F_T("calloc failed on error %s", strerror(errno));
+            TRACE_F("calloc failed on error %s", strerror(errno));
             for(i = 0; i < foundFilesNum; i++)
             {
                 free(foundFiles[i]);
@@ -59,7 +58,7 @@ BOOL getFilesFromDir(const char *dir, char ***files, unsigned *filesNum)
 
         if(-1 == stat(fullname, &fileInfo))
         {
-            TRACE_W_T("failed to get %s stats on error %s\n", file->d_name, strerror(errno));
+            TRACE_W("failed to get %s stats on error %s\n", file->d_name, strerror(errno));
             free(fullname);
             continue;
         }
@@ -75,7 +74,7 @@ BOOL getFilesFromDir(const char *dir, char ***files, unsigned *filesNum)
                 foundFiles = realloc(tmp_reallocPointer, sizeof(char*) * (foundFilesNum));
                 if(!foundFiles)
                 {
-                    TRACE_F_T("realloc failed on error %s", strerror(errno));
+                    TRACE_F("realloc failed on error %s", strerror(errno));
                     free(fullname);
                     for(i = 0; i < foundFilesNum - 1; i++)
                     {
@@ -90,7 +89,7 @@ BOOL getFilesFromDir(const char *dir, char ***files, unsigned *filesNum)
                 foundFiles = malloc(sizeof(char*) * foundFilesNum);
                 if(!foundFiles)
                 {
-                    TRACE_F_T("malloc failed on error %s", strerror(errno));
+                    TRACE_F("malloc failed on error %s", strerror(errno));
                     free(fullname);
                     return FALSE;
                 }
@@ -104,7 +103,7 @@ BOOL getFilesFromDir(const char *dir, char ***files, unsigned *filesNum)
     }
     if(-1 == closedir(dirStream))
     {
-        TRACE_F_T("failed to close dir stream on error %s\n", strerror(errno));
+        TRACE_F("failed to close dir stream on error %s\n", strerror(errno));
 
         for(i = 0; i < foundFilesNum; i++)
         {
@@ -139,13 +138,13 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
     char          **tmp_reallocPointer;
     if((dir == NULL) || (files == NULL) || (filesNum == NULL))
     {
-        TRACE_F_T("Invalid parameters: dir = %p, files = %p, filesNum = %p\n", dir, files, filesNum);
+        TRACE_F("Invalid parameters: dir = %p, files = %p, filesNum = %p\n", dir, files, filesNum);
         return FALSE;
     }
 
     if(NULL == (dirStream = opendir(dir)))
     {
-        TRACE_F_T("failed to load dir stream %s on error %s\n", dir, strerror(errno));
+        TRACE_F("failed to load dir stream %s on error %s\n", dir, strerror(errno));
         return FALSE;
     }
 
@@ -157,7 +156,7 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
         fullname = calloc(dirNameSize + fileNameSize + 1, 1);
         if(fullname == NULL)
         {
-            TRACE_F_T("calloc failed on error %s", strerror(errno));
+            TRACE_F("calloc failed on error %s", strerror(errno));
             for(i = 0; i < foundFilesNum; i++)
             {
                 free(foundFiles[i]);
@@ -171,7 +170,7 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
 
         if(-1 == stat(fullname, &fileInfo))
         {
-            TRACE_W_T("failed to get %s stats on error %s\n", file->d_name, strerror(errno));
+            TRACE_W("failed to get %s stats on error %s\n", file->d_name, strerror(errno));
             free(fullname);
             continue;
         }
@@ -187,7 +186,7 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
                 foundFiles = realloc(tmp_reallocPointer, sizeof(char*) * (foundFilesNum));
                 if(!foundFiles)
                 {
-                    TRACE_F_T("realloc failed on error %s", strerror(errno));
+                    TRACE_F("realloc failed on error %s", strerror(errno));
                     free(fullname);
                     for(i = 0; i < foundFilesNum - 1; i++)
                     {
@@ -202,7 +201,7 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
                 foundFiles = malloc(sizeof(char*) * foundFilesNum);
                 if(!foundFiles)
                 {
-                    TRACE_F_T("malloc failed on error %s", strerror(errno));
+                    TRACE_F("malloc failed on error %s", strerror(errno));
                     free(fullname);
                     return FALSE;
                 }
@@ -216,7 +215,7 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
     }
     if(-1 == closedir(dirStream))
     {
-        TRACE_F_T("failed to close dir stream on error %s\n", strerror(errno));
+        TRACE_F("failed to close dir stream on error %s\n", strerror(errno));
 
         for(i = 0; i < foundFilesNum; i++)
         {
@@ -265,13 +264,13 @@ BOOL mkpath(const char *path, mode_t mode)
     char           *copypath;
     if(path == NULL)
     {
-        TRACE_F_T("Invalid parameter: path = %p", path);
+        TRACE_F("Invalid parameter: path = %p", path);
         return FALSE;
     }
     copypath = calloc(strlen(path) + 1, 1);
     if(copypath == NULL)
     {
-        TRACE_F_T("calloc failed on error %s", strerror(errno));
+        TRACE_F("calloc failed on error %s", strerror(errno));
         return FALSE;
     }
     strcpy(copypath, path);

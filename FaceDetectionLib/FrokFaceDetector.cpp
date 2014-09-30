@@ -15,7 +15,7 @@ void* frokFaceDetectorAlloc()
     }
     catch(...)
     {
-        TRACE_F_T("FrokFaceDetector constructor failed");
+        TRACE_F("FrokFaceDetector constructor failed");
         return NULL;
     }
     return instance;
@@ -80,7 +80,7 @@ FrokFaceDetector::FrokFaceDetector()
     }
     catch(...)
     {
-        TRACE_F_T("Failed to load some of cascades");
+        TRACE_F("Failed to load some of cascades");
         throw FROK_RESULT_OPENCV_ERROR;
     }
 
@@ -90,7 +90,7 @@ FrokFaceDetector::FrokFaceDetector()
     }
     catch(...)
     {
-        TRACE_F_T("Opencv failed to create CLAHE normalizer");
+        TRACE_F("Opencv failed to create CLAHE normalizer");
         throw FROK_RESULT_OPENCV_ERROR;
     }
 
@@ -99,19 +99,19 @@ FrokFaceDetector::FrokFaceDetector()
     faceSize = cv::Size(158, 190);
     defaultImageSize = cv::Size(320, 320);
 
-    TRACE_T("new FrokFaceDetector");
+    TRACE_N("new FrokFaceDetector");
 }
 
 FrokFaceDetector::~FrokFaceDetector()
 {
-    TRACE_T("~FrokFaceDetector");
+    TRACE_N("~FrokFaceDetector");
 }
 
 FrokResult FrokFaceDetector::SetCascadeParameters(EnumCascades cascade, CascadeProperties params)
 {
     if(cascades.find(cascade) == cascades.end())
     {
-        TRACE_F_T("Invalid cascade name");
+        TRACE_F("Invalid cascade name");
         return FROK_RESULT_INVALID_PARAMETER;
     }
 
@@ -156,7 +156,7 @@ FrokResult FrokFaceDetector::SetDefaultCascadeParameters(EnumCascades cascade, c
     }
     default:
     {
-        TRACE_F_T("Invalid cascade name");
+        TRACE_F("Invalid cascade name");
         return FROK_RESULT_INVALID_PARAMETER;
     }
     }
@@ -168,7 +168,7 @@ FrokResult FrokFaceDetector::SetTargetImage(cv::Mat &image)
 {
     TRACE_T("started");
     image.copyTo(targetImageGray);
-    TRACE_S_T("Target photo size: %dx%d", targetImageGray.cols, targetImageGray.rows);
+    TRACE_S("Target photo size: %dx%d", targetImageGray.cols, targetImageGray.rows);
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
@@ -213,7 +213,7 @@ FrokResult FrokFaceDetector::SetTargetImage(const char *imagePath, bool dontResi
     cascades[CASCADE_FACE].properties.maxObjectSize = cv::Size(targetImageGray.cols, targetImageGray.rows);
 
     //cv::imwrite("/home/zda/target.jpg", targetImageGray);
-    TRACE_S_T("Target photo %s size: %dx%d", imagePath, targetImageGray.cols, targetImageGray.rows);
+    TRACE_S("Target photo size: %dx%d", targetImageGray.cols, targetImageGray.rows);
 
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
@@ -797,7 +797,7 @@ detect_nose:
     }
     else if(nose.size() > 1)
     {
-        TRACE_W_T("Found more then 1 nose. Need to implement additional logic");
+        TRACE_W("Found more then 1 nose. Need to implement additional logic");
     }
     TRACE_T("Failed to find nose with CASCADE_NOSE_MSC");
     TRACE_W_T("Nose detection failed");

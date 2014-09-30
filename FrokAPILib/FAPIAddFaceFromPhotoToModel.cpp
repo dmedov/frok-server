@@ -43,7 +43,7 @@ bool FAPI_AddFaceFromPhotoToModel_JSON2FUNCP(ConvertParams* psConvertParams)
 {
     if(!psConvertParams)
     {
-        TRACE_F_T("Invalid parameter: converterParams = %p", psConvertParams);
+        TRACE_F("Invalid parameter: converterParams = %p", psConvertParams);
         return false;
     }
 
@@ -54,20 +54,20 @@ bool FAPI_AddFaceFromPhotoToModel_JSON2FUNCP(ConvertParams* psConvertParams)
     }
     catch(...)
     {
-        TRACE_F_T("Failed to deserialize input json %s", psConvertParams->jsonParameters.c_str());
+        TRACE_F("Failed to deserialize input json %s", psConvertParams->jsonParameters.c_str());
         return false;
     }
 
     if(!jsonParams.HasKeys(inAddFaceFromPhotoToModelParams))
     {
-        TRACE_F_T("Invalid parameter: input json doesn't have all mandatory keys.");
-        TRACE_T("Mandatory parameter:");
+        TRACE_F("Invalid parameter: input json doesn't have all mandatory keys.");
+        TRACE_N("Mandatory parameter:");
         for(std::vector<std::string>::const_iterator it = inAddFaceFromPhotoToModelParams.begin(); it != inAddFaceFromPhotoToModelParams.end(); ++it)
         {
-            TRACE_T("\t%s", ((std::string)*it).c_str());
+            TRACE_N("\t%s", ((std::string)*it).c_str());
         }
 
-        TRACE_T("Input json: %s", psConvertParams->jsonParameters.c_str());
+        TRACE_N("Input json: %s", psConvertParams->jsonParameters.c_str());
         return false;
     }
 
@@ -104,7 +104,7 @@ FrokResult AddFaceFromPhotoToModel(void *inParams, void **outParams, const char 
     if(inParams == NULL || outParams == NULL || userBasePath == NULL || targetPhotosPath == NULL ||
             detector == NULL || recognizer == NULL)
     {
-        TRACE_F_T("Invalid parameters. inParams = %p, outParams = %p, userBasePath = %p,\
+        TRACE_F("Invalid parameters. inParams = %p, outParams = %p, userBasePath = %p,\
                 targetPhotosPath = %p, detector = %p, recognizer = %p",
                 inParams, outParams, userBasePath, targetPhotosPath, detector, recognizer);
         return FROK_RESULT_INVALID_PARAMETER;
@@ -141,7 +141,7 @@ FrokResult AddFaceFromPhotoToModel(void *inParams, void **outParams, const char 
 
     if(faces.size() < in->faceNumber)
     {
-        TRACE_F_T("Invalid faceNumber. Found %zu faces, faceNumber = %d", faces.size(), in->faceNumber);
+        TRACE_F("Invalid faceNumber. Found %zu faces, faceNumber = %d", faces.size(), in->faceNumber);
         return FROK_RESULT_INVALID_PARAMETER;
     }
 
