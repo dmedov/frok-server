@@ -313,7 +313,7 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
             /*double geometricMean = pow(prob1 * prob2 * prob3, 1. / 3);
             double arithmeticMean = (prob1 + prob2 + prob3) / 3;*/
 
-            double prob = abs(prob1_o - abs(prob2_o - prob3_o))/1.5;
+            double prob = (prob1_o - (prob2_o - prob3_o))/1.5;
             /*double geometricMean_o = pow(prob1_o * prob2_o * prob3_o, 1. / 3);
             double arithmeticMean_o = (prob1_o + prob2_o + prob3_o) / 3;*/
 
