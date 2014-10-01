@@ -303,7 +303,7 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
 
             double prob1_o = GetSimilarity_FirstMethod_old(targetFace, predictedFace);
             double prob2_o = GetSimilarity_SecondMethod_old(targetFace, predictedFace);
-            double prob3_o = GetSimilarity_ThirdMethod_old(targetFace, predictedFace);
+            double prob3_o = 1 - GetSimilarity_ThirdMethod_old(targetFace, predictedFace);
             /*if((prob1 < 0) || (prob2 < 0) || (prob3 < 0))
             {
                 TRACE_F_T("Some of GetSimilarities failed");
@@ -313,8 +313,9 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
             /*double geometricMean = pow(prob1 * prob2 * prob3, 1. / 3);
             double arithmeticMean = (prob1 + prob2 + prob3) / 3;*/
 
-            double geometricMean_o = pow(prob1_o * prob2_o * prob3_o, 1. / 3);
-            double arithmeticMean_o = (prob1_o + prob2_o + prob3_o) / 3;
+            double prob = abs(prob1_o - abs(prob2_o - prob3_o))/1.5;
+            /*double geometricMean_o = pow(prob1_o * prob2_o * prob3_o, 1. / 3);
+            double arithmeticMean_o = (prob1_o + prob2_o + prob3_o) / 3;*/
 
             //double weightMean = 0.90 * geometricMean_o + 0.10 * prob4;
             //double weightMean_both = 2.5* geometricMean_o + 0.5 * weightMean;
@@ -324,10 +325,11 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
             TRACE_S_T("arithmetic mean probability = %lf", arithmeticMean);
             TRACE_S_T("weightMean mean probability = %lf", weightMean);*/
 
-            TRACE_S_T("geometric mean probability = %lf", geometricMean_o);
-            TRACE_S_T("arithmetic mean probability = %lf", arithmeticMean_o);
+            /*TRACE_S_T("geometric mean probability = %lf", geometricMean_o);
+            TRACE_S_T("arithmetic mean probability = %lf", arithmeticMean_o);*/
             //similarities[userId] = weightMean;
-            similarities[userId] = geometricMean_o;
+            //similarities[userId] = geometricMean_o;
+            similarities[userId] = prob;
         }
     }
     TRACE_T("finished");
