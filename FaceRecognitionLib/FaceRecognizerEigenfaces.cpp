@@ -335,7 +335,7 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
             TRACE_S_T("arithmetic mean probability = %lf", arithmeticMean_o);*/
             //similarities[userId] = weightMean;
             //similarities[userId] = geometricMean_o;
-            similarities[userId] = prob;
+            similarities[userId] = fabs(prob);
         }
     }
     TRACE_T("finished");
