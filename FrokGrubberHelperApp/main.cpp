@@ -12,13 +12,15 @@
 
 #define MODULE_NAME     "GRUB"
 
-#define GRUBBER_PATH    "/home/zda/grubber/"
-#define RESULT_FILE_PATH    "/home/zda/grubber/result.txt"
+const char GRUBBER_PATH[] = "/home/zda/grubber/";
+const char RESULT_FILE_PATH[] ="/home/zda/grubber/result.txt";
 
 struct results
 {
     unsigned marks[1024];
     unsigned friends[10240];
+    unsigned photos[10240];
+    unsigned marks_with_faces[1024];
 };
 
 BOOL getJsonFromFile(const char *filePath, json::Object &json);
@@ -31,7 +33,7 @@ int main(void)
         return -1;
     }
 
-    FaceDetectorAbstract *detector = new FrokFaceDetector;
+    //FaceDetectorAbstract *detector = new FrokFaceDetector;
     char **users = NULL;
     unsigned usersNum = 0;
     struct results res;
@@ -55,23 +57,35 @@ int main(void)
         int pcdone = 100 * i / usersNum;
         TRACE_S_T("[%02d%%] Processing user %s started", pcdone, users[i]);
 
+        char *userPath = NULL;
+        char *jsonFilePath = NULL;
         json::Object json;
         json::Array markedPhotos;
         json::Array friends;
-        size_t numOfMarks;
-        size_t numOfFriends;
+        size_t numOfMarks = 0;
+        size_t numOfFriends = 0;
+        unsigned numOfPhotos = 0;
+        char **photos = NULL;
 
-        char *jsonFilePath = (char*)calloc(strlen(GRUBBER_PATH) + strlen(users[i]) + strlen("/")
-                                           + strlen(users[i]) + strlen(".json") + 1, 1);
+        userPath = (char*)calloc(strlen(GRUBBER_PATH) + strlen(users[i]) + strlen("/") + 100, 1);
+        if(userPath == NULL)
+        {
+            TRACE_F("calloc failed on error %s", strerror(errno));
+            goto next_user_0;
+        }
+
+        strcpy(userPath, GRUBBER_PATH);
+        strcat(userPath, users[i]);
+        strcat(userPath, "/");
+
+        jsonFilePath = (char*)calloc(strlen(userPath) + strlen(users[i]) + strlen(".json") + 100, 1);
         if(jsonFilePath == NULL)
         {
             TRACE_F("calloc failed on error %s", strerror(errno));
             goto next_user_0;
         }
 
-        strcpy(jsonFilePath, GRUBBER_PATH);
-        strcat(jsonFilePath, users[i]);
-        strcat(jsonFilePath, "/");
+        strcpy(jsonFilePath, userPath);
         strcat(jsonFilePath, users[i]);
         strcat(jsonFilePath, ".json");
 
@@ -81,36 +95,72 @@ int main(void)
             goto next_user_0;
         }
 
-        markedPhotos = json["markedPhotos"].ToArray();
-        friends = json["friends"].ToArray();
+        markedPhotos = json[(std::string)"markedPhotos"].ToArray();
+        friends = json[(std::string)"friends"].ToArray();
 
-        numOfMarks = markedPhotos.size();;
+        numOfMarks = markedPhotos.size();
         if(numOfMarks > 1023) {
             numOfMarks = 1023;
         }
-        numOfFriends = friends.size();;
+        numOfFriends = friends.size();
         if(numOfFriends > 10239) numOfFriends = 10239;
 
         res.marks[numOfMarks]++;
         res.friends[numOfFriends]++;
 
+        if(TRUE == getFilesFromDir(userPath, &photos, &numOfPhotos))
+        {
+            if(numOfPhotos > 10240) numOfPhotos = 10240;
+            res.photos[numOfPhotos]++;
+        }
+
+        /*for(int cnt = 0; cnt < markedPhotos.size(); cnt++)
+        {
+
+        }*/
+
 next_user_0:
+        for(int cnt = 0;cnt < numOfPhotos; cnt++)
+        {
+            free(photos[cnt]);
+        }
+        free(photos);
         free(jsonFilePath);
-        jsonFilePath = NULL;
+        free(userPath);
+        userPath = NULL;
         TRACE_S_T("[%02d%%] Processing user %s finished", pcdone, users[i]);
+        free(users[i]);
     }
 
+    free(users);
+
     // Print results
+    unsigned numOfPeopleWith5Marks = 0;
+    unsigned numOfPeopleWith10Marks = 0;
+    unsigned numOfPeopleWith20Marks = 0;
     fprintf(resfs, "makrs:\n");
     for(int i = 0; i < 1024; i++)
     {
+        if(i >= 5) numOfPeopleWith5Marks += res.marks[i];
+        if(i >= 10) numOfPeopleWith10Marks += res.marks[i];
+        if(i >= 20) numOfPeopleWith20Marks += res.marks[i];
         fprintf(resfs, "%i\n", res.marks[i]);
     }
+
+    TRACE_R("%02d - people with 20 marks or higher", (100 * numOfPeopleWith20Marks / usersNum));
+    TRACE_R("%02d - people with 10 marks or higher", (100 * numOfPeopleWith10Marks / usersNum));
+    TRACE_R("%02d - people with 5 marks or higher", (100 * numOfPeopleWith5Marks / usersNum));
 
     fprintf(resfs, "friends:\n");
     for(int i = 0; i < 10240; i++)
     {
         fprintf(resfs, "%i\n", res.friends[i]);
+    }
+
+    fprintf(resfs, "photos:\n");
+    for(int i = 0; i < 10240; i++)
+    {
+        fprintf(resfs, "%i\n", res.photos[i]);
     }
 
     fclose(resfs);
@@ -142,24 +192,35 @@ BOOL getJsonFromFile(const char *filePath, json::Object &json)
         return FALSE;
     }
 
-    char *buffer = (char*)mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
-    if(buffer == MAP_FAILED)
+    char *membuffer = (char*)mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    if(membuffer == MAP_FAILED)
     {
         TRACE_F("mmap failed on error %s", strerror(errno));
         close(fd);
         return FALSE;
     }
+    char *buffer = (char*)calloc(sb.st_size + 1, 1);
+    if(buffer == NULL)
+    {
+        TRACE_F("calloc failed on error %s", strerror(errno));
+        munmap(membuffer, sb.st_size);
+        close(fd);
+        return FALSE;
+    }
+    memcpy(buffer, membuffer, sb.st_size);
 
     try {
         json = json::Deserialize(buffer);
     } catch(...) {
         TRACE_F("Failed to deserialize jsonFile");
-        munmap(buffer, sb.st_size);
+        free(buffer);
+        munmap(membuffer, sb.st_size);
         close(fd);
         return FALSE;
     }
 
-    munmap(buffer, sb.st_size);
+    free(buffer);
+    munmap(membuffer, sb.st_size);
     close(fd);
     return TRUE;
 }
