@@ -13,6 +13,13 @@
 #define MODULE_NAME     "GRUB"
 
 #define GRUBBER_PATH    "/home/zda/grubber/"
+#define RESULT_FILE_PATH    "/home/zda/grubber/result.txt"
+
+struct results
+{
+    unsigned marks[1024];
+    unsigned friends[10240];
+};
 
 BOOL getJsonFromFile(const char *filePath, json::Object &json);
 
@@ -27,6 +34,15 @@ int main(void)
     FaceDetectorAbstract *detector = new FrokFaceDetector;
     char **users = NULL;
     unsigned usersNum = 0;
+    struct results res;
+    memset(&res, 0, sizeof(res));
+
+    FILE *resfs = fopen(RESULT_FILE_PATH, "w");
+    if(!resfs)
+    {
+        TRACE_F("Failed to open file %s for writing", RESULT_FILE_PATH);
+        return -1;
+    }
 
     if(TRUE != getSubdirsFromDir(GRUBBER_PATH, &users, &usersNum))
     {
@@ -40,6 +56,11 @@ int main(void)
         TRACE_S_T("[%02d%%] Processing user %s started", pcdone, users[i]);
 
         json::Object json;
+        json::Array markedPhotos;
+        json::Array friends;
+        size_t numOfMarks;
+        size_t numOfFriends;
+
         char *jsonFilePath = (char*)calloc(strlen(GRUBBER_PATH) + strlen(users[i]) + strlen("/")
                                            + strlen(users[i]) + strlen(".json") + 1, 1);
         if(jsonFilePath == NULL)
@@ -60,13 +81,39 @@ int main(void)
             goto next_user_0;
         }
 
-        TRACE_N("Parsed json: %s", json::Serialize(json).c_str());
-        sleep(1);
+        markedPhotos = json["markedPhotos"].ToArray();
+        friends = json["friends"].ToArray();
+
+        numOfMarks = markedPhotos.size();;
+        if(numOfMarks > 1023) {
+            numOfMarks = 1023;
+        }
+        numOfFriends = friends.size();;
+        if(numOfFriends > 10239) numOfFriends = 10239;
+
+        res.marks[numOfMarks]++;
+        res.friends[numOfFriends]++;
+
 next_user_0:
         free(jsonFilePath);
         jsonFilePath = NULL;
         TRACE_S_T("[%02d%%] Processing user %s finished", pcdone, users[i]);
     }
+
+    // Print results
+    fprintf(resfs, "makrs:\n");
+    for(int i = 0; i < 1024; i++)
+    {
+        fprintf(resfs, "%i\n", res.marks[i]);
+    }
+
+    fprintf(resfs, "friends:\n");
+    for(int i = 0; i < 10240; i++)
+    {
+        fprintf(resfs, "%i\n", res.friends[i]);
+    }
+
+    fclose(resfs);
 
     return 0;
 }
