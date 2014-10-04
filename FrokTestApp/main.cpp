@@ -1,4 +1,4 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include "FrokAPI.h"
 #include "frokLibCommon.h"
 
@@ -13,6 +13,8 @@ void usage()
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
+using namespace std;
+using namespace cv;
 
 int main(void)
 {
@@ -56,13 +58,16 @@ int main(void)
     void *fapi = frokAPIAlloc(commonContext->photoBasePath, commonContext->targetPhotosPath, detector, recognizer);
     frokAPIInit(fapi);
 
-    std::string inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"1\"], \"phName\":\"here.jpg\"}";
+    string inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"1\"], \"phName\":\"here.jpg\"}";
 
     char *outJson = NULL;
 
     frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson.c_str()), inJson.c_str(), &outJson);
 
     TRACE_N("result: %s", outJson);
+
+    outputJsonOut(outJson);
+    waitKey(0);
 
     return 0;
 }

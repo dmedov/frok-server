@@ -4,8 +4,13 @@
 #include <sys/time.h>
 #include <time.h>
 #include <sys/times.h>
+#include <sstream>
+#include <vector>
 
 #define MODULE_NAME "FAPI"
+
+using namespace std;
+using namespace cv;
 
 extern "C"
 {
@@ -42,9 +47,9 @@ void frokAPIDealloc(void *instance)
 
 FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, const char *inJson, char **outJson)
 {
-    std::string strFunctionName = functionName;
-    std::string strInJson = inJson;
-    std::string strOutJson;
+    string strFunctionName = functionName;
+    string strInJson = inJson;
+    string strOutJson;
     json::Object jOutJson;
     json::Object jInJson;
     FrokResult res;
@@ -112,12 +117,72 @@ FrokResult frokAPIExecuteFunction(void *instance, const char *functionName, cons
         }
     }
 
-    std::string str = json::Serialize(jOutJson);
+    string str = json::Serialize(jOutJson);
     *outJson = new char [str.size() + 2];
     strcpy(*outJson, str.c_str());
     strcat(*outJson, "\n\0");
 
     return res;
+}
+
+void outputJsonOut(char* outJson){
+    stringstream ss;
+    ss << commonContext->targetPhotosPath << "/here.jpg";
+    Mat mat = imread(ss.str().c_str());
+
+    char *sp;
+    const char *sepJson = "[{}]:,\"";
+    const char* keyWords[6] = {"P","userId","x1","x2", "y1", "y2"};
+
+    vector <KeyElements> keyElements;
+
+    sp = strtok(outJson, sepJson);
+    int it = 0;
+    while (sp) {
+        if(strstr(sp, "users")){
+            KeyElements ke;
+            sp = strtok(NULL, sepJson);
+            for(int i = 0; i < 6; i++)
+                if(strstr(sp,keyWords[i])){
+                    sp = strtok(NULL, sepJson);
+                    switch(i){
+                    case 0:
+                        ke.P = atof(sp);
+                        break;
+                    case 1:
+                        ke.ids = atoi(sp);
+                        break;
+                    case 2:
+                        ke.x1 = atoi(sp);
+                        break;
+                    case 3:
+                        ke.x2 = atoi(sp);
+                        break;
+                    case 4:
+                        ke.y1 = atoi(sp);
+                        break;
+                    case 5:
+                        ke.y2 = atoi(sp);
+                        break;
+                    }
+                    if(i != 5) sp = strtok(NULL, sepJson);
+                }
+            keyElements.push_back(ke);
+            it++;
+
+        }
+        sp = strtok(NULL, sepJson);
+    }
+
+    for(int i = 0; i < it; i++){
+        TRACE_N("#%d\tP:%f id:%d x1:%d x2:%d y1:%d y2:%d",i, keyElements[i].P, keyElements[i].ids, keyElements[i].x1, keyElements[i].x2, keyElements[i].y1, keyElements[i].y2 );
+        rectangle(mat, cv::Rect(keyElements[i].x1,keyElements[i].y1, keyElements[i].x2 - keyElements[i].x1, keyElements[i].y2 - keyElements[i].y1), Scalar( 255, 128,  64) );
+        stringstream text;
+        text << "#" << i << " id:" << keyElements[i].ids << " p:" << (int)(keyElements[i].P*100) << "%";
+        putText(mat, text.str(), Point(keyElements[i].x1,keyElements[i].y1 - 7),1 , CV_FONT_HERSHEY_PLAIN, Scalar(255, 64, 64));
+    }
+
+    imshow("result", mat);
 }
 
 char *getFunctionFromJson(const char *inJson)
@@ -127,13 +192,13 @@ char *getFunctionFromJson(const char *inJson)
         TRACE_F("Invalid parameter: inJson = %p", inJson);
         return NULL;
     }
-    std::string strJson = inJson;
-    std::string cmd;
+    string strJson = inJson;
+    string cmd;
     json::Object jObject;
     try
     {
-         jObject = json::Deserialize(strJson);
-         cmd = jObject["cmd"].ToString();
+        jObject = json::Deserialize(strJson);
+        cmd = jObject["cmd"].ToString();
     }
     catch(...)
     {
@@ -188,21 +253,21 @@ FrokAPI::~FrokAPI()
     targets_folder_path = NULL;
 }
 
-void FrokAPI::AddAPIFunction(std::string functionName, FrokAPIFunction *function)
+void FrokAPI::AddAPIFunction(string functionName, FrokAPIFunction *function)
 {
     functions[functionName] = function;
 }
 
-void FrokAPI::GetAvailableFunctions(std::vector<std::string> &availableFunctions)
+void FrokAPI::GetAvailableFunctions(vector<string> &availableFunctions)
 {
     availableFunctions.clear();
-    for(std::map<std::string, FrokAPIFunction*>::iterator it = functions.begin(); it != functions.end(); ++it)
+    for(map<string, FrokAPIFunction*>::iterator it = functions.begin(); it != functions.end(); ++it)
     {
         availableFunctions.push_back(it->first);
     }
 }
 
-FrokResult FrokAPI::ExecuteFunction(std::string functionName, std::string inJson, std::string &outJson)
+FrokResult FrokAPI::ExecuteFunction(string functionName, string inJson, string &outJson)
 {
     if(functions.find(functionName) == functions.end())
     {
