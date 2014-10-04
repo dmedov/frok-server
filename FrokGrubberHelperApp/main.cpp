@@ -4,6 +4,7 @@
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include "FrokAPI.h"
@@ -59,7 +60,7 @@ int main(void)
             goto next_user_0;
         }
 
-        //TRACE_N("Parsed json: %s", json::Serialize(json).c_str());
+        TRACE_N("Parsed json: %s", json::Serialize(json).c_str());
         sleep(1);
 next_user_0:
         free(jsonFilePath);
@@ -72,57 +73,33 @@ next_user_0:
 
 BOOL getJsonFromFile(const char *filePath, json::Object &json)
 {
-    int fd = open(filePath, O_RDWR);
+    int fd = open(filePath, O_RDONLY);
+    struct stat sb;
     if(fd == -1)
     {
         TRACE_F("Failed to open file %s on error %s", filePath, strerror(errno));
         return FALSE;
     }
 
-    FILE *fs = fdopen(fd, "r+");
-    if(!fs)
+    if(-1 == fstat(fd, &sb))
     {
-        TRACE_F("Failed to open fs on error %s", strerror(errno));
+        TRACE_F("fstat failed on error %s", strerror(errno));
         close(fd);
         return FALSE;
     }
 
-    if(-1 == fseek(fs, 0, SEEK_END))
+    if(!S_ISREG(sb.st_mode))
     {
-        TRACE_F("fseek failed on error %s", strerror(errno));
-        fclose(fs);
+        TRACE_F("%s is not a file", filePath);
+        close(fd);
         return FALSE;
     }
 
-    long fileSize = ftell(fs);
-    if(-1 == fileSize)
+    char *buffer = (char*)mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    if(buffer == MAP_FAILED)
     {
-        TRACE_F("ftell failed on error %s", strerror(errno));
-        fclose(fs);
-        return FALSE;
-    }
-
-    if(-1 == fseek(fs, 0, SEEK_SET))
-    {
-        TRACE_F("fseek failed on error %s", strerror(errno));
-        fclose(fs);
-        return FALSE;
-    }
-
-    char *buffer = (char*)calloc(fileSize + 1, 1);
-    if(buffer == NULL)
-    {
-        TRACE_F("calloc failed on error %s", strerror(errno));
-        fclose(fs);
-        return FALSE;
-    }
-
-    size_t nr;
-    nr = fread(buffer, fileSize, 1, fs);
-    if(nr == 0)
-    {
-        TRACE_F("Failed to read file with fread");
-        fclose(fs);
+        TRACE_F("mmap failed on error %s", strerror(errno));
+        close(fd);
         return FALSE;
     }
 
@@ -130,11 +107,13 @@ BOOL getJsonFromFile(const char *filePath, json::Object &json)
         json = json::Deserialize(buffer);
     } catch(...) {
         TRACE_F("Failed to deserialize jsonFile");
-        fclose(fs);
+        munmap(buffer, sb.st_size);
+        close(fd);
         return FALSE;
     }
 
-    fclose(fs);
+    munmap(buffer, sb.st_size);
+    close(fd);
     return TRUE;
 }
 
