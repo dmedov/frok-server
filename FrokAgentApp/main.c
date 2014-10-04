@@ -12,7 +12,7 @@
 //{"cmd":"train", "arrUserIds":["1"]}
 //{"cmd":"recognize", "arrUserIds":["1", "13"], "photoName":"1.jpg"}
 //{"cmd":"addFace", "userId":"0", "photoName":"snapshot2.png", "faceNumber": "2"}
-//{"cmd":"getFaces", "userId":"0", "photoName":"snapshot2.png"}
+//{"cmd":"getFaces", "userId":"0", "phName":"snapshot2.png"}
 static void sigintHandler(int UNUSED(sig), siginfo_t UNUSED(*si), void UNUSED(*p))
 {
     if(FROK_RESULT_SUCCESS != frokAgentStop())
