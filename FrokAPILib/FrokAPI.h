@@ -6,6 +6,14 @@
 #include "frokLibCommon.h"
 
 #ifdef __cplusplus
+typedef struct {
+    double P;
+    int ids;
+    int x1;
+    int x2;
+    int y1;
+    int y2;
+} KeyElements;
 
 class FrokAPI
 {
@@ -31,6 +39,8 @@ extern FrokAPI FROK_API_FUNCTIONS[];
 #ifdef __cplusplus
 extern "C"{
 #endif //c++
+// Show result inage with detection and recognition results
+void outputJsonOut(char* outJson);
 // returns allocated in memory object
 void *frokAPIAlloc(const char *photo_base_path, const char *targets_folder_path,
                    void *detector, void *recognizer);
