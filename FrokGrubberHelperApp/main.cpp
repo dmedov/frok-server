@@ -14,8 +14,8 @@
 
 #define MODULE_NAME     "GRUB"
 
-const char GRUBBER_PATH[] = "/home/zda/grubber_tmp/";
-const char RESULT_FILE_PATH[] ="/home/zda/grubber_tmp/result.txt";
+const char GRUBBER_PATH[] = "/home/zda/grubber/";
+const char RESULT_FILE_PATH[] ="/home/zda/grubber/result.txt";
 #define MAX_USERS_NUM 5000
 #define THREADS_NUM 8
 
@@ -418,5 +418,6 @@ getUserStats_finish:
     free(jsonFilePath);
     free(userPath);
     free(params);
+    delete detector;
     return NULL;
 }
