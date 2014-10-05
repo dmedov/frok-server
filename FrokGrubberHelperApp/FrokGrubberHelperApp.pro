@@ -20,7 +20,8 @@ INCLUDEPATH += /opt/opencv-2.4.9/static/include
 INCLUDEPATH += ../FrokLibCommon/
 INCLUDEPATH += ../FaceDetectionLib/
 INCLUDEPATH += ../FaceRecognitionLib/
-INCLUDEPATH += ../FrokAPILib
+INCLUDEPATH += ../FrokAPILib/
+INCLUDEPATH += ../FrokJsonLib/
 
 QMAKE_CXXFLAGS +=   -Werror -Wall -Wno-unused-function -Wno-write-strings -Wno-unused-result -Wno-unknown-pragmas
 QMAKE_CFLAGS_DEBUG +=     -Werror -Wall -Wno-unused-function -Wno-write-strings -Wno-unused-result -Wno-unknown-pragmas
