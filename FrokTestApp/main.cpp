@@ -70,7 +70,6 @@ int main(void)
         TRACE_S("Recognize base inited");
     }
 
-
     void *fapi = frokAPIAlloc(commonContext->photoBasePath, commonContext->targetPhotosPath, detector, recognizer);
     frokAPIInit(fapi);
 

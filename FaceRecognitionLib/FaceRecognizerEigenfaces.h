@@ -6,6 +6,7 @@
 // include dependencies
 #include "FaceRecognizerAbstract.h"
 #include "FaceModelEigenfaces.h"
+#include "FaceModelFisherfaces.h"
 #include "frokLibCommon.h"
 
 typedef std::pair< std::string, FaceModelAbstract* > userIdAndModel;
