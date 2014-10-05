@@ -79,44 +79,25 @@ int main(void)
     }
 
     int i = 0;
-    for(i = 0; (i + THREADS_NUM) < usersNum; i+=THREADS_NUM)
+    pthread_t *pthreads = (pthread_t*)malloc(THREADS_NUM * sizeof(pthread_t));
+    memset(pthreads, 0, THREADS_NUM * sizeof(pthread_t));
+    while(i != usersNum)
     {
-        pthread_t *pthreads = (pthread_t*)malloc(THREADS_NUM * sizeof(pthread_t));
-        for(int j = 0; j < THREADS_NUM; j++)
-        {
-            struct thread_params *params = (struct thread_params*)malloc(sizeof(struct thread_params));
-            params->i = i + j;
-            params->res = &res;
-            params->userName = users[i + j];
-            pthread_create(&pthreads[j], NULL, getUserStats, (void*)params);
-        }
-
-        for(int j = 0; j < THREADS_NUM; j++)
-        {
-            pthread_join(pthreads[j], NULL);
-            free(users[i + j]);
-            users[i + j] = NULL;
-        }
-        int pcdone = 100 * i / usersNum;
-        TRACE_TIMESTAMP("[%02d%%] Progress\n", pcdone);
-        free(pthreads);
-    }
-
-    pthread_t *pthreads = (pthread_t*)malloc((usersNum - i) * sizeof(pthread_t));
-    for(int j = 0; j < usersNum - i; j++)
-    {
+        int n = i%THREADS_NUM;
+        pthread_join(pthreads[n], NULL);
+        TRACE_TIMESTAMP("[%02d%%] In progress...\n", 100 * i / usersNum);
         struct thread_params *params = (struct thread_params*)malloc(sizeof(struct thread_params));
-        params->i = i + j;
+        params->i = i;
         params->res = &res;
-        params->userName = users[i + j];
-        pthread_create(&pthreads[j], NULL, getUserStats, (void*)params);
+        params->userName = users[i];
+        pthread_create(&pthreads[n], NULL, getUserStats, (void*)params);
+        i++;
     }
-    for(int j = 0; j < usersNum - i; j++)
-    {
-        pthread_join(pthreads[j], NULL);
-        free(users[i + j]);
-    }
+
+    for(i = 0; i < THREADS_NUM; i++)    pthread_join(pthreads[i], NULL);
+
     TRACE_TIMESTAMP("[100%%] Done.\n");
+    for(i = 0; i < usersNum; i++)   free(users[i]);
     free(pthreads);
     free(users);
 

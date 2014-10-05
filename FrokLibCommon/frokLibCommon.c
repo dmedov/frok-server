@@ -499,6 +499,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
     }
 
 #ifndef TRACE_DEBUG
+#ifndef NO_DAEMON
     TRACE_S("Setting std fd for release");
     TRACE_S("\tstdin is now /dev/null\n\tstdout is now %s\n\tstderr is now %s", commonContext->outputFile, commonContext->outputFile);
     TRACE_S("See output logs in file %s", commonContext->outputFile);
@@ -603,6 +604,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
     }
+#endif //NO_DAEMON
 #endif //TRACE_DEBUG
 
     TRACE_N("Init succeed");
