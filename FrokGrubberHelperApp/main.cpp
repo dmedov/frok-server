@@ -14,9 +14,10 @@
 
 #define MODULE_NAME     "GRUB"
 
-const char GRUBBER_PATH[] = "/home/zda/grubber/";
-const char RESULT_FILE_PATH[] ="/home/zda/grubber/result.txt";
+const char GRUBBER_PATH[] = "/home/zda/grubber_tmp/";
+const char RESULT_FILE_PATH[] ="/home/zda/grubber_tmp/result.txt";
 #define MAX_USERS_NUM 5000
+#define THREADS_NUM 8
 
 pthread_mutex_t results_lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -26,8 +27,8 @@ struct results
     unsigned photos_with_solo_faces[1024];
     unsigned marks_without_faces[1024];
     unsigned marks_with_faces[1024];
-    unsigned friends[10240];
-    unsigned photos[10240];
+    unsigned friends[10240];            // Number of people with ### friends
+    unsigned photos[10240];             // Number of people with ### photos
     unsigned user_photos_with_faces[MAX_USERS_NUM];
     unsigned user_photos_with_solo_faces[MAX_USERS_NUM];
     unsigned user_marks[MAX_USERS_NUM];
@@ -42,6 +43,7 @@ struct thread_params
 };
 
 BOOL getJsonFromFile(const char *filePath, json::Object &json);
+void *getUserStats(void *params);
 
 int main(void)
 {
@@ -76,172 +78,46 @@ int main(void)
         return -1;
     }
 
-    for(int i = 0; i < usersNum; i++)
+    int i = 0;
+    for(i = 0; (i + THREADS_NUM) < usersNum; i+=THREADS_NUM)
     {
+        pthread_t *pthreads = (pthread_t*)malloc(THREADS_NUM * sizeof(pthread_t));
+        for(int j = 0; j < THREADS_NUM; j++)
+        {
+            struct thread_params *params = (struct thread_params*)malloc(sizeof(struct thread_params));
+            params->i = i + j;
+            params->res = &res;
+            params->userName = users[i + j];
+            pthread_create(&pthreads[j], NULL, getUserStats, (void*)params);
+        }
+
+        for(int j = 0; j < THREADS_NUM; j++)
+        {
+            pthread_join(pthreads[j], NULL);
+            free(users[i + j]);
+            users[i + j] = NULL;
+        }
         int pcdone = 100 * i / usersNum;
-        TRACE_TIMESTAMP("[%02d%%] Processing user %s started\n", pcdone, users[i]);
-
-        char *userPath = NULL;
-        char *jsonFilePath = NULL;
-        json::Object json;
-        json::Array markedPhotos;
-        json::Array friends;
-        size_t numOfMarks = 0;
-        size_t numOfFriends = 0;
-        unsigned numOfPhotos = 0;
-        char **photos = NULL;
-        char *photoPath = NULL;
-
-        userPath = (char*)calloc(strlen(GRUBBER_PATH) + strlen(users[i]) + strlen("/") + 100, 1);
-        if(userPath == NULL)
-        {
-            TRACE("calloc failed on error %s\n", strerror(errno));
-            goto next_user_0;
-        }
-
-        strcpy(userPath, GRUBBER_PATH);
-        strcat(userPath, users[i]);
-        strcat(userPath, "/");
-
-        jsonFilePath = (char*)calloc(strlen(userPath) + strlen(users[i]) + strlen(".json") + 100, 1);
-        if(jsonFilePath == NULL)
-        {
-            TRACE("calloc failed on error %s\n", strerror(errno));
-            goto next_user_0;
-        }
-
-        strcpy(jsonFilePath, userPath);
-        strcat(jsonFilePath, users[i]);
-        strcat(jsonFilePath, ".json");
-
-        if(FALSE == getJsonFromFile(jsonFilePath, json))
-        {
-            TRACE("getJsonFromFile failed\n");
-            goto next_user_0;
-        }
-
-        try {
-            markedPhotos = json[(std::string)"markedPhotos"].ToArray();
-            friends = json[(std::string)"friends"].ToArray();
-        } catch(...) {
-            TRACE("Invalid json\n");
-            goto next_user_0;
-        }
-
-        numOfMarks = markedPhotos.size();
-        if(numOfMarks > 1023) {
-            numOfMarks = 1023;
-        }
-        numOfFriends = friends.size();
-        if(numOfFriends > 10239) numOfFriends = 10239;
-
-        res.marks_without_faces[numOfMarks]++;
-        res.friends[numOfFriends]++;
-
-        if(TRUE == getFilesFromDir(userPath, &photos, &numOfPhotos))
-        {
-            if(numOfPhotos > 10240) numOfPhotos = 10240;
-            res.photos[numOfPhotos]++;
-        }
-
-        for(int cnt = 0; cnt < numOfPhotos; cnt++)
-        {
-            std::vector<cv::Rect> faces;
-            std::vector<cv::Mat> normFaces;
-            photoPath = (char*)calloc(strlen(userPath) + strlen(photos[cnt]) + 1, 1);
-            if(photoPath == NULL)
-            {
-                continue;
-            }
-            strcpy(photoPath, userPath);
-            strcat(photoPath, photos[cnt]);
-            if(FROK_RESULT_SUCCESS != detector->SetTargetImage(photoPath))
-            {
-                goto next_photo;
-            }
-
-            if(FROK_RESULT_SUCCESS != detector->GetFacesFromPhoto(faces))
-            {
-                goto next_photo;
-            }
-
-            if(FROK_RESULT_SUCCESS != detector->GetNormalizedFaceImages(faces, normFaces))
-            {
-                goto next_photo;
-            }
-
-            if(normFaces.size() > 0)
-            {
-                res.user_photos_with_faces[i]++;
-                if(normFaces.size() == 1)
-                {
-                    res.user_photos_with_solo_faces[i]++;
-                }
-            }
-next_photo:
-            free(photoPath);
-        }
-
-        if(res.user_photos_with_faces[i] > 1023)    res.user_photos_with_faces[i] = 1023;
-        res.photos_with_faces[res.user_photos_with_faces[i]]++;
-        if(res.user_photos_with_solo_faces[i] > 1023)    res.user_photos_with_solo_faces[i] = 1023;
-        res.photos_with_solo_faces[res.user_photos_with_solo_faces[i]]++;
-
-        res.user_marks[i] = markedPhotos.size();
-        for(int cnt = 0; cnt < markedPhotos.size(); cnt++)
-        {
-            json::Object obj = markedPhotos[cnt];
-            std::string photoName = obj["photoId"].ToString();
-            std::vector<cv::Rect> faces;
-            std::vector<cv::Mat> normFaces;
-
-            photoPath = (char*)calloc(strlen(userPath) + photoName.size() + strlen(".jpg") + 1, 1);
-            if(photoPath == NULL)
-            {
-                continue;
-            }
-            strcpy(photoPath, userPath);
-            strcat(photoPath, photoName.c_str());
-            strcat(photoPath, ".jpg");
-
-            if(FROK_RESULT_SUCCESS != detector->SetTargetImage(photoPath))
-            {
-                goto next_marked_photo;
-            }
-
-            if(FROK_RESULT_SUCCESS != detector->GetFacesFromPhoto(faces))
-            {
-                goto next_marked_photo;
-            }
-
-            if(FROK_RESULT_SUCCESS != detector->GetNormalizedFaceImages(faces, normFaces))
-            {
-                goto next_marked_photo;
-            }
-
-            if(normFaces.size() > 0)
-            {
-                res.user_marks_with_faces[i]++;
-            }
-next_marked_photo:
-            free(photoPath);
-        }
-        if(res.user_marks_with_faces[i] > 1023)    res.user_marks_with_faces[i] = 1023;
-        res.marks_with_faces[res.user_marks_with_faces[i]]++;
-
-next_user_0:
-        for(int cnt = 0;cnt < numOfPhotos; cnt++)
-        {
-            free(photos[cnt]);
-        }
-        free(photos);
-        free(jsonFilePath);
-        free(userPath);
-        userPath = NULL;
-        TRACE_TIMESTAMP("[%02d%%] Processing user %s finished\n", pcdone, users[i]);
-        free(users[i]);
+        TRACE_TIMESTAMP("[%02d%%] Progress\n", pcdone);
+        free(pthreads);
     }
 
+    pthread_t *pthreads = (pthread_t*)malloc((usersNum - i) * sizeof(pthread_t));
+    for(int j = 0; j < usersNum - i; j++)
+    {
+        struct thread_params *params = (struct thread_params*)malloc(sizeof(struct thread_params));
+        params->i = i + j;
+        params->res = &res;
+        params->userName = users[i + j];
+        pthread_create(&pthreads[j], NULL, getUserStats, (void*)params);
+    }
+    for(int j = 0; j < usersNum - i; j++)
+    {
+        pthread_join(pthreads[j], NULL);
+        free(users[i + j]);
+    }
+    TRACE_TIMESTAMP("[100%%] Done.\n");
+    free(pthreads);
     free(users);
 
     // Print results
@@ -385,7 +261,7 @@ BOOL getJsonFromFile(const char *filePath, json::Object &json)
     return TRUE;
 }
 
-void getUserStats(void *params)
+void *getUserStats(void *params)
 {
     struct results *res = ((struct thread_params *)params)->res;
     char *userName = ((struct thread_params *)params)->userName;
@@ -505,7 +381,7 @@ next_photo:
     if(res->user_photos_with_solo_faces[i] > 1023)    res->user_photos_with_solo_faces[i] = 1023;
     res->photos_with_solo_faces[res->user_photos_with_solo_faces[i]]++;
     res->user_marks[i] = markedPhotos.size();
-    pthread_mutex_lock(&results_lock);
+    pthread_mutex_unlock(&results_lock);
 
     for(int cnt = 0; cnt < markedPhotos.size(); cnt++)
     {
@@ -561,4 +437,5 @@ getUserStats_finish:
     free(jsonFilePath);
     free(userPath);
     free(params);
+    return NULL;
 }
