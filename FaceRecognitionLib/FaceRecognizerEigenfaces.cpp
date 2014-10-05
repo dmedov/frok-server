@@ -55,7 +55,7 @@ BOOL frokFaceRecognizerEigenfacesInit(void *instance, const char *photoBasePath)
         FaceModelAbstract *model;
         try
         {
-            model = new FaceModelEigenfaces(user);
+            model = new FaceModelFisherfaces(user);
             if(FROK_RESULT_SUCCESS != (res = model->LoadUserModel(userPath.c_str())))
             {
                 TRACE_F("LoadUserModel for user %s failed on error %s, continue...", user.c_str(), FrokResultToString(res));

@@ -26,11 +26,13 @@ HEADERS +=                  \
     FaceRecognizerAbstract.h \
     FaceModelAbstract.h \
     FaceRecognizerEigenfaces.h \
-    FaceModelEigenfaces.h
+    FaceModelEigenfaces.h \
+    FaceModelFisherfaces.h
 
 SOURCES +=                  \
     FaceModelAbstract.cpp \
     FaceModelEigenfaces.cpp \
     FaceRecognizerEigenfaces.cpp \
-    FaceRecognizerAbstract.cpp
+    FaceRecognizerAbstract.cpp \
+    FaceModelFisherfaces.cpp
 
