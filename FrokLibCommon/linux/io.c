@@ -152,6 +152,10 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
 
     while (NULL != (file = readdir(dirStream)))
     {
+        if((0 == strcmp(file->d_name, ".")) || (0 == strcmp(file->d_name, "..")))
+        {
+            continue;
+        }
         fileNameSize = strlen(file->d_name);
         fullname = calloc(dirNameSize + fileNameSize + 1, 1);
         if(fullname == NULL)
