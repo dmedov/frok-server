@@ -350,9 +350,12 @@ double FaceRecognizerEigenfaces::GetSimilarity_FirstMethod_old(const cv::Mat &fi
     cv::Mat blr_rec;
     secondImage.copyTo(blr_rec);
 
-    cv::erode(blr_img, blr_img, blr_img);
-    cv::erode(blr_rec, blr_rec, blr_rec);
+    cv::GaussianBlur(blr_img, blr_img, cv::Size(7,7), 0, 0);
+    cv::GaussianBlur(blr_rec, blr_rec, cv::Size(7,7), 0, 0);
 
+//    cv::imshow("blr_img",blr_img);
+//    cv::imshow("blr_rec",blr_rec);
+//    cv::waitKey(0);
 
     cv::Mat dif = abs(cv::Mat(blr_img) - cv::Mat(blr_rec));
 
