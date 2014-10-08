@@ -12,18 +12,23 @@
 #include "../FrokJsonlib/json.h"
 #include <pthread.h>
 #include <semaphore.h>
+#include <signal.h>
+
 #define MODULE_NAME     "GRUB"
 
 const char GRUBBER_PATH[] = "/home/zda/grubber_tmp/";
 const char RESULT_FILE_PATH[] ="/home/zda/grubber_tmp/result.txt";
-#define MAX_USERS_NUM 5000
-#define THREADS_NUM 8
+const char SAVE_FILE_PATH[] ="/home/zda/grubber_tmp/load.txt";
+#define MAX_USERS_NUM       10000
+#define THREADS_NUM         8
 #define SAVE_EREVRY_N_TURN  10
+#define MAX_USERNAME_LEN    20
 
 pthread_mutex_t results_lock = PTHREAD_MUTEX_INITIALIZER;
 
 struct results
 {
+
     unsigned photos_with_faces[1024];
     unsigned photos_with_solo_faces[1024];
     unsigned marks_without_faces[1024];
@@ -34,6 +39,7 @@ struct results
     unsigned user_photos_with_solo_faces[MAX_USERS_NUM];
     unsigned user_marks[MAX_USERS_NUM];
     unsigned user_marks_with_faces[MAX_USERS_NUM];
+    char users[MAX_USERS_NUM][MAX_USERNAME_LEN];
 };
 
 struct thread_params
@@ -52,12 +58,81 @@ struct thread_semas
 BOOL getJsonFromFile(const char *filePath, json::Object &json);
 void *getUserStats(void *params);
 
-void save(FILE *fs, struct results *res)
+BOOL save(const char *filename, struct results *res)
 {
+    ssize_t ret, nr;
+    size_t len;
+    char *buf;
+    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 
+    if(fd == -1)
+    {
+        TRACE_F("Failed to open file %s on error %s", filePath, strerror(errno));
+        return FALSE;
+    }
+
+    len = sizeof(struct results);
+    buf = (char*)res;
+    while(len != 0 && (ret = write(fd, buf, len)) != 0)
+    {
+        if(ret == -1)
+        {
+            if(errno == EINTR)
+                continue;
+            TRACE("write failed on error %s", strerror(errno));
+            return FALSE;
+        }
+        len -= ret;
+        buf += ret;
+    }
+
+    close(fd);
+    return TRUE;
 }
-void load(FILE *fs, struct results *res)
-{}
+BOOL load(const char *filename, struct results *res)
+{
+    int fd = open(filename, O_RDONLY);
+    struct stat sb;
+    if(fd == -1)
+    {
+        TRACE_F("Failed to open file %s on error %s", filePath, strerror(errno));
+        return FALSE;
+    }
+
+    if(-1 == fstat(fd, &sb))
+    {
+        TRACE_F("fstat failed on error %s", strerror(errno));
+        close(fd);
+        return FALSE;
+    }
+
+    if(!S_ISREG(sb.st_mode))
+    {
+        TRACE_F("%s is not a file", filePath);
+        close(fd);
+        return FALSE;
+    }
+
+    char *membuffer = (char*)mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    if(membuffer == MAP_FAILED)
+    {
+        TRACE_F("mmap failed on error %s", strerror(errno));
+        close(fd);
+        return FALSE;
+    }
+
+    if(sb.st_size < sizeof(struct results))
+    {
+        TRACE("Invalid load file size\n");
+        return FALSE;
+    }
+
+    memcpy(res, membuffer, sb.st_size);
+
+    munmap(membuffer, sb.st_size);
+    close(fd);
+    return TRUE;
+}
 
 struct thread_params params;
 
@@ -69,11 +144,13 @@ int main(void)
         return -1;
     }
 
-    FaceDetectorAbstract *detector = new FrokFaceDetector;
+    char **users_tmp = NULL;
     char **users = NULL;
+    unsigned usersNum_tmp = 0;
     unsigned usersNum = 0;
-    struct results res;
-    memset(&res, 0, sizeof(res));
+    struct results *res = (struct results*)calloc(sizeof(struct results), 1);
+
+    load(SAVE_FILE_PATH, res);
 
     FILE *resfs = fopen(RESULT_FILE_PATH, "w");
     if(!resfs)
@@ -82,18 +159,40 @@ int main(void)
         return -1;
     }
 
-    if(TRUE != getSubdirsFromDir(GRUBBER_PATH, &users, &usersNum))
+    if(TRUE != getSubdirsFromDir(GRUBBER_PATH, &users_tmp, &usersNum_tmp))
     {
         TRACE("Failed to get users\n");
         return -1;
     }
 
-    if(usersNum > MAX_USERS_NUM)
+    if(usersNum_tmp > MAX_USERS_NUM)
     {
         TRACE("Too much users\n");
         return -1;
     }
 
+    users = (char**)calloc(MAX_USERS_NUM, 1);
+
+    for(int j = 0; j < usersNum_tmp; j++)
+    {
+        bool found = false;
+        for(int k = 0; k < MAX_USERS_NUM; k++)
+        {
+            if(0 == strcmp(users_tmp[j], res->users[k]))
+            {
+                found = true;
+                break;
+            }
+        }
+        if(found == false)
+        {
+            users[usersNum] = (char*)calloc(strlen(users_tmp[j]) + 1, 1);
+            strcpy(users[usersNum], users_tmp[j]);
+            usersNum++;
+        }
+        free(users_tmp[j]);
+    }
+    free(users_tmp);
 
     pthread_t *pthreads = (pthread_t*)malloc(THREADS_NUM * sizeof(pthread_t));
     struct thread_semas *semas = (struct thread_semas*)malloc(THREADS_NUM * sizeof(struct thread_semas));
@@ -131,6 +230,22 @@ int main(void)
     int i = 0;
     while(i != usersNum)
     {
+        if(i%SAVE_EREVRY_N_TURN == 0)
+        {
+            TRACE("SAVE_PROCESS_STARTED\n");
+            signal(SIGINT, SIG_IGN);
+            for(int j = 0; j < THREADS_NUM; j++)
+            {
+                sem_wait(&semas[j].semaFinished);
+            }
+            save(SAVE_FILE_PATH, res);
+            for(int j = 0; j < THREADS_NUM; j++)
+            {
+                sem_post(&semas[j].semaFinished);
+            }
+            signal(SIGINT, SIG_DFL);
+            TRACE("SAVE_PROCESS_FINISHED\n");
+        }
         //int n = i%THREADS_NUM;
         int n = 0;
         while(1)
@@ -143,8 +258,8 @@ int main(void)
             n++;
         }
         TRACE_TIMESTAMP("[%02d%%] In progress...\n", 100 * i / usersNum);
-        params.i = i;
-        params.res = &res;
+        params.i = usersNum_tmp - usersNum + i;
+        params.res = res;
         params.userName = users[i];
         while(-1 == sem_post(&semas[n].semaInit))
         {
@@ -171,9 +286,17 @@ int main(void)
     {
         sem_wait(&semas[i].semaFinished);
         pthread_cancel(pthreads[i]);
+        pthread_join(pthreads[i], NULL);
     }
 
     TRACE_TIMESTAMP("[100%%] Done.\n");
+
+    TRACE("SAVE_PROCESS_STARTED\n");
+    signal(SIGINT, SIG_IGN);
+    save(SAVE_FILE_PATH, res);
+    signal(SIGINT, SIG_DFL);
+    TRACE("SAVE_PROCESS_FINISHED\n");
+
     for(i = 0; i < usersNum; i++)   free(users[i]);
     free(semas);
     free(pthreads);
@@ -187,21 +310,21 @@ int main(void)
     fprintf(resfs, "makrs_with_faces:\n");
     for(int i = 0; i < 5000; i++)
     {
-        fprintf(resfs, "%i %i\n", res.user_marks[i], res.user_marks_with_faces[i]);
+        fprintf(resfs, "%i %i\n", res->user_marks[i], res->user_marks_with_faces[i]);
     }
 
     fprintf(resfs, "makrs without faces:\n");
     for(int i = 0; i < 1024; i++)
     {
-        if(i >= 5) numOfPeopleWith5Marks += res.marks_without_faces[i];
-        if(i >= 10) numOfPeopleWith10Marks += res.marks_without_faces[i];
-        if(i >= 20) numOfPeopleWith20Marks += res.marks_without_faces[i];
-        fprintf(resfs, "%i\n", res.marks_without_faces[i]);
+        if(i >= 5) numOfPeopleWith5Marks += res->marks_without_faces[i];
+        if(i >= 10) numOfPeopleWith10Marks += res->marks_without_faces[i];
+        if(i >= 20) numOfPeopleWith20Marks += res->marks_without_faces[i];
+        fprintf(resfs, "%i\n", res->marks_without_faces[i]);
     }
 
-    TRACE("%02d - people with 20 marks or higher\n", (100 * numOfPeopleWith20Marks / usersNum));
-    TRACE("%02d - people with 10 marks or higher\n", (100 * numOfPeopleWith10Marks / usersNum));
-    TRACE("%02d - people with 5 marks or higher\n", (100 * numOfPeopleWith5Marks / usersNum));
+    TRACE("%02d%% - people with 20 marks or higher\n", (100 * numOfPeopleWith20Marks / (usersNum_tmp)));
+    TRACE("%02d%% - people with 10 marks or higher\n", (100 * numOfPeopleWith10Marks / (usersNum_tmp)));
+    TRACE("%02d%% - people with 5 marks or higher\n", (100 * numOfPeopleWith5Marks / (usersNum_tmp)));
 
     numOfPeopleWith20Marks = 0;
     numOfPeopleWith5Marks = 0;
@@ -209,15 +332,15 @@ int main(void)
     fprintf(resfs, "makrs with faces:\n");
     for(int i = 0; i < 1024; i++)
     {
-        if(i >= 5) numOfPeopleWith5Marks += res.marks_with_faces[i];
-        if(i >= 10) numOfPeopleWith10Marks += res.marks_with_faces[i];
-        if(i >= 20) numOfPeopleWith20Marks += res.marks_with_faces[i];
-        fprintf(resfs, "%i\n", res.marks_with_faces[i]);
+        if(i >= 5) numOfPeopleWith5Marks += res->marks_with_faces[i];
+        if(i >= 10) numOfPeopleWith10Marks += res->marks_with_faces[i];
+        if(i >= 20) numOfPeopleWith20Marks += res->marks_with_faces[i];
+        fprintf(resfs, "%i\n", res->marks_with_faces[i]);
     }
 
-    TRACE("%02d - people with 20 marks with faces or higher\n", (100 * numOfPeopleWith20Marks / usersNum));
-    TRACE("%02d - people with 10 marks with faces or higher\n", (100 * numOfPeopleWith10Marks / usersNum));
-    TRACE("%02d - people with 5 marks with faces or higher\n", (100 * numOfPeopleWith5Marks / usersNum));
+    TRACE("%02d%% - people with 20 marks with faces or higher\n", (100 * numOfPeopleWith20Marks / (usersNum_tmp)));
+    TRACE("%02d%% - people with 10 marks with faces or higher\n", (100 * numOfPeopleWith10Marks / (usersNum_tmp)));
+    TRACE("%02d%% - people with 5 marks with faces or higher\n", (100 * numOfPeopleWith5Marks / (usersNum_tmp)));
 
     int numOfPeopleWith5Faces = 0;
     int numOfPeopleWith5SoloFaces = 0;
@@ -228,37 +351,35 @@ int main(void)
 
     for(int i = 0; i < 1024; i++)
     {
-        if(i >= 5) numOfPeopleWith5Faces += res.photos_with_faces[i];
-        if(i >= 10) numOfPeopleWith10Faces += res.photos_with_faces[i];
-        if(i >= 20) numOfPeopleWith20Faces += res.photos_with_faces[i];
-        if(i >= 5) numOfPeopleWith5SoloFaces += res.photos_with_solo_faces[i];
-        if(i >= 10) numOfPeopleWith10SoloFaces += res.photos_with_solo_faces[i];
-        if(i >= 20) numOfPeopleWith20SoloFaces += res.photos_with_solo_faces[i];
+        if(i >= 5) numOfPeopleWith5Faces += res->photos_with_faces[i];
+        if(i >= 10) numOfPeopleWith10Faces += res->photos_with_faces[i];
+        if(i >= 20) numOfPeopleWith20Faces += res->photos_with_faces[i];
+        if(i >= 5) numOfPeopleWith5SoloFaces += res->photos_with_solo_faces[i];
+        if(i >= 10) numOfPeopleWith10SoloFaces += res->photos_with_solo_faces[i];
+        if(i >= 20) numOfPeopleWith20SoloFaces += res->photos_with_solo_faces[i];
     }
 
-    TRACE("%02d - people with 20 faces or higher\n", (100 * numOfPeopleWith20Faces / usersNum));
-    TRACE("%02d - people with 10 faces or higher\n", (100 * numOfPeopleWith10Faces / usersNum));
-    TRACE("%02d - people with 5 faces or higher\n", (100 * numOfPeopleWith5Faces / usersNum));
+    TRACE("%02d%% - people with 20 faces or higher\n", (100 * numOfPeopleWith20Faces / (usersNum_tmp )));
+    TRACE("%02d%% - people with 10 faces or higher\n", (100 * numOfPeopleWith10Faces / (usersNum_tmp )));
+    TRACE("%02d%% - people with 5 faces or higher\n", (100 * numOfPeopleWith5Faces / (usersNum_tmp )));
 
-    TRACE("%02d - people with 20 solo faces or higher\n", (100 * numOfPeopleWith20SoloFaces / usersNum));
-    TRACE("%02d - people with 10 solo faces or higher\n", (100 * numOfPeopleWith10SoloFaces / usersNum));
-    TRACE("%02d - people with 5 solo faces or higher\n", (100 * numOfPeopleWith5SoloFaces / usersNum));
+    TRACE("%02d%% - people with 20 solo faces or higher\n", (100 * numOfPeopleWith20SoloFaces / (usersNum_tmp )));
+    TRACE("%02d%% - people with 10 solo faces or higher\n", (100 * numOfPeopleWith10SoloFaces / (usersNum_tmp )));
+    TRACE("%02d%% - people with 5 solo faces or higher\n", (100 * numOfPeopleWith5SoloFaces / (usersNum_tmp )));
 
     fprintf(resfs, "friends:\n");
     for(int i = 0; i < 10240; i++)
     {
-        fprintf(resfs, "%i\n", res.friends[i]);
+        fprintf(resfs, "%i\n", res->friends[i]);
     }
 
     fprintf(resfs, "photos:\n");
     for(int i = 0; i < 10240; i++)
     {
-        fprintf(resfs, "%i\n", res.photos[i]);
+        fprintf(resfs, "%i\n", res->photos[i]);
     }
 
     fclose(resfs);
-
-    delete detector;
     frokLibCommonDeinit();
     return 0;
 }
@@ -408,6 +529,7 @@ void *getUserStats(void *sema)
             if(numOfFriends > 10239) numOfFriends = 10239;
 
             pthread_mutex_lock(&results_lock);
+            strcpy(res->users[i], userName);
             res->marks_without_faces[numOfMarks]++;
             res->friends[numOfFriends]++;
             pthread_mutex_unlock(&results_lock);
