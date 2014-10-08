@@ -29,7 +29,7 @@ extern char *tracePrefix;
 #define _N(__x__, ...)       "[%s][%s->%s] "          __x__ "\n", tracePrefix, MODULE_NAME, __FUNCTION__, ##__VA_ARGS__
 #endif //TRACE_DEBUG
 
-#define TRACE_F_T(__x__, ...)   TRACE_TIMESTAMP(_FAIL(__x__,  ##__VA_ARGS__))
+/*#define TRACE_F_T(__x__, ...)   TRACE_TIMESTAMP(_FAIL(__x__,  ##__VA_ARGS__))
 #define TRACE_W_T(__x__, ...)   TRACE_TIMESTAMP(_WARN(__x__,  ##__VA_ARGS__))
 #define TRACE_S_T(__x__, ...)   TRACE_TIMESTAMP(_SUCC(__x__,  ##__VA_ARGS__))
 #define TRACE_R_T(__x__, ...)   TRACE_TIMESTAMP(_RES(__x__, ##__VA_ARGS__))
@@ -39,7 +39,19 @@ extern char *tracePrefix;
 #define TRACE_W(__x__, ...)     TRACE(_WARN(__x__,  ##__VA_ARGS__))
 #define TRACE_S(__x__, ...)     TRACE(_SUCC(__x__,  ##__VA_ARGS__))
 #define TRACE_R(__x__, ...)     TRACE(_RES(__x__, ##__VA_ARGS__))
-#define TRACE_N(__x__, ...)     TRACE(_N(__x__, ##__VA_ARGS__))
+#define TRACE_N(__x__, ...)     TRACE(_N(__x__, ##__VA_ARGS__))*/
+
+#define TRACE_F_T(__x__, ...)
+#define TRACE_W_T(__x__, ...)
+#define TRACE_S_T(__x__, ...)
+#define TRACE_R_T(__x__, ...)
+#define TRACE_T(__x__, ...)
+
+#define TRACE_F(__x__, ...)
+#define TRACE_W(__x__, ...)
+#define TRACE_S(__x__, ...)
+#define TRACE_R(__x__, ...)
+#define TRACE_N(__x__, ...)
 
 #define TRACE_TIMESTAMP(format...)      do{struct timespec ts;                                  \
                                         pthread_mutex_lock(&commonContext->trace_cs);           \
