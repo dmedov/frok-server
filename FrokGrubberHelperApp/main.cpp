@@ -16,12 +16,13 @@
 
 #define MODULE_NAME     "GRUB"
 
-const char GRUBBER_PATH[] = "/home/zda/grubber_tmp/";
-const char RESULT_FILE_PATH[] ="/home/zda/grubber_tmp/result.txt";
-const char SAVE_FILE_PATH[] ="/home/zda/grubber_tmp/load.txt";
+const char GRUBBER_PATH[] = "/home/zda/grubber/";
+const char RESULT_FILE_PATH[] ="/home/zda/grubber/result.txt";
+const char SAVE_FILE_PATH[] ="/home/zda/grubber/load.txt";
 #define MAX_USERS_NUM       10000
 #define THREADS_NUM         8
-#define SAVE_EREVRY_N_TURN  10
+#define SAVE_EREVRY_N_TURN  200
+
 #define MAX_USERNAME_LEN    20
 
 pthread_mutex_t results_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -40,6 +41,7 @@ struct results
     unsigned user_marks[MAX_USERS_NUM];
     unsigned user_marks_with_faces[MAX_USERS_NUM];
     char users[MAX_USERS_NUM][MAX_USERNAME_LEN];
+    unsigned lastUserPos;
 };
 
 struct thread_params
@@ -144,13 +146,13 @@ int main(void)
         return -1;
     }
 
-    char **users_tmp = NULL;
     char **users = NULL;
-    unsigned usersNum_tmp = 0;
     unsigned usersNum = 0;
+    unsigned userOffset = 0;
     struct results *res = (struct results*)calloc(sizeof(struct results), 1);
 
     load(SAVE_FILE_PATH, res);
+    userOffset = res->lastUserPos;
 
     FILE *resfs = fopen(RESULT_FILE_PATH, "w");
     if(!resfs)
@@ -159,40 +161,30 @@ int main(void)
         return -1;
     }
 
-    if(TRUE != getSubdirsFromDir(GRUBBER_PATH, &users_tmp, &usersNum_tmp))
+    if(TRUE != getSubdirsFromDir(GRUBBER_PATH, &users, &usersNum))
     {
         TRACE("Failed to get users\n");
         return -1;
     }
 
-    if(usersNum_tmp > MAX_USERS_NUM)
+    if(usersNum > MAX_USERS_NUM)
     {
         TRACE("Too much users\n");
         return -1;
     }
 
-    users = (char**)calloc(MAX_USERS_NUM, 1);
-
-    for(int j = 0; j < usersNum_tmp; j++)
+    for(int j = 0; j < usersNum; j++)
     {
-        bool found = false;
         for(int k = 0; k < MAX_USERS_NUM; k++)
         {
-            if(0 == strcmp(users_tmp[j], res->users[k]))
+            if(0 == strcmp(users[j], res->users[k]))
             {
-                found = true;
+                free(users[j]);
+                users[j] = NULL;
                 break;
             }
         }
-        if(found == false)
-        {
-            users[usersNum] = (char*)calloc(strlen(users_tmp[j]) + 1, 1);
-            strcpy(users[usersNum], users_tmp[j]);
-            usersNum++;
-        }
-        free(users_tmp[j]);
     }
-    free(users_tmp);
 
     pthread_t *pthreads = (pthread_t*)malloc(THREADS_NUM * sizeof(pthread_t));
     struct thread_semas *semas = (struct thread_semas*)malloc(THREADS_NUM * sizeof(struct thread_semas));
@@ -230,6 +222,11 @@ int main(void)
     int i = 0;
     while(i != usersNum)
     {
+        if(users[i] == NULL)
+        {
+            i++;
+            continue;
+        }
         if(i%SAVE_EREVRY_N_TURN == 0)
         {
             TRACE("SAVE_PROCESS_STARTED\n");
@@ -238,6 +235,7 @@ int main(void)
             {
                 sem_wait(&semas[j].semaFinished);
             }
+            res->lastUserPos = userOffset + i + 1;
             save(SAVE_FILE_PATH, res);
             for(int j = 0; j < THREADS_NUM; j++)
             {
@@ -258,7 +256,7 @@ int main(void)
             n++;
         }
         TRACE_TIMESTAMP("[%02d%%] In progress...\n", 100 * i / usersNum);
-        params.i = usersNum_tmp - usersNum + i;
+        params.i = userOffset + i + 1;
         params.res = res;
         params.userName = users[i];
         while(-1 == sem_post(&semas[n].semaInit))
@@ -322,9 +320,9 @@ int main(void)
         fprintf(resfs, "%i\n", res->marks_without_faces[i]);
     }
 
-    TRACE("%02d%% - people with 20 marks or higher\n", (100 * numOfPeopleWith20Marks / (usersNum_tmp)));
-    TRACE("%02d%% - people with 10 marks or higher\n", (100 * numOfPeopleWith10Marks / (usersNum_tmp)));
-    TRACE("%02d%% - people with 5 marks or higher\n", (100 * numOfPeopleWith5Marks / (usersNum_tmp)));
+    TRACE("%02d%% - people with 20 marks or higher\n", (100 * numOfPeopleWith20Marks / (usersNum)));
+    TRACE("%02d%% - people with 10 marks or higher\n", (100 * numOfPeopleWith10Marks / (usersNum)));
+    TRACE("%02d%% - people with 5 marks or higher\n", (100 * numOfPeopleWith5Marks / (usersNum)));
 
     numOfPeopleWith20Marks = 0;
     numOfPeopleWith5Marks = 0;
@@ -338,9 +336,9 @@ int main(void)
         fprintf(resfs, "%i\n", res->marks_with_faces[i]);
     }
 
-    TRACE("%02d%% - people with 20 marks with faces or higher\n", (100 * numOfPeopleWith20Marks / (usersNum_tmp)));
-    TRACE("%02d%% - people with 10 marks with faces or higher\n", (100 * numOfPeopleWith10Marks / (usersNum_tmp)));
-    TRACE("%02d%% - people with 5 marks with faces or higher\n", (100 * numOfPeopleWith5Marks / (usersNum_tmp)));
+    TRACE("%02d%% - people with 20 marks with faces or higher\n", (100 * numOfPeopleWith20Marks / (usersNum)));
+    TRACE("%02d%% - people with 10 marks with faces or higher\n", (100 * numOfPeopleWith10Marks / (usersNum)));
+    TRACE("%02d%% - people with 5 marks with faces or higher\n", (100 * numOfPeopleWith5Marks / (usersNum)));
 
     int numOfPeopleWith5Faces = 0;
     int numOfPeopleWith5SoloFaces = 0;
@@ -359,13 +357,13 @@ int main(void)
         if(i >= 20) numOfPeopleWith20SoloFaces += res->photos_with_solo_faces[i];
     }
 
-    TRACE("%02d%% - people with 20 faces or higher\n", (100 * numOfPeopleWith20Faces / (usersNum_tmp )));
-    TRACE("%02d%% - people with 10 faces or higher\n", (100 * numOfPeopleWith10Faces / (usersNum_tmp )));
-    TRACE("%02d%% - people with 5 faces or higher\n", (100 * numOfPeopleWith5Faces / (usersNum_tmp )));
+    TRACE("%02d%% - people with 20 faces or higher\n", (100 * numOfPeopleWith20Faces / (usersNum )));
+    TRACE("%02d%% - people with 10 faces or higher\n", (100 * numOfPeopleWith10Faces / (usersNum )));
+    TRACE("%02d%% - people with 5 faces or higher\n", (100 * numOfPeopleWith5Faces / (usersNum )));
 
-    TRACE("%02d%% - people with 20 solo faces or higher\n", (100 * numOfPeopleWith20SoloFaces / (usersNum_tmp )));
-    TRACE("%02d%% - people with 10 solo faces or higher\n", (100 * numOfPeopleWith10SoloFaces / (usersNum_tmp )));
-    TRACE("%02d%% - people with 5 solo faces or higher\n", (100 * numOfPeopleWith5SoloFaces / (usersNum_tmp )));
+    TRACE("%02d%% - people with 20 solo faces or higher\n", (100 * numOfPeopleWith20SoloFaces / (usersNum )));
+    TRACE("%02d%% - people with 10 solo faces or higher\n", (100 * numOfPeopleWith10SoloFaces / (usersNum )));
+    TRACE("%02d%% - people with 5 solo faces or higher\n", (100 * numOfPeopleWith5SoloFaces / (usersNum )));
 
     fprintf(resfs, "friends:\n");
     for(int i = 0; i < 10240; i++)
