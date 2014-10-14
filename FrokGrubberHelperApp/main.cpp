@@ -30,16 +30,9 @@ pthread_mutex_t results_lock = PTHREAD_MUTEX_INITIALIZER;
 struct results
 {
 
-    unsigned photos_with_faces[1024];
-    unsigned photos_with_solo_faces[1024];
-    unsigned marks_without_faces[1024];
-    unsigned marks_with_faces[1024];
-    unsigned friends[10240];            // Number of people with ### friends
-    unsigned photos[10240];             // Number of people with ### photos
-    unsigned user_photos_with_faces[MAX_USERS_NUM];
-    unsigned user_photos_with_solo_faces[MAX_USERS_NUM];
-    unsigned user_marks[MAX_USERS_NUM];
-    unsigned user_marks_with_faces[MAX_USERS_NUM];
+    unsigned main_alb_faces_num[1024];
+    unsigned marks_faces_num[1024];
+    unsigned total_faces_num[1024];
     char users[MAX_USERS_NUM][MAX_USERNAME_LEN];
     unsigned lastUserPos;
 };
@@ -302,81 +295,59 @@ int main(void)
     free(users);
 
     // Print results
-    /*unsigned numOfPeopleWith5Marks = 0;
-    unsigned numOfPeopleWith10Marks = 0;
-    unsigned numOfPeopleWith20Marks = 0;
-
-    fprintf(resfs, "makrs_with_faces:\n");
-    for(int i = 0; i < 5000; i++)
-    {
-        fprintf(resfs, "%i %i\n", res->user_marks[i], res->user_marks_with_faces[i]);
-    }
-
-    fprintf(resfs, "makrs without faces:\n");
-    for(int i = 0; i < 1024; i++)
-    {
-        if(i >= 5) numOfPeopleWith5Marks += res->marks_without_faces[i];
-        if(i >= 10) numOfPeopleWith10Marks += res->marks_without_faces[i];
-        if(i >= 20) numOfPeopleWith20Marks += res->marks_without_faces[i];
-        fprintf(resfs, "%i\n", res->marks_without_faces[i]);
-    }
-
-    TRACE("%02d%% - people with 20 marks or higher\n", (100 * numOfPeopleWith20Marks / (usersNum)));
-    TRACE("%02d%% - people with 10 marks or higher\n", (100 * numOfPeopleWith10Marks / (usersNum)));
-    TRACE("%02d%% - people with 5 marks or higher\n", (100 * numOfPeopleWith5Marks / (usersNum)));
-
-    numOfPeopleWith20Marks = 0;
-    numOfPeopleWith5Marks = 0;
-    numOfPeopleWith10Marks = 0;
-    fprintf(resfs, "makrs with faces:\n");
-    for(int i = 0; i < 1024; i++)
-    {
-        if(i >= 5) numOfPeopleWith5Marks += res->marks_with_faces[i];
-        if(i >= 10) numOfPeopleWith10Marks += res->marks_with_faces[i];
-        if(i >= 20) numOfPeopleWith20Marks += res->marks_with_faces[i];
-        fprintf(resfs, "%i\n", res->marks_with_faces[i]);
-    }
-
-    TRACE("%02d%% - people with 20 marks with faces or higher\n", (100 * numOfPeopleWith20Marks / (usersNum)));
-    TRACE("%02d%% - people with 10 marks with faces or higher\n", (100 * numOfPeopleWith10Marks / (usersNum)));
-    TRACE("%02d%% - people with 5 marks with faces or higher\n", (100 * numOfPeopleWith5Marks / (usersNum)));
-
-    int numOfPeopleWith5Faces = 0;
-    int numOfPeopleWith5SoloFaces = 0;
-    int numOfPeopleWith10Faces = 0;
-    int numOfPeopleWith10SoloFaces = 0;
-    int numOfPeopleWith20Faces = 0;
-    int numOfPeopleWith20SoloFaces = 0;
+    unsigned numOfPeopleWith1ValidFaces = 0;
+    unsigned numOfPeopleWith5ValidFaces = 0;
+    unsigned numOfPeopleWith10ValidFaces = 0;
+    unsigned numOfPeopleWith20ValidFaces = 0;
 
     for(int i = 0; i < 1024; i++)
     {
-        if(i >= 5) numOfPeopleWith5Faces += res->photos_with_faces[i];
-        if(i >= 10) numOfPeopleWith10Faces += res->photos_with_faces[i];
-        if(i >= 20) numOfPeopleWith20Faces += res->photos_with_faces[i];
-        if(i >= 5) numOfPeopleWith5SoloFaces += res->photos_with_solo_faces[i];
-        if(i >= 10) numOfPeopleWith10SoloFaces += res->photos_with_solo_faces[i];
-        if(i >= 20) numOfPeopleWith20SoloFaces += res->photos_with_solo_faces[i];
+        if(i >= 1)  numOfPeopleWith1ValidFaces += res->total_faces_num[i];
+        if(i >= 5)  numOfPeopleWith5ValidFaces += res->total_faces_num[i];
+        if(i >= 10)  numOfPeopleWith10ValidFaces += res->total_faces_num[i];
+        if(i >= 20)  numOfPeopleWith20ValidFaces += res->total_faces_num[i];
     }
 
-    TRACE("%02d%% - people with 20 faces or higher\n", (100 * numOfPeopleWith20Faces / (usersNum )));
-    TRACE("%02d%% - people with 10 faces or higher\n", (100 * numOfPeopleWith10Faces / (usersNum )));
-    TRACE("%02d%% - people with 5 faces or higher\n", (100 * numOfPeopleWith5Faces / (usersNum )));
+    unsigned numOfPeopleWith1ValidFacesFromMainAlbum = 0;
+    unsigned numOfPeopleWith5ValidFacesFromMainAlbum = 0;
+    unsigned numOfPeopleWith10ValidFacesFromMainAlbum = 0;
+    unsigned numOfPeopleWith20ValidFacesFromMainAlbum = 0;
 
-    TRACE("%02d%% - people with 20 solo faces or higher\n", (100 * numOfPeopleWith20SoloFaces / (usersNum )));
-    TRACE("%02d%% - people with 10 solo faces or higher\n", (100 * numOfPeopleWith10SoloFaces / (usersNum )));
-    TRACE("%02d%% - people with 5 solo faces or higher\n", (100 * numOfPeopleWith5SoloFaces / (usersNum )));
-
-    fprintf(resfs, "friends:\n");
-    for(int i = 0; i < 10240; i++)
+    for(int i = 0; i < 1024; i++)
     {
-        fprintf(resfs, "%i\n", res->friends[i]);
+        if(i >= 1)  numOfPeopleWith1ValidFacesFromMainAlbum += res->main_alb_faces_num[i];
+        if(i >= 5)  numOfPeopleWith5ValidFacesFromMainAlbum += res->main_alb_faces_num[i];
+        if(i >= 10)  numOfPeopleWith10ValidFacesFromMainAlbum += res->main_alb_faces_num[i];
+        if(i >= 20)  numOfPeopleWith20ValidFacesFromMainAlbum += res->main_alb_faces_num[i];
     }
 
-    fprintf(resfs, "photos:\n");
-    for(int i = 0; i < 10240; i++)
+    unsigned numOfPeopleWith1ValidFacesFromMarks = 0;
+    unsigned numOfPeopleWith5ValidFacesFromMarks = 0;
+    unsigned numOfPeopleWith10ValidFacesFromMarks = 0;
+    unsigned numOfPeopleWith20ValidFacesFromMarks = 0;
+
+    for(int i = 0; i < 1024; i++)
     {
-        fprintf(resfs, "%i\n", res->photos[i]);
-    }*/
+        if(i >= 1)  numOfPeopleWith1ValidFacesFromMarks += res->marks_faces_num[i];
+        if(i >= 5)  numOfPeopleWith5ValidFacesFromMarks += res->marks_faces_num[i];
+        if(i >= 10)  numOfPeopleWith10ValidFacesFromMarks += res->marks_faces_num[i];
+        if(i >= 20)  numOfPeopleWith20ValidFacesFromMarks += res->marks_faces_num[i];
+    }
+
+    TRACE("%02d%% - people with 20 valid faces from marks or higher\n", (100 * numOfPeopleWith20ValidFacesFromMarks / (usersNum)));
+    TRACE("%02d%% - people with 10 valid faces from marks or higher\n", (100 * numOfPeopleWith10ValidFacesFromMarks / (usersNum)));
+    TRACE("%02d%% - people with 5 valid faces from marks or higher\n", (100 * numOfPeopleWith5ValidFacesFromMarks / (usersNum)));
+    TRACE("%02d%% - people with 1 valid faces from marks or higher\n", (100 * numOfPeopleWith1ValidFacesFromMarks / (usersNum)));
+
+    TRACE("%02d%% - people with 20 valid faces from main album or higher\n", (100 * numOfPeopleWith20ValidFacesFromMainAlbum / (usersNum)));
+    TRACE("%02d%% - people with 10 valid faces from main album or higher\n", (100 * numOfPeopleWith10ValidFacesFromMainAlbum / (usersNum)));
+    TRACE("%02d%% - people with 5 valid faces from main album or higher\n", (100 * numOfPeopleWith5ValidFacesFromMainAlbum / (usersNum)));
+    TRACE("%02d%% - people with 1 valid faces from main album or higher\n", (100 * numOfPeopleWith1ValidFacesFromMainAlbum / (usersNum)));
+
+    TRACE("%02d%% - people with 20 valid faces total or higher\n", (100 * numOfPeopleWith20ValidFaces / (usersNum)));
+    TRACE("%02d%% - people with 10 valid faces total or higher\n", (100 * numOfPeopleWith10ValidFaces / (usersNum)));
+    TRACE("%02d%% - people with 5 valid faces total or higher\n", (100 * numOfPeopleWith5ValidFaces / (usersNum)));
+    TRACE("%02d%% - people with 1 valid faces total or higher\n", (100 * numOfPeopleWith1ValidFaces / (usersNum)));
 
     fclose(resfs);
     frokLibCommonDeinit();
@@ -576,12 +547,9 @@ void *getUserStats(void *sema)
 
 //              Main album - find photos with one face
 
-                if(TRUE == getFilesFromDir(userPath, &photos, &numOfPhotos))
+                if(FALSE == getFilesFromDir(userPath, &photos, &numOfPhotos))
                 {
-                    if(numOfPhotos > 10240) numOfPhotos = 10240;
-                    pthread_mutex_lock(&results_lock);
-                    res->photos[numOfPhotos]++;
-                    pthread_mutex_unlock(&results_lock);
+                    goto getUserStats_finish;
                 }
 
                 for(int cnt1 = 0; cnt1 < numOfPhotos; cnt1++)
@@ -631,8 +599,6 @@ void *getUserStats(void *sema)
 
                     if(normFaces.size() > 0)
                     {
-                        pthread_mutex_lock(&results_lock);
-                        res->user_photos_with_faces[i]++;
                         if(normFaces.size() == 1)
                         {
                             try {
@@ -642,10 +608,8 @@ void *getUserStats(void *sema)
                                 obj["x"] = faceRect.x + (faceRect.width / 2);
                                 obj["y"] = faceRect.y + (faceRect.height / 2);
                                 mainAlbumResult.push_back(obj);
-                                res->user_photos_with_solo_faces[i]++;
                             } catch(...) {}
                         }
-                        pthread_mutex_unlock(&results_lock);
                     }
             next_photo:
                     free(photoPath);
@@ -782,120 +746,24 @@ void *getUserStats(void *sema)
                 }
 //              Done
 
-                /*numOfMarks = markedPhotos.size();
-                if(numOfMarks > 1023) {
-                    numOfMarks = 1023;
-                }
-                numOfFriends = friends.size();
-                if(numOfFriends > 10239) numOfFriends = 10239;
-
+//              Write results to global scope
                 pthread_mutex_lock(&results_lock);
                 strcpy(res->users[i], userName);
-                res->marks_without_faces[numOfMarks]++;
-                res->friends[numOfFriends]++;
+                if(mainAlbumResult.size() > 1023)
+                    res->main_alb_faces_num[1023] ++;
+                else
+                    res->main_alb_faces_num[mainAlbumResult.size()]++;
+                if(markedPhotosResult.size() > 1023)
+                    res->marks_faces_num[1023] ++;
+                else
+                    res->marks_faces_num[markedPhotosResult.size()]++;
+                if((mainAlbumResult.size() + markedPhotosResult.size()) > 1023)
+                    res->total_faces_num[1023] ++;
+                else
+                    res->total_faces_num[mainAlbumResult.size() + markedPhotosResult.size()]++;
+
                 pthread_mutex_unlock(&results_lock);
-
-                if(TRUE == getFilesFromDir(userPath, &photos, &numOfPhotos))
-                {
-                    if(numOfPhotos > 10240) numOfPhotos = 10240;
-                    pthread_mutex_lock(&results_lock);
-                    res->photos[numOfPhotos]++;
-                    pthread_mutex_unlock(&results_lock);
-                }
-
-                for(int cnt = 0; cnt < numOfPhotos; cnt++)
-                {
-                    std::vector<cv::Rect> faces;
-                    std::vector<cv::Mat> normFaces;
-                    photoPath = (char*)calloc(strlen(userPath) + strlen(photos[cnt]) + 1, 1);
-                    if(photoPath == NULL)
-                    {
-                        continue;
-                    }
-                    strcpy(photoPath, userPath);
-                    strcat(photoPath, photos[cnt]);
-                    if(FROK_RESULT_SUCCESS != detector->SetTargetImage(photoPath))
-                    {
-                        goto next_photo;
-                    }
-
-                    if(FROK_RESULT_SUCCESS != detector->GetFacesFromPhoto(faces))
-                    {
-                        goto next_photo;
-                    }
-
-                    if(FROK_RESULT_SUCCESS != detector->GetNormalizedFaceImages(faces, normFaces))
-                    {
-                        goto next_photo;
-                    }
-
-                    if(normFaces.size() > 0)
-                    {
-                        pthread_mutex_lock(&results_lock);
-                        res->user_photos_with_faces[i]++;
-                        if(normFaces.size() == 1)
-                        {
-                            res->user_photos_with_solo_faces[i]++;
-                        }
-                        pthread_mutex_unlock(&results_lock);
-                    }
-            next_photo:
-                    free(photoPath);
-                }
-
-                pthread_mutex_lock(&results_lock);
-                if(res->user_photos_with_faces[i] > 1023)    res->user_photos_with_faces[i] = 1023;
-                res->photos_with_faces[res->user_photos_with_faces[i]]++;
-                if(res->user_photos_with_solo_faces[i] > 1023)    res->user_photos_with_solo_faces[i] = 1023;
-                res->photos_with_solo_faces[res->user_photos_with_solo_faces[i]]++;
-                res->user_marks[i] = markedPhotos.size();
-                pthread_mutex_unlock(&results_lock);
-
-                for(int cnt = 0; cnt < markedPhotos.size(); cnt++)
-                {
-                    json::Object obj = markedPhotos[cnt];
-                    std::string photoName = obj["photoId"].ToString();
-                    std::vector<cv::Rect> faces;
-                    std::vector<cv::Mat> normFaces;
-
-                    photoPath = (char*)calloc(strlen(userPath) + photoName.size() + strlen(".jpg") + 1, 1);
-                    if(photoPath == NULL)
-                    {
-                        continue;
-                    }
-                    strcpy(photoPath, userPath);
-                    strcat(photoPath, photoName.c_str());
-                    strcat(photoPath, ".jpg");
-
-                    if(FROK_RESULT_SUCCESS != detector->SetTargetImage(photoPath))
-                    {
-                        goto next_marked_photo;
-                    }
-
-                    if(FROK_RESULT_SUCCESS != detector->GetFacesFromPhoto(faces))
-                    {
-                        goto next_marked_photo;
-                    }
-
-                    if(FROK_RESULT_SUCCESS != detector->GetNormalizedFaceImages(faces, normFaces))
-                    {
-                        goto next_marked_photo;
-                    }
-
-                    if(normFaces.size() > 0)
-                    {
-                        pthread_mutex_lock(&results_lock);
-                        res->user_marks_with_faces[i]++;
-                        pthread_mutex_unlock(&results_lock);
-                    }
-            next_marked_photo:
-                    free(photoPath);
-                }
-                pthread_mutex_lock(&results_lock);
-                if(res->user_marks_with_faces[i] > 1023)    res->user_marks_with_faces[i] = 1023;
-                res->marks_with_faces[res->user_marks_with_faces[i]]++;
-                pthread_mutex_unlock(&results_lock);*/
-
+//              Done
             getUserStats_finish:
                 for(int cnt = 0;cnt < numOfPhotos; cnt++)
                 {
