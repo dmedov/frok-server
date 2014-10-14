@@ -58,6 +58,7 @@ struct thread_semas
 };
 
 BOOL getJsonFromFile(const char *filePath, json::Object &json);
+BOOL writeJsonToFile(const char *filePath, json::Object &json);
 void *getUserStats(void *params);
 
 BOOL save(const char *filename, struct results *res)
@@ -301,7 +302,7 @@ int main(void)
     free(users);
 
     // Print results
-    unsigned numOfPeopleWith5Marks = 0;
+    /*unsigned numOfPeopleWith5Marks = 0;
     unsigned numOfPeopleWith10Marks = 0;
     unsigned numOfPeopleWith20Marks = 0;
 
@@ -375,7 +376,7 @@ int main(void)
     for(int i = 0; i < 10240; i++)
     {
         fprintf(resfs, "%i\n", res->photos[i]);
-    }
+    }*/
 
     fclose(resfs);
     frokLibCommonDeinit();
@@ -439,6 +440,52 @@ BOOL getJsonFromFile(const char *filePath, json::Object &json)
     return TRUE;
 }
 
+BOOL writeJsonToFile(const char *filePath, json::Object &json)
+{
+    size_t len;
+    ssize_t ret;
+    int fd;
+    const char *buffer = NULL;
+    std::string tmp;
+    try {
+        tmp = json::Serialize(json);
+    } catch(...) {
+        TRACE("Failed to serialize jsonFile\n");
+        return FALSE;
+    }
+
+    buffer = tmp.c_str();
+
+    if(buffer != NULL)
+    {
+        fd = open(filePath, O_WRONLY | O_TRUNC, O_CREAT, 0664);
+        if(fd == -1)
+        {
+            TRACE_F("Failed to open file %s on error %s", filePath, strerror(errno));
+            return FALSE;
+        }
+        len = strlen(buffer);
+
+        while(len != 0 && (ret = write(fd, buffer, len)) != 0)
+        {
+            if(ret == -1)
+            {
+                if(errno == EINTR || errno == EAGAIN)
+                {
+                    continue;
+                }
+                TRACE("write failed on error %s\n", strerror(errno));
+                return FALSE;
+            }
+            len -= ret;
+            buffer += ret;
+        }
+        close(fd);
+    }
+
+    return TRUE;
+}
+
 void *getUserStats(void *sema)
 {
     struct thread_semas *semas = (struct thread_semas*)sema;
@@ -465,184 +512,405 @@ void *getUserStats(void *sema)
                 return NULL;
             }
         }
-        do
+        try
         {
-            struct results *res = params_copy.res;
-            char *userName = params_copy.userName;
-            int i = params_copy.i;
-            char *userPath = NULL;
-            char *jsonFilePath = NULL;
-            json::Object json;
-            json::Array markedPhotos;
-            json::Array friends;
-            size_t numOfMarks = 0;
-            size_t numOfFriends = 0;
-            unsigned numOfPhotos = 0;
-            char **photos = NULL;
-            char *photoPath = NULL;
-
-            FaceDetectorAbstract *detector = new FrokFaceDetector;
-
-            userPath = (char*)calloc(strlen(GRUBBER_PATH) + strlen(userName) + strlen("/") + 100, 1);
-            if(userPath == NULL)
+            do
             {
-                TRACE("calloc failed on error %s\n", strerror(errno));
-                goto getUserStats_finish;
-            }
+                struct results *res = params_copy.res;
+                char *userName = params_copy.userName;
+                int i = params_copy.i;
+                char *userPath = NULL;
+                char *jsonFilePath = NULL;
+                json::Object json;
 
-            strcpy(userPath, GRUBBER_PATH);
-            strcat(userPath, userName);
-            strcat(userPath, "/");
+                json::Object result;    // Final result that would be printed in users' json file
+                json::Array mainAlbumResult;
+                json::Array markedPhotosResult;
 
-            jsonFilePath = (char*)calloc(strlen(userPath) + strlen(userName) + strlen(".json") + 100, 1);
-            if(jsonFilePath == NULL)
-            {
-                TRACE("calloc failed on error %s\n", strerror(errno));
-                goto getUserStats_finish;
-            }
+                json::Array markedPhotos;
+                json::Array friends;
+                size_t numOfMarks = 0;
+                size_t numOfFriends = 0;
+                unsigned numOfPhotos = 0;
+                char **photos = NULL;
+                char *photoPath = NULL;
 
-            strcpy(jsonFilePath, userPath);
-            strcat(jsonFilePath, userName);
-            strcat(jsonFilePath, ".json");
+                FaceDetectorAbstract *detector = new FrokFaceDetector;
 
-            if(FALSE == getJsonFromFile(jsonFilePath, json))
-            {
-                TRACE("getJsonFromFile failed\n");
-                goto getUserStats_finish;
-            }
-
-            try {
-                markedPhotos = json[(std::string)"markedPhotos"].ToArray();
-                friends = json[(std::string)"friends"].ToArray();
-            } catch(...) {
-                TRACE("Invalid json\n");
-                goto getUserStats_finish;
-            }
-
-            numOfMarks = markedPhotos.size();
-            if(numOfMarks > 1023) {
-                numOfMarks = 1023;
-            }
-            numOfFriends = friends.size();
-            if(numOfFriends > 10239) numOfFriends = 10239;
-
-            pthread_mutex_lock(&results_lock);
-            strcpy(res->users[i], userName);
-            res->marks_without_faces[numOfMarks]++;
-            res->friends[numOfFriends]++;
-            pthread_mutex_unlock(&results_lock);
-
-            if(TRUE == getFilesFromDir(userPath, &photos, &numOfPhotos))
-            {
-                if(numOfPhotos > 10240) numOfPhotos = 10240;
-                pthread_mutex_lock(&results_lock);
-                res->photos[numOfPhotos]++;
-                pthread_mutex_unlock(&results_lock);
-            }
-
-            for(int cnt = 0; cnt < numOfPhotos; cnt++)
-            {
-                std::vector<cv::Rect> faces;
-                std::vector<cv::Mat> normFaces;
-                photoPath = (char*)calloc(strlen(userPath) + strlen(photos[cnt]) + 1, 1);
-                if(photoPath == NULL)
+                userPath = (char*)calloc(strlen(GRUBBER_PATH) + strlen(userName) + strlen("/") + 100, 1);
+                if(userPath == NULL)
                 {
-                    continue;
-                }
-                strcpy(photoPath, userPath);
-                strcat(photoPath, photos[cnt]);
-                if(FROK_RESULT_SUCCESS != detector->SetTargetImage(photoPath))
-                {
-                    goto next_photo;
+                    TRACE("calloc failed on error %s\n", strerror(errno));
+                    goto getUserStats_finish;
                 }
 
-                if(FROK_RESULT_SUCCESS != detector->GetFacesFromPhoto(faces))
+                strcpy(userPath, GRUBBER_PATH);
+                strcat(userPath, userName);
+                strcat(userPath, "/");
+
+                jsonFilePath = (char*)calloc(strlen(userPath) + strlen(userName) + strlen(".json") + 100, 1);
+                if(jsonFilePath == NULL)
                 {
-                    goto next_photo;
+                    TRACE("calloc failed on error %s\n", strerror(errno));
+                    goto getUserStats_finish;
                 }
 
-                if(FROK_RESULT_SUCCESS != detector->GetNormalizedFaceImages(faces, normFaces))
+                strcpy(jsonFilePath, userPath);
+                strcat(jsonFilePath, userName);
+                strcat(jsonFilePath, ".json");
+
+                if(FALSE == getJsonFromFile(jsonFilePath, json))
                 {
-                    goto next_photo;
+                    TRACE("getJsonFromFile failed\n");
+                    goto getUserStats_finish;
+                }
+//              Preparation finished
+//              Get marked photos
+                try {
+                    markedPhotos = json[(std::string)"markedPhotos"].ToArray();
+                    friends = json[(std::string)"friends"].ToArray();
+                } catch(...) {
+                    TRACE("Invalid json\n");
+                    goto getUserStats_finish;
                 }
 
-                if(normFaces.size() > 0)
+//              Main album - find photos with one face
+
+                if(TRUE == getFilesFromDir(userPath, &photos, &numOfPhotos))
                 {
+                    if(numOfPhotos > 10240) numOfPhotos = 10240;
                     pthread_mutex_lock(&results_lock);
-                    res->user_photos_with_faces[i]++;
-                    if(normFaces.size() == 1)
+                    res->photos[numOfPhotos]++;
+                    pthread_mutex_unlock(&results_lock);
+                }
+
+                for(int cnt1 = 0; cnt1 < numOfPhotos; cnt1++)
+                {
+                    for(int cnt = 0; cnt < markedPhotos.size(); cnt++)
                     {
-                        res->user_photos_with_solo_faces[i]++;
+                        json::Object markedPhoto = markedPhotos[cnt];
+                        if(0 == strcmp(photos[cnt1], markedPhoto["photoId"].ToString().c_str()))
+                        {
+                            free(photos[cnt1]);
+                            photos[cnt1] = NULL;
+                            break;
+                        }
                     }
-                    pthread_mutex_unlock(&results_lock);
-                }
-        next_photo:
-                free(photoPath);
-            }
-
-            pthread_mutex_lock(&results_lock);
-            if(res->user_photos_with_faces[i] > 1023)    res->user_photos_with_faces[i] = 1023;
-            res->photos_with_faces[res->user_photos_with_faces[i]]++;
-            if(res->user_photos_with_solo_faces[i] > 1023)    res->user_photos_with_solo_faces[i] = 1023;
-            res->photos_with_solo_faces[res->user_photos_with_solo_faces[i]]++;
-            res->user_marks[i] = markedPhotos.size();
-            pthread_mutex_unlock(&results_lock);
-
-            for(int cnt = 0; cnt < markedPhotos.size(); cnt++)
-            {
-                json::Object obj = markedPhotos[cnt];
-                std::string photoName = obj["photoId"].ToString();
-                std::vector<cv::Rect> faces;
-                std::vector<cv::Mat> normFaces;
-
-                photoPath = (char*)calloc(strlen(userPath) + photoName.size() + strlen(".jpg") + 1, 1);
-                if(photoPath == NULL)
-                {
-                    continue;
-                }
-                strcpy(photoPath, userPath);
-                strcat(photoPath, photoName.c_str());
-                strcat(photoPath, ".jpg");
-
-                if(FROK_RESULT_SUCCESS != detector->SetTargetImage(photoPath))
-                {
-                    goto next_marked_photo;
                 }
 
-                if(FROK_RESULT_SUCCESS != detector->GetFacesFromPhoto(faces))
+                for(int cnt = 0; cnt < numOfPhotos; cnt++)
                 {
-                    goto next_marked_photo;
+                    if(photos[cnt] == NULL)
+                    {
+                        continue;
+                    }
+
+                    std::vector<cv::Rect> faces;
+                    std::vector<cv::Mat> normFaces;
+                    photoPath = (char*)calloc(strlen(userPath) + strlen(photos[cnt]) + 1, 1);
+                    if(photoPath == NULL)
+                    {
+                        continue;
+                    }
+                    strcpy(photoPath, userPath);
+                    strcat(photoPath, photos[cnt]);
+                    if(FROK_RESULT_SUCCESS != detector->SetTargetImage(photoPath))
+                    {
+                        goto next_photo;
+                    }
+
+                    if(FROK_RESULT_SUCCESS != detector->GetFacesFromPhoto(faces))
+                    {
+                        goto next_photo;
+                    }
+
+                    if(FROK_RESULT_SUCCESS != detector->GetNormalizedFaceImages(faces, normFaces))
+                    {
+                        goto next_photo;
+                    }
+
+                    if(normFaces.size() > 0)
+                    {
+                        pthread_mutex_lock(&results_lock);
+                        res->user_photos_with_faces[i]++;
+                        if(normFaces.size() == 1)
+                        {
+                            try {
+                                json::Object obj;
+                                cv::Rect faceRect = faces.at(0);
+                                obj["photoId"] = photos[cnt];
+                                obj["x"] = faceRect.x + (faceRect.width / 2);
+                                obj["y"] = faceRect.y + (faceRect.height / 2);
+                                mainAlbumResult.push_back(obj);
+                                res->user_photos_with_solo_faces[i]++;
+                            } catch(...) {}
+                        }
+                        pthread_mutex_unlock(&results_lock);
+                    }
+            next_photo:
+                    free(photoPath);
                 }
 
-                if(FROK_RESULT_SUCCESS != detector->GetNormalizedFaceImages(faces, normFaces))
-                {
-                    goto next_marked_photo;
-                }
+//              Main album - finished
 
-                if(normFaces.size() > 0)
+//              Marked photos - verify any face and find closest one.
+
+                for(int cnt = 0; cnt < markedPhotos.size(); cnt++)
                 {
+                    try {
+                        json::Object obj = markedPhotos[cnt];
+                        if(obj["marksNum"].ToInt() >= 7)   // Fuck photos with 7+ marks
+                        {
+                            continue;
+                        }
+
+                        std::string photoName = obj["photoId"].ToString();
+                        std::vector<cv::Rect> faces;
+                        std::vector<cv::Mat> normFaces;
+
+                        photoPath = (char*)calloc(strlen(userPath) + photoName.size() + strlen(".jpg") + 1, 1);
+                        if(photoPath == NULL)
+                        {
+                            continue;
+                        }
+                        strcpy(photoPath, userPath);
+                        strcat(photoPath, photoName.c_str());
+                        strcat(photoPath, ".jpg");
+
+                        if(FROK_RESULT_SUCCESS != detector->SetTargetImage(photoPath))
+                        {
+                            goto next_marked_photo;
+                        }
+
+                        if(FROK_RESULT_SUCCESS != detector->GetFacesFromPhoto(faces))
+                        {
+                            goto next_marked_photo;
+                        }
+
+                        if(FROK_RESULT_SUCCESS != detector->GetNormalizedFaceImages(faces, normFaces))
+                        {
+                            goto next_marked_photo;
+                        }
+
+                        if(normFaces.size() > 0)
+                        {
+                            for(int cnt1 = 0; cnt1 < normFaces.size(); cnt1++)
+                            {
+                                try {
+                                    cv::Rect curRect = faces.at(cnt1);
+                                    json::Object curUserMark;
+                                    // Verify that im the closest dude on photo
+                                    json::Array allMarksOnPhoto =  obj["marks"];
+                                    double distanceToTheFace = DBL_MAX;
+                                    int cnt2;
+                                    bool userFound = false;
+                                    for(cnt2 = 0; cnt2 < allMarksOnPhoto.size(); cnt2++)
+                                    {
+
+                                        json::Object curMark = allMarksOnPhoto[cnt2];
+                                        if(0 == strcmp(curMark["uid"].ToString().c_str(), photoName.c_str()))
+                                        {
+                                            userFound = true;
+                                            curUserMark = curMark;
+                                            double tmp = pow(pow((curMark["x"].ToInt() - (curRect.x + curRect.width / 2)), 2) +
+                                                    pow((curMark["y"].ToInt() - (curRect.y + curRect.height / 2)), 2), 0.5);
+                                            if(tmp <= distanceToTheFace)
+                                            {
+                                                distanceToTheFace = tmp;
+                                                continue;
+                                            }
+                                            else
+                                            {
+                                                break;
+                                            }
+                                        }
+
+                                        if(userFound == false)
+                                        {
+                                            // Just save the closest user and hope that user is closier to the curRect
+                                            double tmp = pow(pow((curMark["x"].ToInt() - (curRect.x + curRect.width / 2)), 2) +
+                                                    pow((curMark["y"].ToInt() - (curRect.y + curRect.height / 2)), 2), 0.5);
+                                            if(tmp < distanceToTheFace)
+                                            {
+                                                distanceToTheFace = tmp;
+                                            }
+                                            continue;
+                                        }
+                                        else
+                                        {
+                                            if(pow(pow((curMark["x"].ToInt() - (curRect.x + curRect.width / 2)), 2) +
+                                                   pow((curMark["y"].ToInt() - (curRect.y + curRect.height / 2)), 2), 0.5) < distanceToTheFace)
+                                            {       // oh nooooo, some fake dude on photo
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if(cnt != allMarksOnPhoto.size())
+                                    {
+                                        continue;       // Ok we are absolutely sure that this is some other guy. So gay.
+                                    }
+                                    json::Object curRes;
+                                    std::stringstream sstream;
+                                    sstream << cnt1;
+                                    curRes["photoId"] = photoName;
+                                    curRes["faceNum"] = sstream.str();
+                                    curRes["x"] = curUserMark["x"];
+                                    curRes["y"] = curUserMark["y"];
+                                    markedPhotosResult.push_back(curRes);
+                                    break;
+                                } catch(...) {}
+                            }
+                        }
+                next_marked_photo:
+                        free(photoPath);
+                    } catch(...) {
+                        int asdasd = 0;
+                                asdasd++;
+                    }
+                }
+//              Marked photos - finished
+
+//              Create output json
+                result["mainAlbum"] = mainAlbumResult;
+                result["marks"] = markedPhotosResult;
+                json["result"] = result;
+//              Write json to file
+                if(FALSE == writeJsonToFile(jsonFilePath, json))
+                {
+                    TRACE("writeJsonToFile failed\n");
+                    goto getUserStats_finish;
+                }
+//              Done
+
+                /*numOfMarks = markedPhotos.size();
+                if(numOfMarks > 1023) {
+                    numOfMarks = 1023;
+                }
+                numOfFriends = friends.size();
+                if(numOfFriends > 10239) numOfFriends = 10239;
+
+                pthread_mutex_lock(&results_lock);
+                strcpy(res->users[i], userName);
+                res->marks_without_faces[numOfMarks]++;
+                res->friends[numOfFriends]++;
+                pthread_mutex_unlock(&results_lock);
+
+                if(TRUE == getFilesFromDir(userPath, &photos, &numOfPhotos))
+                {
+                    if(numOfPhotos > 10240) numOfPhotos = 10240;
                     pthread_mutex_lock(&results_lock);
-                    res->user_marks_with_faces[i]++;
+                    res->photos[numOfPhotos]++;
                     pthread_mutex_unlock(&results_lock);
                 }
-        next_marked_photo:
-                free(photoPath);
-            }
-            pthread_mutex_lock(&results_lock);
-            if(res->user_marks_with_faces[i] > 1023)    res->user_marks_with_faces[i] = 1023;
-            res->marks_with_faces[res->user_marks_with_faces[i]]++;
-            pthread_mutex_unlock(&results_lock);
 
-        getUserStats_finish:
-            for(int cnt = 0;cnt < numOfPhotos; cnt++)
-            {
-                free(photos[cnt]);
-            }
-            free(photos);
-            free(jsonFilePath);
-            free(userPath);
-            delete detector;
-        }while(0);
+                for(int cnt = 0; cnt < numOfPhotos; cnt++)
+                {
+                    std::vector<cv::Rect> faces;
+                    std::vector<cv::Mat> normFaces;
+                    photoPath = (char*)calloc(strlen(userPath) + strlen(photos[cnt]) + 1, 1);
+                    if(photoPath == NULL)
+                    {
+                        continue;
+                    }
+                    strcpy(photoPath, userPath);
+                    strcat(photoPath, photos[cnt]);
+                    if(FROK_RESULT_SUCCESS != detector->SetTargetImage(photoPath))
+                    {
+                        goto next_photo;
+                    }
+
+                    if(FROK_RESULT_SUCCESS != detector->GetFacesFromPhoto(faces))
+                    {
+                        goto next_photo;
+                    }
+
+                    if(FROK_RESULT_SUCCESS != detector->GetNormalizedFaceImages(faces, normFaces))
+                    {
+                        goto next_photo;
+                    }
+
+                    if(normFaces.size() > 0)
+                    {
+                        pthread_mutex_lock(&results_lock);
+                        res->user_photos_with_faces[i]++;
+                        if(normFaces.size() == 1)
+                        {
+                            res->user_photos_with_solo_faces[i]++;
+                        }
+                        pthread_mutex_unlock(&results_lock);
+                    }
+            next_photo:
+                    free(photoPath);
+                }
+
+                pthread_mutex_lock(&results_lock);
+                if(res->user_photos_with_faces[i] > 1023)    res->user_photos_with_faces[i] = 1023;
+                res->photos_with_faces[res->user_photos_with_faces[i]]++;
+                if(res->user_photos_with_solo_faces[i] > 1023)    res->user_photos_with_solo_faces[i] = 1023;
+                res->photos_with_solo_faces[res->user_photos_with_solo_faces[i]]++;
+                res->user_marks[i] = markedPhotos.size();
+                pthread_mutex_unlock(&results_lock);
+
+                for(int cnt = 0; cnt < markedPhotos.size(); cnt++)
+                {
+                    json::Object obj = markedPhotos[cnt];
+                    std::string photoName = obj["photoId"].ToString();
+                    std::vector<cv::Rect> faces;
+                    std::vector<cv::Mat> normFaces;
+
+                    photoPath = (char*)calloc(strlen(userPath) + photoName.size() + strlen(".jpg") + 1, 1);
+                    if(photoPath == NULL)
+                    {
+                        continue;
+                    }
+                    strcpy(photoPath, userPath);
+                    strcat(photoPath, photoName.c_str());
+                    strcat(photoPath, ".jpg");
+
+                    if(FROK_RESULT_SUCCESS != detector->SetTargetImage(photoPath))
+                    {
+                        goto next_marked_photo;
+                    }
+
+                    if(FROK_RESULT_SUCCESS != detector->GetFacesFromPhoto(faces))
+                    {
+                        goto next_marked_photo;
+                    }
+
+                    if(FROK_RESULT_SUCCESS != detector->GetNormalizedFaceImages(faces, normFaces))
+                    {
+                        goto next_marked_photo;
+                    }
+
+                    if(normFaces.size() > 0)
+                    {
+                        pthread_mutex_lock(&results_lock);
+                        res->user_marks_with_faces[i]++;
+                        pthread_mutex_unlock(&results_lock);
+                    }
+            next_marked_photo:
+                    free(photoPath);
+                }
+                pthread_mutex_lock(&results_lock);
+                if(res->user_marks_with_faces[i] > 1023)    res->user_marks_with_faces[i] = 1023;
+                res->marks_with_faces[res->user_marks_with_faces[i]]++;
+                pthread_mutex_unlock(&results_lock);*/
+
+            getUserStats_finish:
+                for(int cnt = 0;cnt < numOfPhotos; cnt++)
+                {
+                    free(photos[cnt]);
+                }
+                free(photos);
+                free(jsonFilePath);
+                free(userPath);
+                delete detector;
+            }while(0);
+        }
+        catch(...)
+        {
+            TRACE("Ooops, not as bad as real ooops but something failed. Kepp going\n");
+        }
 
         while(-1 == sem_post(&semas->semaFinished))
         {
