@@ -856,6 +856,7 @@ FrokResult FrokFaceDetector::AlignFaceImage(cv::Rect faceCoords, const cv::Mat &
     TRACE_T("Detection started");
 
     HumanFace humanFace;
+    memset(&humanFace, 0, sizeof(humanFace));
 
     TRACE_T("Calling GetHumanFaceParts ...");
     if(FROK_RESULT_SUCCESS != (result = GetHumanFaceParts(imageFace, &humanFace)))

@@ -212,6 +212,18 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
             }
 
             foundFiles[foundFilesNum - 1] = calloc(fileNameSize + 1, 1);
+            if(foundFiles[foundFilesNum - 1] == NULL)
+            {
+                TRACE_F("calloc failed on error %s", strerror(errno));
+                free(fullname);
+                for(i = 0; i < foundFilesNum - 1; i++)
+                {
+                    free(tmp_reallocPointer[i]);
+                }
+                free(tmp_reallocPointer);
+                return FALSE;
+             }
+
             strcpy(foundFiles[foundFilesNum - 1], file->d_name);
         }
         free(fullname);
