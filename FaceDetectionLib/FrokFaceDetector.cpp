@@ -837,6 +837,14 @@ detect_mouth:
 
 detect_finish:
     TRACE_T("finished");
+    cv::rectangle(image, faceParts->leftEye, cv::Scalar(255),1,8,0);
+    cv::rectangle(image, faceParts->rightEye, cv::Scalar(255),1,8,0);
+    cv::rectangle(image, faceParts->nose, cv::Scalar(255),1,8,0);
+    cv::rectangle(image, faceParts->mouth, cv::Scalar(255),1,8,0);
+
+    cv::imshow("imageParts",image);
+    TRACE_R("***************=================================**************************");
+
 
     return FROK_RESULT_SUCCESS;
 }

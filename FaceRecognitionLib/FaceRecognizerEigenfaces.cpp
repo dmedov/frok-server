@@ -391,11 +391,11 @@ double FaceRecognizerEigenfaces::GetSimilarity_ThirdMethod_old(const cv::Mat &fi
     }
     cv::Mat diffMat = temporary1 - temporary2;
 
-//        cv::imshow("temporary1",temporary1);
-//        cv::imshow("temporary2",temporary2);
-//        cv::imshow("firstImage",firstImage);
-//        cv::imshow("secondImage",secondImage);
-//        cv::waitKey(0);
+        cv::imshow("temporary1",temporary1);
+        cv::imshow("temporary2",temporary2);
+        cv::imshow("firstImage",firstImage);
+        cv::imshow("secondImage",secondImage);
+        cv::waitKey(0);
 
     double err = 0;
     for(int row = 0; row < diffMat.rows; row++)
