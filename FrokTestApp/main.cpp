@@ -58,7 +58,7 @@ int main(void)
     void *fapi = frokAPIAlloc(commonContext->photoBasePath, commonContext->targetPhotosPath, detector, recognizer);
     frokAPIInit(fapi);
 
-    string inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"1\"], \"phName\":\"here.jpg\"}";
+    string inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"11\",\"12\",\"13\",\"14\",\"15\",\"16\",\"17\",\"18\",\"19\"], \"phName\":\"here.jpg\"}";
 
     char *outJson = NULL;
 
