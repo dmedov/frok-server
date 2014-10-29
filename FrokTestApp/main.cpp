@@ -58,6 +58,12 @@ int main(void)
     void *fapi = frokAPIAlloc(commonContext->photoBasePath, commonContext->targetPhotosPath, detector, recognizer);
     frokAPIInit(fapi);
 
+    /*string inJson1 = "{\"cmd\":\"train\", \"userIds\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"11\",\"12\",\"13\",\"14\",\"15\",\"16\",\"17\",\"18\",\"19\"]}";
+
+    char *outJson1 = NULL;
+
+    frokAPIExecuteFunction(fapi, getFunctionFromJson(inJson1.c_str()), inJson1.c_str(), &outJson1);*/
+
     string inJson = "{\"cmd\":\"recognize\", \"userIds\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"11\",\"12\",\"13\",\"14\",\"15\",\"16\",\"17\",\"18\",\"19\"], \"phName\":\"here.jpg\"}";
 
     char *outJson = NULL;
@@ -66,8 +72,8 @@ int main(void)
 
     TRACE_N("result: %s", outJson);
 
-    outputJsonOut(outJson);
-    waitKey(0);
+    //outputJsonOut(outJson);
+    //waitKey(0);
 
     return 0;
 }

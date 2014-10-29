@@ -306,20 +306,22 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
 
         if (hammingDistance <= maxHammingDistance)
         {
+            double prob1 = GetSimilarity_FirstMethod(targetFace, predictedFace);
+            double prob2 = GetSimilarity_SecondMethod(targetFace, predictedFace);
+            double prob3 = GetSimilarity_ThirdMethod(targetFace, predictedFace);
+            double prob_chi = GetSimilarity_ChiSquare(targetFace, predictedFace);
 
-            double prob1_o = GetSimilarity_FirstMethod_old(targetFace, predictedFace);
-            double prob2_o = GetSimilarity_SecondMethod_old(targetFace, predictedFace);
-            double prob3_o = GetSimilarity_ThirdMethod_old(targetFace, predictedFace);
+            double prob_res1 = pow(prob1 *prob2 * prob3, 1. / 3);
 
-            double prob_res1 = pow(prob1_o*prob2_o*prob3_o, 1. / 3);
+            double prob = prob_res1;
+            if(prob_chi > 0.9)
+            {
+                prob += prob_chi;
+                prob /= 2;
+            }
 
-            double prob_max = std::max(std::max(prob3_o, prob2_o), prob1_o);
-            double prob_min = std::min(std::min(prob3_o, prob2_o), prob1_o);
-
-            double prob = (prob_res1 - (prob_max - prob_min))/1.5;
-
-            TRACE_S_T("User %s results:", userId.c_str());
-            similarities[userId] = fabs(prob);
+            TRACE_S_T("User %s results:%lf", userId.c_str(), prob);
+            similarities[userId] = 1 - prob;
         }
     }
     TRACE_T("finished");
