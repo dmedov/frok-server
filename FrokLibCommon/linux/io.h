@@ -6,12 +6,12 @@
 // include dependencies
 #include <stdio.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #pragma GCC poison cout
 #pragma GCC poison printf
 
 extern char *tracePrefix;
-
 // Trace system
 #ifdef TRACE_DEBUG
 
@@ -41,10 +41,15 @@ extern char *tracePrefix;
 #define TRACE_R(__x__, ...)     TRACE(_RES(__x__, ##__VA_ARGS__))
 #define TRACE_N(__x__, ...)     TRACE(_N(__x__, ##__VA_ARGS__))
 
-#define TRACE_TIMESTAMP(format...)      do{struct timespec ts;                                  \
+#define TRACE_TIMESTAMP(format...)      do{struct timeval tv = {0, 0};                          \
                                         pthread_mutex_lock(&commonContext->trace_cs);           \
-                                        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);           \
-                                        fprintf(stdout, "[%5li.%09li]", ts.tv_sec, ts.tv_nsec); \
+                                        gettimeofday(&tv,NULL);                                 \
+                                        int sec, usec;                                          \
+                                        sec  = tv.tv_sec - commonContext->startTime.tv_sec;     \
+                                        if(commonContext->startTime.tv_usec > tv.tv_usec){--sec;\
+                                        usec=1e6+tv.tv_usec-commonContext->startTime.tv_usec;}  \
+                                        else{usec=tv.tv_usec-commonContext->startTime.tv_usec;} \
+                                        fprintf(stdout, "[%5d.%06d]", sec, usec);               \
                                         fprintf(stdout, ##format);                              \
                                         pthread_mutex_unlock(&commonContext->trace_cs);}while(0)
 

@@ -203,7 +203,7 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
             else
             {
                 foundFiles = malloc(sizeof(char*) * foundFilesNum);
-                if(!foundFiles)
+                if(foundFiles == NULL)
                 {
                     TRACE_F("malloc failed on error %s", strerror(errno));
                     free(fullname);
@@ -222,12 +222,11 @@ BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
                 }
                 free(tmp_reallocPointer);
                 return FALSE;
-             }
+            }
 
             strcpy(foundFiles[foundFilesNum - 1], file->d_name);
         }
         free(fullname);
-
     }
     if(-1 == closedir(dirStream))
     {

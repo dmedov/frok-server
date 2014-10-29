@@ -41,7 +41,7 @@ typedef struct frokCommonContext
     char *targetPhotosPath;
     pthread_mutex_t common_cs;
     pthread_mutex_t trace_cs;
-    struct timespec startTime;
+    struct timeval startTime;
 }frokCommonContext;
 #pragma pack(pop)
 

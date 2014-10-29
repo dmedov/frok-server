@@ -402,10 +402,11 @@ FrokResult frokLibCommonInit(const char *configFilePath)
     TRACE_N("commonContext created");
 
     TRACE_N("Set starting time");
-    memset(&commonContext->startTime, 0, sizeof(struct timespec));
-    if(-1 == clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &commonContext->startTime))
+    memset(&commonContext->startTime, 0, sizeof(struct timeval));
+
+    if(-1 == gettimeofday(&commonContext->startTime, NULL))
     {
-        TRACE_F("clock_gettime failed on error %s", strerror(errno));
+        TRACE_F("gettimeofday failed on error %s", strerror(errno));
         free(commonContext);
         commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
@@ -499,6 +500,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
     }
 
 #ifndef TRACE_DEBUG
+#ifndef NO_DAEMON
     TRACE_S("Setting std fd for release");
     TRACE_S("\tstdin is now /dev/null\n\tstdout is now %s\n\tstderr is now %s", commonContext->outputFile, commonContext->outputFile);
     TRACE_S("See output logs in file %s", commonContext->outputFile);
@@ -603,6 +605,7 @@ FrokResult frokLibCommonInit(const char *configFilePath)
         commonContext = NULL;
         return FROK_RESULT_LINUX_ERROR;
     }
+#endif //NO_DAEMON
 #endif //TRACE_DEBUG
 
     TRACE_N("Init succeed");
