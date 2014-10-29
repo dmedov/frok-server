@@ -111,8 +111,6 @@ double FaceRecognizerEigenfaces::GetSimilarity_FirstMethod(const cv::Mat firstIm
     cv::erode(secondImageCopy, secondImageCopy, secondImageCopy);
     cv::Mat diffMat = firstImageCopy - secondImageCopy;
 
-
-
     double err = 0;
     for(int row = 0; row < diffMat.rows; row++)
     {
@@ -292,49 +290,35 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
             continue;
         }
 
+//        int n = 3; // Количество точек
+//        CvPoint *pts = new CvPoint[sizeof(CvPoint)*n]; // Массив точек
+//        pts[0] = cvPoint(10,10);
+//        pts[1] = cvPoint(50,50);
+//        pts[2] = cvPoint(50,10);
+//        cvFillPoly(targetFace, &pts, &n, 1, CV_RGB(0,255,0));
+
+
+//        cv::imshow("targetFace", targetFace);
+//        cv::waitKey(0);
+
+
         __int64_t hammingDistance = calcHammingDistance(calcImageHash(targetFace), calcImageHash(predictedFace));
 
         if (hammingDistance <= maxHammingDistance)
         {
-            /*double prob1 = GetSimilarity_FirstMethod(targetFace, predictedFace);  // method is deprecated
-            double prob2 = GetSimilarity_SecondMethod(targetFace, predictedFace);
-            double prob3 = GetSimilarity_ThirdMethod(targetFace, predictedFace);
-            double prob4 = GetSimilarity_ChiSquare(targetFace, predictedFace);*/
 
             double prob1_o = GetSimilarity_FirstMethod_old(targetFace, predictedFace);
             double prob2_o = GetSimilarity_SecondMethod_old(targetFace, predictedFace);
-            double prob3_o = 1 - GetSimilarity_ThirdMethod_old(targetFace, predictedFace);
-            /*if((prob1 < 0) || (prob2 < 0) || (prob3 < 0))
-            {
-                TRACE_F_T("Some of GetSimilarities failed");
-                continue;
-            }*/
-
-            /*double geometricMean = pow(prob1 * prob2 * prob3, 1. / 3);
-            double arithmeticMean = (prob1 + prob2 + prob3) / 3;*/
+            double prob3_o = GetSimilarity_ThirdMethod_old(targetFace, predictedFace);
 
             double prob_res1 = pow(prob1_o*prob2_o*prob3_o, 1. / 3);
 
-            double prob_res2 = std::max(prob3_o, prob2_o); //prob_res2 = max(prob_res2, prob1);
-            double prob_res3 = std::min(prob3_o, prob2_o); //prob_res3 = min(prob_res3, prob1);
+            double prob_max = std::max(std::max(prob3_o, prob2_o), prob1_o);
+            double prob_min = std::min(std::min(prob3_o, prob2_o), prob1_o);
 
-
-            double prob = (prob_res1 - (prob_res2 - prob_res3))/1.5;
-            /*double geometricMean_o = pow(prob1_o * prob2_o * prob3_o, 1. / 3);
-            double arithmeticMean_o = (prob1_o + prob2_o + prob3_o) / 3;*/
-
-            //double weightMean = 0.90 * geometricMean_o + 0.10 * prob4;
-            //double weightMean_both = 2.5* geometricMean_o + 0.5 * weightMean;
+            double prob = (prob_res1 - (prob_max - prob_min))/1.5;
 
             TRACE_S_T("User %s results:", userId.c_str());
-            /*TRACE_S_T("geometric mean probability = %lf", geometricMean);
-            TRACE_S_T("arithmetic mean probability = %lf", arithmeticMean);
-            TRACE_S_T("weightMean mean probability = %lf", weightMean);*/
-
-            /*TRACE_S_T("geometric mean probability = %lf", geometricMean_o);
-            TRACE_S_T("arithmetic mean probability = %lf", arithmeticMean_o);*/
-            //similarities[userId] = weightMean;
-            //similarities[userId] = geometricMean_o;
             similarities[userId] = fabs(prob);
         }
     }
@@ -350,9 +334,8 @@ double FaceRecognizerEigenfaces::GetSimilarity_FirstMethod_old(const cv::Mat &fi
     cv::Mat blr_rec;
     secondImage.copyTo(blr_rec);
 
-    cv::erode(blr_img, blr_img, blr_img);
-    cv::erode(blr_rec, blr_rec, blr_rec);
-
+    cv::GaussianBlur(blr_img, blr_img, cv::Size(7,7), 0, 0);
+    cv::GaussianBlur(blr_rec, blr_rec, cv::Size(7,7), 0, 0);
 
     cv::Mat dif = abs(cv::Mat(blr_img) - cv::Mat(blr_rec));
 
@@ -384,12 +367,13 @@ double FaceRecognizerEigenfaces::GetSimilarity_SecondMethod_old(const cv::Mat &f
         // Calculate the L2 relative error between the 2 images.
         double errorL2 = norm(firstImage, secondImage, CV_L2);
         // Convert to a reasonable scale, since L2 error is summed across all pixels of the image.
-        return errorL2 / (double)(firstImage.rows * firstImage.cols);;
+        double prob = 1 - (errorL2 / (double)(firstImage.rows * firstImage.cols));
+        if (prob > 1) prob = 0.99;
+        if (prob < 0) prob = 0.01;
+        return prob;
     }
-    else {
-        //cout << "WARNING: Images have a different size in 'getSimilarity()'." << endl;
-        return 100000000.0;  // Return a bad value                      [TBD] this is not invalid value. Value must be really invalid
-    }
+    else return 0.01;
+
 }
 
 double FaceRecognizerEigenfaces::GetSimilarity_ThirdMethod_old(const cv::Mat &firstImage, const cv::Mat &secondImage)
@@ -406,6 +390,12 @@ double FaceRecognizerEigenfaces::GetSimilarity_ThirdMethod_old(const cv::Mat &fi
         return -1;
     }
     cv::Mat diffMat = temporary1 - temporary2;
+
+//        cv::imshow("temporary1",temporary1);
+//        cv::imshow("temporary2",temporary2);
+//        cv::imshow("firstImage",firstImage);
+//        cv::imshow("secondImage",secondImage);
+//        cv::waitKey(0);
 
     double err = 0;
     for(int row = 0; row < diffMat.rows; row++)
@@ -427,7 +417,22 @@ double FaceRecognizerEigenfaces::GetSimilarity_ThirdMethod_old(const cv::Mat &fi
     return prob;
 }
 
-// [TBD] Get any prove of this code frok Nikita!
+//double FaceRecognizerEigenfaces::GetSimilarity_HashEigen(const cv::Mat &firstImage, const cv::Mat &secondImage){
+//    cv::Mat temporary1, temporary2;
+//    try
+//    {
+//        cv::cornerMinEigenVal(firstImage, temporary1, 10, 5);
+//        cv::cornerMinEigenVal(secondImage, temporary2, 10, 5);
+//    }
+//    catch(...)
+//    {
+//        TRACE_F_T("Opencv failed to process cornerMinEigenVal function");
+//        return -1;
+//    }
+
+//}
+
+
 __int64_t FaceRecognizerEigenfaces::calcImageHash(cv::Mat &image)
 {
     TRACE_T("started");

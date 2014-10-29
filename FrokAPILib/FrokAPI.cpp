@@ -163,12 +163,18 @@ void outputJsonOut(char* outJson){
                         break;
                     case 5:
                         ke.y2 = atoi(sp);
+                         it++;
                         break;
                     }
-                    if(i != 5) sp = strtok(NULL, sepJson);
+                    if(i != 5)
+                        sp = strtok(NULL, sepJson);
+                }else if(i == 2){
+                    i--;
+                    sp = strtok(NULL, sepJson);
                 }
+
             keyElements.push_back(ke);
-            it++;
+
 
         }
         sp = strtok(NULL, sepJson);
