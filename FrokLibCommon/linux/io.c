@@ -14,7 +14,7 @@
 // don't forget '/' in the end of dir name. Example: good = "/home/workspace/" bad: "/home/workspace"
 BOOL getFilesFromDir(const char *dir, char ***files, unsigned *filesNum)
 {
-    int             i;
+    size_t             i;
     DIR            *dirStream;
     struct dirent  *file;
     struct stat     fileInfo;
@@ -126,7 +126,7 @@ BOOL getFilesFromDir(const char *dir, char ***files, unsigned *filesNum)
 
 BOOL getSubdirsFromDir(const char *dir, char ***files, unsigned *filesNum)
 {
-    int             i;
+    size_t          i;
     DIR            *dirStream;
     struct dirent  *file;
     struct stat     fileInfo;

@@ -47,7 +47,7 @@ BOOL frokFaceRecognizerEigenfacesInit(void *instance, const char *photoBasePath)
         return FALSE;
     }
 
-    for(int i = 0; i < usersNum; i++)
+    for(unsigned i = 0; i < usersNum; i++)
     {
         std::string user = users[i];
         std::string userPath = photoBasePath;

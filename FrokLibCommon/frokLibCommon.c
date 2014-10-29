@@ -24,7 +24,7 @@ BOOL frokLibCommonParseConfigFile(const char *configFile)
     int configDescriptor;
     char lineBuf[LINE_MAX];
     char tmp;
-    int i, j;
+    size_t i, j;
     BOOL noWritting = FALSE;
 
     if(commonContext == NULL)
@@ -383,7 +383,6 @@ void set_trace_prefix(const char *prefix)
 FrokResult frokLibCommonInit(const char *configFilePath)
 {
     int result = 0;
-    int fd;
     pthread_mutexattr_t mAttr;
 
     if(commonContext != NULL)

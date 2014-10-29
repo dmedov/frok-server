@@ -15,7 +15,6 @@
 BOOL frokBecomeADaemon()
 {
     pid_t pid;
-    int i;
 
     if(!commonContext)
     {
@@ -59,6 +58,7 @@ BOOL frokBecomeADaemon()
     TRACE_S("Daemon started");
 
     TRACE_S("finished");
+    return TRUE;
 }
 
 BOOL obtainCPU(short cpu_number)

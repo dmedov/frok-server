@@ -139,7 +139,7 @@ FrokResult AddFaceFromPhotoToModel(void *inParams, void **outParams, const char 
         return res;
     }
 
-    if(faces.size() < in->faceNumber)
+    if(faces.size() < (size_t)in->faceNumber)
     {
         TRACE_F("Invalid faceNumber. Found %zu faces, faceNumber = %d", faces.size(), in->faceNumber);
         return FROK_RESULT_INVALID_PARAMETER;

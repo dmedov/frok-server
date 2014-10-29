@@ -230,7 +230,7 @@ void frokAPIInit(void *instance)
     ((FrokAPI*)instance)->AddAPIFunction("recognize", &FAPI_Recognize);
 }
 
-void frokAPIDeinit(void *UNUSED(instance))
+void frokAPIDeinit(void UNUSED(*instance))
 {
     return;
 }
