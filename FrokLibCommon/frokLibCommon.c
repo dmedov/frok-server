@@ -382,6 +382,7 @@ void set_trace_prefix(const char *prefix)
 
 FrokResult frokLibCommonInit(const char *configFilePath)
 {
+    int fd = 0;
     int result = 0;
     pthread_mutexattr_t mAttr;
 
