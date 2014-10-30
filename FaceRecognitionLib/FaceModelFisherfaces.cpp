@@ -18,6 +18,12 @@ FaceModelFisherfaces::FaceModelFisherfaces(std::string userId) : FaceModelAbstra
     TRACE_N("new FaceModelFisherfaces");
 }
 
+FaceModelFisherfaces::FaceModelFisherfaces(FaceModelAbstract *m)
+{
+    this->model = m->model;
+    this->userId = m->userId;
+}
+
 FrokResult FaceModelFisherfaces::GenerateUserModel(const char *grayFacesPath)
 {
     TRACE_T("started");

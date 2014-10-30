@@ -79,6 +79,7 @@ FrokResult FaceModelEigenfaces::GenerateUserModel(const char *grayFacesPath)
                 TRACE_F_T("Opencv failed to train model");
                 return FROK_RESULT_OPENCV_ERROR;
             }
+
             TRACE_S_T("Model training succeed");
         }
     }

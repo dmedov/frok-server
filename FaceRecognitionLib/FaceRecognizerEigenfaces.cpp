@@ -94,7 +94,8 @@ FaceRecognizerEigenfaces::~FaceRecognizerEigenfaces()
 FrokResult FaceRecognizerEigenfaces::AddFaceUserModel(std::string userId, FaceModelAbstract *model)
 {
     TRACE_T("started");
-    models[userId] = model;
+    models[userId] = new FaceModelFisherfaces(model);
+
     TRACE_T("finished");
     return FROK_RESULT_SUCCESS;
 }
@@ -290,28 +291,16 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
             continue;
         }
 
-//        int n = 3; // Количество точек
-//        CvPoint *pts = new CvPoint[sizeof(CvPoint)*n]; // Массив точек
-//        pts[0] = cvPoint(10,10);
-//        pts[1] = cvPoint(50,50);
-//        pts[2] = cvPoint(50,10);
-//        cvFillPoly(targetFace, &pts, &n, 1, CV_RGB(0,255,0));
-
-
-//        cv::imshow("targetFace", targetFace);
-//        cv::waitKey(0);
-
-
         __int64_t hammingDistance = calcHammingDistance(calcImageHash(targetFace), calcImageHash(predictedFace));
 
         if (hammingDistance <= maxHammingDistance)
         {
-            double prob1 = GetSimilarity_FirstMethod(targetFace, predictedFace);
+            //double prob1 = GetSimilarity_FirstMethod(targetFace, predictedFace);
             double prob2 = GetSimilarity_SecondMethod(targetFace, predictedFace);
             double prob3 = GetSimilarity_ThirdMethod(targetFace, predictedFace);
             double prob_chi = GetSimilarity_ChiSquare(targetFace, predictedFace);
 
-            double prob_res1 = pow(prob1 *prob2 * prob3, 1. / 3);
+            double prob_res1 = pow(prob2 * prob3, 1. / 2);
 
             double prob = prob_res1;
             if(prob_chi > 0.9)
@@ -321,7 +310,7 @@ FrokResult FaceRecognizerEigenfaces::GetSimilarityOfFaceWithModels(std::map<std:
             }
 
             TRACE_S_T("User %s results:%lf", userId.c_str(), prob);
-            similarities[userId] = 1 - prob;
+            similarities[userId] = prob;
         }
     }
     TRACE_T("finished");

@@ -9,7 +9,7 @@ const char USER_MODEL_FILENAME_EIGENFACES[] = "eigenface.yml";
 
 class FaceModelEigenfaces : public FaceModelAbstract
 {
-private:
+protected:
     // [TBD] needed for Eigenfaces AddFaceToModel function
     std::vector<cv::Mat>        userGrayFaces;
     std::vector<int>            labels;

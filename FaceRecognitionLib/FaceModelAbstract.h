@@ -11,7 +11,7 @@
 
 class FaceModelAbstract
 {
-protected:
+public:
     // FaceRecognizer model for this user
     cv::Ptr<cv::FaceRecognizer> model;
     // This user's user id

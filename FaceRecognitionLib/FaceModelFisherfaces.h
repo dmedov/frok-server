@@ -9,12 +9,13 @@ const char USER_MODEL_FILENAME_FISHERFACES[] = "eigenface.yml";
 
 class FaceModelFisherfaces : public FaceModelAbstract
 {
-private:
+protected:
     // [TBD] needed for Fisherface AddFaceToModel function
     std::vector<cv::Mat>        userGrayFaces;
     std::vector<int>            labels;
 public:
     FaceModelFisherfaces();
+    FaceModelFisherfaces(FaceModelAbstract *m);
     FaceModelFisherfaces(std::string userId);
     ~FaceModelFisherfaces();
 
